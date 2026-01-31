@@ -21,11 +21,6 @@ class ExtendRoomDataDto {
   expiresAt: string;
 }
 
-class UpdateNameDataDto {
-  @ApiProperty({ example: "새 회의 이름" })
-  name: string;
-}
-
 // === API Response DTOs ===
 
 export class CreateRoomApiResponseDto {
@@ -69,16 +64,16 @@ export class DeleteRoomApiResponseDto {
 }
 
 export class UpdateRoomNameApiResponseDto {
-  @ApiProperty({ type: UpdateNameDataDto })
-  data: UpdateNameDataDto;
+  @ApiProperty({ example: null, nullable: true, type: "null" })
+  data: null;
 
   @ApiProperty({ example: "방 이름이 변경되었습니다" })
   message: string;
 }
 
 export class UpdateNicknameApiResponseDto {
-  @ApiProperty({ type: UpdateNameDataDto })
-  data: UpdateNameDataDto;
+  @ApiProperty({ example: null, nullable: true, type: "null" })
+  data: null;
 
   @ApiProperty({ example: "닉네임이 변경되었습니다" })
   message: string;
@@ -88,5 +83,3 @@ export class UpdateNicknameApiResponseDto {
 export type CreateRoomResponseDto = { id: string };
 export type RoomDetailResponseDto = RoomDetailApiResponseDto["data"];
 export type ExtendRoomResponseDto = { expiresAt: string };
-export type UpdateRoomNameResponseDto = { name: string };
-export type UpdateNicknameResponseDto = { name: string };

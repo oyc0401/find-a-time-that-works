@@ -81,8 +81,8 @@ export class RoomsController {
   @SwaggerApiResponse({ status: 403, description: "방 생성자만 이름을 변경할 수 있습니다" })
   @SwaggerApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
   async updateRoomName(@Param("id") roomId: string, @Body() dto: UpdateRoomNameDto): Promise<UpdateRoomNameApiResponseDto> {
-    const data = await this.roomsService.updateRoomName(roomId, dto);
-    return { data, message: "방 이름이 변경되었습니다" };
+    await this.roomsService.updateRoomName(roomId, dto);
+    return { data: null, message: "방 이름이 변경되었습니다" };
   }
 
   @Patch(":id/nickname")
@@ -91,7 +91,7 @@ export class RoomsController {
   @SwaggerApiResponse({ status: 200, type: UpdateNicknameApiResponseDto })
   @SwaggerApiResponse({ status: 404, description: "해당 방에서 참여자를 찾을 수 없습니다" })
   async updateNickname(@Param("id") roomId: string, @Body() dto: UpdateNicknameDto): Promise<UpdateNicknameApiResponseDto> {
-    const data = await this.roomsService.updateNickname(roomId, dto);
-    return { data, message: "닉네임이 변경되었습니다" };
+    await this.roomsService.updateNickname(roomId, dto);
+    return { data: null, message: "닉네임이 변경되었습니다" };
   }
 }

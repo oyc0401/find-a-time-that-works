@@ -4,13 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateRoomDto } from "./dto/create-room.dto";
 import { SubmitAvailabilityDto } from "./dto/submit-availability.dto";
 import { DeleteRoomDto, UpdateRoomNameDto, UpdateNicknameDto } from "./dto/room-request.dto";
-import {
-  RoomDetailResponseDto,
-  CreateRoomResponseDto,
-  ExtendRoomResponseDto,
-  UpdateRoomNameResponseDto,
-  UpdateNicknameResponseDto,
-} from "./dto/room-response.dto";
+import { RoomDetailResponseDto, CreateRoomResponseDto, ExtendRoomResponseDto } from "./dto/room-response.dto";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const generateId = customAlphabet(ALPHABET, 8);
@@ -156,7 +150,7 @@ export class RoomsService {
     await this.prisma.room.delete({ where: { id: roomId } });
   }
 
-  async updateRoomName(roomId: string, dto: UpdateRoomNameDto): Promise<UpdateRoomNameResponseDto> {
+  async updateRoomName(roomId: string, dto: UpdateRoomNameDto): Promise<void> {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new NotFoundException("방을 찾을 수 없습니다");
@@ -165,15 +159,13 @@ export class RoomsService {
       throw new ForbiddenException("방 생성자만 이름을 변경할 수 있습니다");
     }
 
-    const updated = await this.prisma.room.update({
+    await this.prisma.room.update({
       where: { id: roomId },
       data: { name: dto.name },
     });
-
-    return { name: updated.name };
   }
 
-  async updateNickname(roomId: string, dto: UpdateNicknameDto): Promise<UpdateNicknameResponseDto> {
+  async updateNickname(roomId: string, dto: UpdateNicknameDto): Promise<void> {
     const participant = await this.prisma.participant.findUnique({
       where: { roomId_userId: { roomId, userId: dto.userId } },
     });
@@ -181,11 +173,9 @@ export class RoomsService {
       throw new NotFoundException("해당 방에서 참여자를 찾을 수 없습니다");
     }
 
-    const updated = await this.prisma.participant.update({
+    await this.prisma.participant.update({
       where: { id: participant.id },
       data: { name: dto.name },
     });
-
-    return { name: updated.name };
   }
 }

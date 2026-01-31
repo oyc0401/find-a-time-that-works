@@ -643,23 +643,13 @@
           "name"
         ]
       },
-      "UpdateNameDataDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "새 회의 이름"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
       "UpdateRoomNameApiResponseDto": {
         "type": "object",
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/UpdateNameDataDto"
+            "type": "null",
+            "example": null,
+            "nullable": true
           },
           "message": {
             "type": "string",
@@ -694,7 +684,9 @@
         "type": "object",
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/UpdateNameDataDto"
+            "type": "null",
+            "example": null,
+            "nullable": true
           },
           "message": {
             "type": "string",
