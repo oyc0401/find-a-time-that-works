@@ -1,0 +1,8 @@
+{
+  "name": "findtime",
+  "private": true,
+  "scripts": {
+    "frontend": "pnpm --filter frontend",
+    "backend": "pnpm --filter backend"
+  }
+}
