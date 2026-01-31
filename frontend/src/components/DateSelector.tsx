@@ -1,6 +1,7 @@
-import { useMemo } from "react";
-import { Text } from "@toss/tds-mobile";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
+import { cn } from "@/lib/cn";
+import { useDateSelectionStore } from "@/stores/useDateSelectionStore";
 
 const TOTAL_CELLS = 35; // 5줄 × 7칸
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
@@ -78,8 +79,113 @@ function useCalendarCells(): Cell[] {
   }, []);
 }
 
+// --- 드래그 선택 훅 ---
+
+type DragMode = "select" | "deselect";
+
+function getRectIndices(startIdx: number, endIdx: number): Set<number> {
+  const startRow = Math.floor(startIdx / 7);
+  const startCol = startIdx % 7;
+  const endRow = Math.floor(endIdx / 7);
+  const endCol = endIdx % 7;
+
+  const minRow = Math.min(startRow, endRow);
+  const maxRow = Math.max(startRow, endRow);
+  const minCol = Math.min(startCol, endCol);
+  const maxCol = Math.max(startCol, endCol);
+
+  const indices = new Set<number>();
+  for (let r = minRow; r <= maxRow; r++) {
+    for (let c = minCol; c <= maxCol; c++) {
+      indices.add(r * 7 + c);
+    }
+  }
+  return indices;
+}
+
+function getCellIdxFromPoint(x: number, y: number): number | undefined {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return undefined;
+  const cellEl = el.closest("[data-cell-idx]");
+  if (!cellEl) return undefined;
+  const idx = Number(cellEl.getAttribute("data-cell-idx"));
+  return Number.isNaN(idx) ? undefined : idx;
+}
+
+function useDateDragSelection(isHidden: (idx: number) => boolean) {
+  const { selectedIndices, select, deselect } = useDateSelectionStore();
+
+  const [previewIndices, setPreviewIndices] = useState<Set<number>>(new Set());
+  const [dragMode, setDragMode] = useState<DragMode>("select");
+
+  const dragStartIdx = useRef<number | undefined>(undefined);
+  const isDragging = useRef(false);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
+      if (idx === undefined || isHidden(idx)) return;
+
+      isDragging.current = true;
+      dragStartIdx.current = idx;
+
+      const mode = selectedIndices.has(idx) ? "deselect" : "select";
+      setDragMode(mode);
+      setPreviewIndices(new Set([idx]));
+
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [selectedIndices, isHidden],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current || dragStartIdx.current === undefined) return;
+
+      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
+      if (idx === undefined || isHidden(idx)) return;
+
+      setPreviewIndices(getRectIndices(dragStartIdx.current, idx));
+    },
+    [isHidden],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (isDragging.current && previewIndices.size > 0) {
+      if (dragMode === "select") {
+        select(previewIndices);
+      } else {
+        deselect(previewIndices);
+      }
+    }
+    isDragging.current = false;
+    dragStartIdx.current = undefined;
+    setPreviewIndices(new Set());
+  }, [previewIndices, dragMode, select, deselect]);
+
+  return {
+    selectedIndices,
+    previewIndices,
+    dragMode,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+  };
+}
+
+// --- 컴포넌트 ---
+
 export default function DateSelector() {
   const cells = useCalendarCells();
+
+  const {
+    selectedIndices,
+    previewIndices,
+    dragMode,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+  } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
 
   return (
     <div className="w-full px-5 py-4">
@@ -100,38 +206,83 @@ export default function DateSelector() {
       </div>
 
       {/* 날짜 그리드 */}
-      <div className="mt-5 grid grid-cols-7 place-items-center gap-y-4">
-        {cells.map((cell, idx) => (
-          <div
-            key={idx}
-            className={[
-              "relative select-none flex items-center justify-center",
-              cell.hidden ? "opacity-0" : "",
-            ].join(" ")}
-          >
-            {cell.isToday && (
-              <div
-                className="absolute rounded-full"
-                style={{
-                  width: 36,
-                  height: 36,
-                  border: `2px solid ${adaptive.blue300}`,
-                }}
-              />
-            )}
-            <span
-              style={{
-                fontSize: 20,
-                lineHeight: "29px",
-                color: cell.isCurrentMonth
-                  ? adaptive.grey800
-                  : adaptive.grey400,
-              }}
+      <div
+        className="mt-3 grid grid-cols-7 place-items-center"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{ touchAction: "none" }}
+      >
+        {cells.map((cell, idx) => {
+          const isConfirmed = selectedIndices.has(idx) && !cell.hidden;
+          const isPreviewing = previewIndices.has(idx) && !cell.hidden;
+
+          // 셀의 최종 표시 상태 결정
+          let circleColor: string | undefined;
+          let textColor: string;
+
+          if (isPreviewing && dragMode === "select" && !isConfirmed) {
+            // 선택 예정: 아직 선택 안 된 셀만
+            circleColor = adaptive.blue200;
+          } else if (isPreviewing && dragMode === "deselect" && isConfirmed) {
+            // 해제 예정: 이미 선택된 셀만
+            circleColor = adaptive.blue50;
+          } else if (isConfirmed) {
+            // 확정된 선택
+            circleColor = adaptive.blue300;
+          }
+
+          if (circleColor === adaptive.blue300 || circleColor === adaptive.blue200) {
+            textColor = "#ffffff";
+          } else {
+            textColor = cell.isCurrentMonth
+              ? adaptive.grey800
+              : adaptive.grey400;
+          }
+
+          return (
+            <div
+              key={idx}
+              data-cell-idx={idx}
+              className={cn(
+                "relative select-none flex items-center justify-center py-2 w-full aspect-square",
+                cell.hidden && "opacity-0 pointer-events-none",
+              )}
             >
-              {cell.day}
-            </span>
-          </div>
-        ))}
+              {circleColor && (
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    backgroundColor: circleColor,
+                  }}
+                />
+              )}
+              {cell.isToday && !circleColor && (
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    border: `2px solid ${adaptive.blue300}`,
+                  }}
+                />
+              )}
+              <span
+                className="relative"
+                style={{
+                  fontSize: 20,
+                  lineHeight: "29px",
+                  color: textColor,
+                }}
+              >
+                {cell.day}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

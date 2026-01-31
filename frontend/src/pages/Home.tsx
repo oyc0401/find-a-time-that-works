@@ -30,7 +30,6 @@ function Header() {
   );
 }
 
-
 function TimeSection() {
   return (
     <>
@@ -57,7 +56,7 @@ export default function Page() {
     <div className="h-screen">
       <Header />
       <DateSelector />
-      {/* <TimeSection /> */}
+      <TimeSection />
       {/* <FixedBottomCTA.Double
         leftButton={
           <CTAButton color="dark" variant="weak" display="block">
