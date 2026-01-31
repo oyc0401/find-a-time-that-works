@@ -9,6 +9,7 @@ import {
   Paragraph,
 } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
+import DateSelector from "../components/DateSelector";
 
 function Header() {
   return (
@@ -29,55 +30,6 @@ function Header() {
   );
 }
 
-type Props = {
-  daysInMonth?: number; // 28~31
-  startOffset?: number; // 0=일,1=월,...6=토 (1일이 시작하는 요일)
-};
-
-function DateSection({
-  daysInMonth = 30,
-  startOffset = 3, // 스샷처럼 1일이 '수'에 오게 하려면 3
-}: Props) {
-  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-
-  // 앞쪽 빈칸 + 날짜들
-  const cells: Array<number | null> = [
-    ...Array.from({ length: startOffset }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-
-  return (
-    <div className="w-full px-5 py-4">
-      {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 text-center">
-        {weekdays.map((d) => (
-          <div
-            key={d}
-            className="text-[17px] font-medium tracking-wide text-slate-300"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* 날짜 그리드 */}
-      <div className="mt-5 grid grid-cols-7 justify-items-center gap-y-4">
-        {cells.map((v, idx) => (
-          <div
-            key={idx}
-            className={[
-              "h-[32px] w-[32px] select-none text-center",
-              "text-[23px] font-normal leading-[32px] text-slate-700",
-              v == null ? "opacity-0" : "",
-            ].join(" ")}
-          >
-            {v ?? 0}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function TimeSection() {
   return (
@@ -102,9 +54,9 @@ function TimeSection() {
 
 export default function Page() {
   return (
-    <div>
+    <div className="h-screen">
       <Header />
-      <DateSection />
+      <DateSelector />
       {/* <TimeSection /> */}
       {/* <FixedBottomCTA.Double
         leftButton={
