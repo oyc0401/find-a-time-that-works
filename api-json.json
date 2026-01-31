@@ -1,1 +1,711 @@
-{"openapi":"3.0.0","paths":{"/rooms":{"post":{"operationId":"RoomsController_create","parameters":[],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateRoomDto"}}}},"responses":{"201":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateRoomResponseDto"}}}}},"summary":"방 생성","tags":["rooms"]}},"/rooms/{id}":{"get":{"operationId":"RoomsController_findById","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RoomDetailResponseDto"}}}},"404":{"description":"방을 찾을 수 없습니다"},"410":{"description":"만료된 방입니다"}},"summary":"방 상세 조회","tags":["rooms"]},"delete":{"operationId":"RoomsController_deleteRoom","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DeleteRoomDto"}}}},"responses":{"204":{"description":"삭제 완료"},"403":{"description":"방 생성자만 삭제할 수 있습니다"},"404":{"description":"방을 찾을 수 없습니다"}},"summary":"방 삭제 (생성자만)","tags":["rooms"]},"patch":{"operationId":"RoomsController_updateRoomName","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UpdateRoomNameDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UpdateRoomNameResponseDto"}}}},"403":{"description":"방 생성자만 이름을 변경할 수 있습니다"},"404":{"description":"방을 찾을 수 없습니다"}},"summary":"방 이름 변경 (생성자만)","tags":["rooms"]}},"/rooms/{id}/availability":{"post":{"operationId":"RoomsController_submitAvailability","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SubmitAvailabilityDto"}}}},"responses":{"201":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SubmitAvailabilityResponseDto"}}}},"404":{"description":"방을 찾을 수 없습니다"},"410":{"description":"만료된 방입니다"}},"summary":"가용 시간 입력 (같은 사용자 UUID면 덮어쓰기)","tags":["rooms"]}},"/rooms/{id}/extend":{"post":{"operationId":"RoomsController_extendRoom","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"responses":{"201":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ExtendRoomResponseDto"}}}},"404":{"description":"방을 찾을 수 없습니다"}},"summary":"방 만료 기간 30일 연장","tags":["rooms"]}},"/rooms/{id}/nickname":{"patch":{"operationId":"RoomsController_updateNickname","parameters":[{"name":"id","required":true,"in":"path","description":"방 ID (8자)","schema":{"example":"aB3kZ9xQ","type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/UpdateNicknameDto"}}}},"responses":{"200":{"description":"","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UpdateNicknameResponseDto"}}}},"404":{"description":"해당 방에서 참여자를 찾을 수 없습니다"}},"summary":"특정 방에서 유저 닉네임 변경","tags":["rooms"]}}},"info":{"title":"FindTime API","description":"겹치는 시간 찾기 API","version":"1.0","contact":{}},"tags":[],"servers":[],"components":{"schemas":{"CreateRoomDto":{"type":"object","properties":{"name":{"type":"string","example":"팀 회의"},"creatorId":{"type":"string","example":"user-uuid-1234"},"dates":{"example":["2026-03-04","2026-03-05"],"description":"대상 날짜 리스트 (YYYY-MM-DD)","type":"array","items":{"type":"string"}},"startTime":{"type":"string","example":"14:00","description":"시작 시각 (HH:mm)"},"endTime":{"type":"string","example":"21:00","description":"종료 시각 (HH:mm)"}},"required":["name","creatorId","dates","startTime","endTime"]},"CreateRoomResponseDto":{"type":"object","properties":{"id":{"type":"string","example":"aB3kZ9xQ"}},"required":["id"]},"RoomDto":{"type":"object","properties":{"id":{"type":"string","example":"aB3kZ9xQ"},"name":{"type":"string","example":"팀 회의"},"creatorId":{"type":"string","example":"user-uuid-1234"},"dates":{"example":["2026-03-04","2026-03-05"],"type":"array","items":{"type":"string"}},"startTime":{"type":"string","example":"14:00"},"endTime":{"type":"string","example":"21:00"},"createdAt":{"type":"string","example":"2026-03-01T00:00:00.000Z"},"expiresAt":{"type":"string","example":"2026-03-11T00:00:00.000Z"}},"required":["id","name","creatorId","dates","startTime","endTime","createdAt","expiresAt"]},"SlotDto":{"type":"object","properties":{"date":{"type":"string","example":"2026-03-04","description":"날짜 (YYYY-MM-DD)"},"time":{"type":"string","example":"14:00","description":"슬롯 시작 시각 (HH:mm, 00분 또는 30분)"}},"required":["date","time"]},"ParticipantDto":{"type":"object","properties":{"id":{"type":"string","example":"aB3kZ9xQ"},"userId":{"type":"string","example":"550e8400-e29b-41d4-a716-446655440000"},"name":{"type":"string","example":"유찬"},"slots":{"type":"array","items":{"$ref":"#/components/schemas/SlotDto"}}},"required":["id","userId","name","slots"]},"RoomDetailResponseDto":{"type":"object","properties":{"room":{"$ref":"#/components/schemas/RoomDto"},"participants":{"type":"array","items":{"$ref":"#/components/schemas/ParticipantDto"}}},"required":["room","participants"]},"SubmitAvailabilityDto":{"type":"object","properties":{"participantId":{"type":"string","example":"550e8400-e29b-41d4-a716-446655440000","description":"프론트에서 생성한 UUID"},"participantName":{"type":"string","example":"유찬"},"slots":{"example":[{"date":"2026-03-04","time":"14:00"},{"date":"2026-03-04","time":"14:30"}],"type":"array","items":{"$ref":"#/components/schemas/SlotDto"}}},"required":["participantId","participantName","slots"]},"SubmitAvailabilityResponseDto":{"type":"object","properties":{"participantId":{"type":"string","example":"aB3kZ9xQ"}},"required":["participantId"]},"ExtendRoomResponseDto":{"type":"object","properties":{"expiresAt":{"type":"string","example":"2026-04-10T00:00:00.000Z","description":"새 만료 일시"}},"required":["expiresAt"]},"DeleteRoomDto":{"type":"object","properties":{"creatorId":{"type":"string","example":"user-uuid-1234","description":"방 생성자 ID"}},"required":["creatorId"]},"UpdateRoomNameDto":{"type":"object","properties":{"creatorId":{"type":"string","example":"user-uuid-1234","description":"방 생성자 ID"},"name":{"type":"string","example":"새 회의 이름","description":"변경할 방 이름"}},"required":["creatorId","name"]},"UpdateRoomNameResponseDto":{"type":"object","properties":{"name":{"type":"string","example":"새 회의 이름","description":"변경된 방 이름"}},"required":["name"]},"UpdateNicknameDto":{"type":"object","properties":{"userId":{"type":"string","example":"user-uuid-1234","description":"유저 ID"},"name":{"type":"string","example":"새 닉네임","description":"변경할 닉네임"}},"required":["userId","name"]},"UpdateNicknameResponseDto":{"type":"object","properties":{"participantId":{"type":"string","example":"participant-uuid-1234","description":"참여자 ID"},"name":{"type":"string","example":"새 닉네임","description":"변경된 닉네임"}},"required":["participantId","name"]}}}}
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/rooms": {
+      "post": {
+        "operationId": "RoomsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRoomApiResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "방 생성",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/rooms/{id}": {
+      "get": {
+        "operationId": "RoomsController_findById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomDetailApiResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "방을 찾을 수 없습니다"
+          },
+          "410": {
+            "description": "만료된 방입니다"
+          }
+        },
+        "summary": "방 상세 조회",
+        "tags": [
+          "rooms"
+        ]
+      },
+      "delete": {
+        "operationId": "RoomsController_deleteRoom",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRoomDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteRoomApiResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "방 생성자만 삭제할 수 있습니다"
+          },
+          "404": {
+            "description": "방을 찾을 수 없습니다"
+          }
+        },
+        "summary": "방 삭제 (생성자만)",
+        "tags": [
+          "rooms"
+        ]
+      },
+      "patch": {
+        "operationId": "RoomsController_updateRoomName",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomNameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateRoomNameApiResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "방 생성자만 이름을 변경할 수 있습니다"
+          },
+          "404": {
+            "description": "방을 찾을 수 없습니다"
+          }
+        },
+        "summary": "방 이름 변경 (생성자만)",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/rooms/{id}/availability": {
+      "post": {
+        "operationId": "RoomsController_submitAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitAvailabilityApiResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "방을 찾을 수 없습니다"
+          },
+          "410": {
+            "description": "만료된 방입니다"
+          }
+        },
+        "summary": "가용 시간 입력 (같은 사용자 UUID면 덮어쓰기)",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/rooms/{id}/extend": {
+      "post": {
+        "operationId": "RoomsController_extendRoom",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendRoomApiResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "방을 찾을 수 없습니다"
+          }
+        },
+        "summary": "방 만료 기간 30일 연장",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/rooms/{id}/nickname": {
+      "patch": {
+        "operationId": "RoomsController_updateNickname",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "방 ID (8자)",
+            "schema": {
+              "example": "aB3kZ9xQ",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNicknameDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateNicknameApiResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "해당 방에서 참여자를 찾을 수 없습니다"
+          }
+        },
+        "summary": "특정 방에서 유저 닉네임 변경",
+        "tags": [
+          "rooms"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "FindTime API",
+    "description": "겹치는 시간 찾기 API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateRoomDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "팀 회의"
+          },
+          "creatorId": {
+            "type": "string",
+            "example": "user-uuid-1234"
+          },
+          "dates": {
+            "example": [
+              "2026-03-04",
+              "2026-03-05"
+            ],
+            "description": "대상 날짜 리스트 (YYYY-MM-DD)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "example": "14:00",
+            "description": "시작 시각 (HH:mm)"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "21:00",
+            "description": "종료 시각 (HH:mm)"
+          }
+        },
+        "required": [
+          "name",
+          "creatorId",
+          "dates",
+          "startTime",
+          "endTime"
+        ]
+      },
+      "CreateRoomDataDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "aB3kZ9xQ"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CreateRoomApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CreateRoomDataDto"
+          },
+          "message": {
+            "type": "string",
+            "example": "방이 생성되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "RoomDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "aB3kZ9xQ"
+          },
+          "name": {
+            "type": "string",
+            "example": "팀 회의"
+          },
+          "creatorId": {
+            "type": "string",
+            "example": "user-uuid-1234"
+          },
+          "dates": {
+            "example": [
+              "2026-03-04",
+              "2026-03-05"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "example": "14:00"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "21:00"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-03-01T00:00:00.000Z"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-03-11T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "creatorId",
+          "dates",
+          "startTime",
+          "endTime",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "SlotDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-03-04",
+            "description": "날짜 (YYYY-MM-DD)"
+          },
+          "time": {
+            "type": "string",
+            "example": "14:00",
+            "description": "슬롯 시작 시각 (HH:mm, 00분 또는 30분)"
+          }
+        },
+        "required": [
+          "date",
+          "time"
+        ]
+      },
+      "ParticipantDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "aB3kZ9xQ"
+          },
+          "userId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "name": {
+            "type": "string",
+            "example": "유찬"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SlotDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "slots"
+        ]
+      },
+      "RoomDetailDataDto": {
+        "type": "object",
+        "properties": {
+          "room": {
+            "$ref": "#/components/schemas/RoomDto"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParticipantDto"
+            }
+          }
+        },
+        "required": [
+          "room",
+          "participants"
+        ]
+      },
+      "RoomDetailApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RoomDetailDataDto"
+          },
+          "message": {
+            "type": "string",
+            "example": "조회 성공"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "SubmitAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "participantId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "프론트에서 생성한 UUID"
+          },
+          "participantName": {
+            "type": "string",
+            "example": "유찬"
+          },
+          "slots": {
+            "example": [
+              {
+                "date": "2026-03-04",
+                "time": "14:00"
+              },
+              {
+                "date": "2026-03-04",
+                "time": "14:30"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "participantId",
+          "participantName",
+          "slots"
+        ]
+      },
+      "SubmitAvailabilityApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "null",
+            "example": null,
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "example": "가용 시간이 저장되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "ExtendRoomDataDto": {
+        "type": "object",
+        "properties": {
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-04-10T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "expiresAt"
+        ]
+      },
+      "ExtendRoomApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ExtendRoomDataDto"
+          },
+          "message": {
+            "type": "string",
+            "example": "만료 기간이 연장되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "DeleteRoomDto": {
+        "type": "object",
+        "properties": {
+          "creatorId": {
+            "type": "string",
+            "example": "user-uuid-1234",
+            "description": "방 생성자 ID"
+          }
+        },
+        "required": [
+          "creatorId"
+        ]
+      },
+      "DeleteRoomApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "null",
+            "example": null,
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "example": "방이 삭제되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "UpdateRoomNameDto": {
+        "type": "object",
+        "properties": {
+          "creatorId": {
+            "type": "string",
+            "example": "user-uuid-1234",
+            "description": "방 생성자 ID"
+          },
+          "name": {
+            "type": "string",
+            "example": "새 회의 이름",
+            "description": "변경할 방 이름"
+          }
+        },
+        "required": [
+          "creatorId",
+          "name"
+        ]
+      },
+      "UpdateNameDataDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "새 회의 이름"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateRoomNameApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpdateNameDataDto"
+          },
+          "message": {
+            "type": "string",
+            "example": "방 이름이 변경되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      },
+      "UpdateNicknameDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "user-uuid-1234",
+            "description": "유저 ID"
+          },
+          "name": {
+            "type": "string",
+            "example": "새 닉네임",
+            "description": "변경할 닉네임"
+          }
+        },
+        "required": [
+          "userId",
+          "name"
+        ]
+      },
+      "UpdateNicknameApiResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpdateNameDataDto"
+          },
+          "message": {
+            "type": "string",
+            "example": "닉네임이 변경되었습니다"
+          }
+        },
+        "required": [
+          "data",
+          "message"
+        ]
+      }
+    }
+  }
+}

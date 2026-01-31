@@ -7,7 +7,6 @@ import { DeleteRoomDto, UpdateRoomNameDto, UpdateNicknameDto } from "./dto/room-
 import {
   RoomDetailResponseDto,
   CreateRoomResponseDto,
-  SubmitAvailabilityResponseDto,
   ExtendRoomResponseDto,
   UpdateRoomNameResponseDto,
   UpdateNicknameResponseDto,
@@ -96,10 +95,7 @@ export class RoomsService {
     };
   }
 
-  async submitAvailability(
-    roomId: string,
-    dto: SubmitAvailabilityDto,
-  ): Promise<SubmitAvailabilityResponseDto> {
+  async submitAvailability(roomId: string, dto: SubmitAvailabilityDto): Promise<void> {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
       throw new NotFoundException("방을 찾을 수 없습니다");
@@ -126,8 +122,6 @@ export class RoomsService {
         })),
       });
     }
-
-    return { participantId: participant.id };
   }
 
   async extendRoom(roomId: string): Promise<ExtendRoomResponseDto> {
@@ -190,6 +184,6 @@ export class RoomsService {
       data: { name: dto.name },
     });
 
-    return { participantId: updated.id, name: updated.name };
+    return { name: updated.name };
   }
 }

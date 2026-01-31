@@ -13,8 +13,8 @@ async function main() {
       throw new Error(`Request failed with status ${response.status}`);
     }
 
-    const body = await response.text();
-    await writeFile(OUTPUT, body);
+    const json = await response.json();
+    await writeFile(OUTPUT, JSON.stringify(json, null, 2));
 
     console.log(`Saved ${URL} to ${OUTPUT}`);
   } catch (error) {
