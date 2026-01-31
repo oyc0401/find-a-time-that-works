@@ -1,12 +1,17 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, Spacing } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 
 const TOTAL_STEPS = 24;
 const THUMB_SIZE = 24;
+const THUMB_RADIUS = THUMB_SIZE / 2;
 const TRACK_HEIGHT = 4;
-const LABEL_MIN_GAP_PERCENT = 10;
+const LABEL_MIN_GAP_PX = 8;
+
+function toTrackPos(percent: number) {
+  return `calc(${THUMB_RADIUS}px + (100% - ${THUMB_SIZE}px) * ${percent / 100})`;
+}
 
 function formatHour(hour: number) {
   return `${hour}:00`;
@@ -31,7 +36,8 @@ export default function TimeSlider() {
     const track = trackRef.current;
     if (!track) return 0;
     const rect = track.getBoundingClientRect();
-    const ratio = (clientX - rect.left) / rect.width;
+    const usable = rect.width - THUMB_SIZE;
+    const ratio = (clientX - rect.left - THUMB_RADIUS) / usable;
     return Math.round(clamp(ratio, 0, 1) * TOTAL_STEPS);
   }, []);
   const draggingRef = useRef<ThumbType | undefined>(undefined);
@@ -71,21 +77,50 @@ export default function TimeSlider() {
     draggingRef.current = undefined;
   }, []);
 
+  const [trackWidth, setTrackWidth] = useState(0);
+  const startLabelRef = useRef<HTMLDivElement>(null);
+  const endLabelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setTrackWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const startPercent = (start / TOTAL_STEPS) * 100;
   const endPercent = (end / TOTAL_STEPS) * 100;
 
-  const gap = endPercent - startPercent;
-  let startLabelPercent = startPercent;
-  let endLabelPercent = endPercent;
-  if (gap < LABEL_MIN_GAP_PERCENT) {
+  // 픽셀 기반 라벨 위치 계산 (toTrackPos의 픽셀 버전)
+  const usable = trackWidth - THUMB_SIZE;
+  const startCenterPx = THUMB_RADIUS + usable * (startPercent / 100);
+  const endCenterPx = THUMB_RADIUS + usable * (endPercent / 100);
+
+  const startLabelW = startLabelRef.current?.offsetWidth ?? 0;
+  const endLabelW = endLabelRef.current?.offsetWidth ?? 0;
+  const halfStart = startLabelW / 2;
+  const halfEnd = endLabelW / 2;
+  const minDist = halfStart + halfEnd + LABEL_MIN_GAP_PX;
+
+  let adjStart = startCenterPx;
+  let adjEnd = endCenterPx;
+
+  if (adjEnd - adjStart < minDist) {
     const mid = clamp(
-      (startPercent + endPercent) / 2,
-      LABEL_MIN_GAP_PERCENT / 2,
-      100 - LABEL_MIN_GAP_PERCENT / 2,
+      (startCenterPx + endCenterPx) / 2,
+      halfStart + minDist / 2,
+      trackWidth - halfEnd - minDist / 2,
     );
-    startLabelPercent = mid - LABEL_MIN_GAP_PERCENT / 2;
-    endLabelPercent = mid + LABEL_MIN_GAP_PERCENT / 2;
+    adjStart = mid - minDist / 2;
+    adjEnd = mid + minDist / 2;
   }
+
+  // 벽 clamp
+  adjStart = clamp(adjStart, halfStart, trackWidth - halfStart);
+  adjEnd = clamp(adjEnd, halfEnd, trackWidth - halfEnd);
 
   return (
     <>
@@ -122,8 +157,8 @@ export default function TimeSlider() {
           <div
             className="absolute top-0 h-full rounded-full"
             style={{
-              left: `${startPercent}%`,
-              right: `${100 - endPercent}%`,
+              left: toTrackPos(startPercent),
+              right: `calc(100% - ${toTrackPos(endPercent)})`,
               backgroundColor: adaptive.blue500,
             }}
           />
@@ -135,7 +170,7 @@ export default function TimeSlider() {
               width: 44,
               height: 44,
               top: "50%",
-              left: `${startPercent}%`,
+              left: toTrackPos(startPercent),
               transform: "translate(-50%, -50%)",
               touchAction: "none",
             }}
@@ -159,7 +194,7 @@ export default function TimeSlider() {
               width: 44,
               height: 44,
               top: "50%",
-              left: `${endPercent}%`,
+              left: toTrackPos(endPercent),
               transform: "translate(-50%, -50%)",
               touchAction: "none",
             }}
@@ -180,9 +215,10 @@ export default function TimeSlider() {
         {/* Labels */}
         <div className="relative" style={{ height: 24, marginTop: 16 }}>
           <div
-            className="absolute"
+            ref={startLabelRef}
+            className="absolute whitespace-nowrap"
             style={{
-              left: `${startLabelPercent}%`,
+              left: adjStart,
               transform: "translateX(-50%)",
             }}
           >
@@ -192,9 +228,10 @@ export default function TimeSlider() {
           </div>
 
           <div
-            className="absolute"
+            ref={endLabelRef}
+            className="absolute whitespace-nowrap"
             style={{
-              right: `${100 - endLabelPercent}%`,
+              right: trackWidth - adjEnd,
               transform: "translateX(50%)",
             }}
           >
