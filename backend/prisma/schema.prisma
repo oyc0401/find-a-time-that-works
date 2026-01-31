@@ -7,15 +7,17 @@ datasource db {
 }
 
 model Room {
-  id           String        @id @default(uuid())
+  id           String        @id @db.VarChar(8)
   name         String
   creatorId    String        @map("creator_id")
   dates        DateTime[]    @db.Date
   startTime    String        @map("start_time")
   endTime      String        @map("end_time")
   createdAt    DateTime      @default(now()) @map("created_at")
+  expiresAt    DateTime      @map("expires_at")
   participants Participant[]
 
+  @@index([expiresAt])
   @@map("room")
 }
 
