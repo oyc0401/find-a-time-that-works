@@ -6,6 +6,7 @@ import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 const TOTAL_STEPS = 24;
 const THUMB_SIZE = 24;
 const TRACK_HEIGHT = 4;
+const LABEL_MIN_GAP_PERCENT = 10;
 
 function formatHour(hour: number) {
   return `${hour}:00`;
@@ -73,6 +74,19 @@ export default function TimeSlider() {
   const startPercent = (start / TOTAL_STEPS) * 100;
   const endPercent = (end / TOTAL_STEPS) * 100;
 
+  const gap = endPercent - startPercent;
+  let startLabelPercent = startPercent;
+  let endLabelPercent = endPercent;
+  if (gap < LABEL_MIN_GAP_PERCENT) {
+    const mid = clamp(
+      (startPercent + endPercent) / 2,
+      LABEL_MIN_GAP_PERCENT / 2,
+      100 - LABEL_MIN_GAP_PERCENT / 2,
+    );
+    startLabelPercent = mid - LABEL_MIN_GAP_PERCENT / 2;
+    endLabelPercent = mid + LABEL_MIN_GAP_PERCENT / 2;
+  }
+
   return (
     <>
       <div className="flex justify-between px-5">
@@ -87,14 +101,14 @@ export default function TimeSlider() {
 
       {/* Slider */}
       <div
-        className="px-5"
+        className="overflow-visible px-5"
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
         {/* Track (thumbs are positioned relative to this) */}
         <div
           ref={trackRef}
-          className="relative w-full rounded-full"
+          className="relative w-full overflow-visible rounded-full"
           style={{
             height: TRACK_HEIGHT,
           }}
@@ -162,17 +176,33 @@ export default function TimeSlider() {
             />
           </div>
         </div>
-      </div>
 
-      {/* Labels */}
-      <Spacing size={22} />
-      <div className="flex justify-between px-5">
-        <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {`${formatHour(start)}`}
-        </Text>
-        <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {`${formatHour(end)}`}
-        </Text>
+        {/* Labels */}
+        <div className="relative" style={{ height: 24, marginTop: 16 }}>
+          <div
+            className="absolute"
+            style={{
+              left: `${startLabelPercent}%`,
+              transform: "translateX(-50%)",
+            }}
+          >
+            <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
+              {formatHour(start)}
+            </Text>
+          </div>
+
+          <div
+            className="absolute"
+            style={{
+              right: `${100 - endLabelPercent}%`,
+              transform: "translateX(50%)",
+            }}
+          >
+            <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
+              {formatHour(end)}
+            </Text>
+          </div>
+        </div>
       </div>
     </>
   );
