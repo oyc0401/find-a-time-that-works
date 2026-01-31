@@ -51,3 +51,6 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
+
+Memo.private.md

@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Room {
+  id           String        @id @default(uuid())
+  name         String
+  creatorId    String        @map("creator_id")
+  dates        DateTime[]    @db.Date
+  startTime    String        @map("start_time")
+  endTime      String        @map("end_time")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  participants Participant[]
+
+  @@map("room")
+}
+
+model Participant {
+  id             String         @id @default(uuid())
+  roomId         String         @map("room_id")
+  name           String
+  createdAt      DateTime       @default(now()) @map("created_at")
+  room           Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  availabilities Availability[]
+
+  @@unique([roomId, name])
+  @@index([roomId])
+  @@map("participant")
+}
+
+model Availability {
+  id            String      @id @default(uuid())
+  participantId String      @map("participant_id")
+  date          DateTime    @db.Date
+  startTime     String      @map("start_time")
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, date, startTime])
+  @@index([participantId])
+  @@map("availability")
+}
