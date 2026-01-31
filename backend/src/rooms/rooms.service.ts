@@ -85,6 +85,7 @@ export class RoomsService {
       },
       participants: room.participants.map((p) => ({
         id: p.id,
+        userId: p.userId,
         name: p.name,
         slots: p.availabilities.map((a) => ({
           date: a.date.toISOString().split("T")[0],
@@ -105,9 +106,9 @@ export class RoomsService {
     this.assertNotExpired(room.expiresAt);
 
     const participant = await this.prisma.participant.upsert({
-      where: { roomId_name: { roomId, name: dto.participantName } },
-      create: { roomId, name: dto.participantName },
-      update: {},
+      where: { roomId_userId: { roomId, userId: dto.participantId } },
+      create: { roomId, userId: dto.participantId, name: dto.participantName },
+      update: { name: dto.participantName },
     });
 
     // 기존 가용 시간 삭제 후 새로 입력

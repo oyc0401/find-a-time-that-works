@@ -34,7 +34,7 @@ export class RoomsController {
   }
 
   @Post(":id/availability")
-  @ApiOperation({ summary: "가용 시간 입력 (같은 이름이면 덮어쓰기)" })
+  @ApiOperation({ summary: "가용 시간 입력 (같은 사용자 UUID면 덮어쓰기)" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @ApiResponse({ status: 201, type: SubmitAvailabilityResponseDto })
   @ApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })

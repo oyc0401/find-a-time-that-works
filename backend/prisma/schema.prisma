@@ -24,12 +24,13 @@ model Room {
 model Participant {
   id             String         @id @default(uuid())
   roomId         String         @map("room_id")
+  userId         String         @map("user_id")
   name           String
   createdAt      DateTime       @default(now()) @map("created_at")
   room           Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
   availabilities Availability[]
 
-  @@unique([roomId, name])
+  @@unique([roomId, userId])
   @@index([roomId])
   @@map("participant")
 }
