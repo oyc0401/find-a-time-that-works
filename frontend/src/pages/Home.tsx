@@ -2,65 +2,20 @@ import {
   Asset,
   Text,
   Top,
-
   BottomSheet,
   ListRow,
   Checkbox,
-
   Spacing,
-} from '@toss/tds-mobile';
-import { adaptive } from '@toss/tds-colors';
+  Paragraph,
+} from "@toss/tds-mobile";
+import { adaptive } from "@toss/tds-colors";
 
-export default function Page() {
+function Header() {
   return (
     <>
-    dsadsad
-       <Asset.Icon
-        frameShape={Asset.frameShape.CleanW24}
-        backgroundColor="transparent"
-        name="icon-arrow-back-ios-mono"
-        color={adaptive.grey900}
-        aria-hidden={true}
-        ratio="1/1"
-      />
-      <Asset.Image
-        frameShape={Asset.frameShape.CleanW16}
-        backgroundColor="transparent"
-        src="https://static.toss.im/appsintoss/2205/c8d4c7e7-9f6c-4568-afef-6445a3867aea.png"
-        aria-hidden={true}
-        style={{ aspectRatio: '1/1' }}
-      />
-      <Text color={adaptive.grey900} typography="t6" fontWeight="semibold">
-        겹치는 시간 찾기
-      </Text>
-      <Asset.Icon
-        frameShape={Asset.frameShape.CleanW20}
-        backgroundColor="transparent"
-        name="icon-heart-mono"
-        color={adaptive.greyOpacity600}
-        aria-hidden={true}
-        ratio="1/1"
-      />
-      <Asset.Icon
-        frameShape={Asset.frameShape.CleanW20}
-        backgroundColor="transparent"
-        name="icon-dots-mono"
-        color={adaptive.greyOpacity600}
-        aria-hidden={true}
-        ratio="1/1"
-      />
-      <Asset.Icon
-        frameShape={Asset.frameShape.CleanW20}
-        backgroundColor="transparent"
-        name="icon-x-mono"
-        color={adaptive.greyOpacity600}
-        aria-hidden={true}
-        ratio="1/1"
-      />
-      <Spacing size={12} />
       <Top
         title={
-          <Top.TitleParagraph size={22} color={adaptive.grey900}>
+          <Top.TitleParagraph size={28} color={adaptive.grey900}>
             모두가 가능한 시간으로 일정을 정해요
           </Top.TitleParagraph>
         }
@@ -70,268 +25,63 @@ export default function Page() {
           </Top.SubtitleParagraph>
         }
       />
-      <div>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
+    </>
+  );
+}
+
+type Props = {
+  daysInMonth?: number; // 28~31
+  startOffset?: number; // 0=일,1=월,...6=토 (1일이 시작하는 요일)
+};
+
+function DateSection({
+  daysInMonth = 30,
+  startOffset = 3, // 스샷처럼 1일이 '수'에 오게 하려면 3
+}: Props) {
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+  // 앞쪽 빈칸 + 날짜들
+  const cells: Array<number | null> = [
+    ...Array.from({ length: startOffset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  return (
+    <div className="w-full px-5 py-4">
+      {/* 요일 헤더 */}
+      <div className="grid grid-cols-7 text-center">
+        {weekdays.map((d) => (
+          <div
+            key={d}
+            className="text-[17px] font-medium tracking-wide text-slate-300"
           >
-            <>콘텐츠를 클릭해 확인해주세요</>
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <>콘텐츠를 클릭해 확인해주세요</>
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <BottomSheet.Select
-              value="0"
-              onChange={()=>{}}
-              options={[
-                {
-                  name: '2023년 12월',
-                  value: '0',
-                  hideUnCheckedCheckBox: true,
-                },
-                { name: '2024년 1월', value: '1', hideUnCheckedCheckBox: true },
-                { name: '2024년 2월', value: '2', hideUnCheckedCheckBox: true },
-              ]}
-            />
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <>콘텐츠를 클릭해 확인해주세요</>
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <>콘텐츠를 클릭해 확인해주세요</>
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <BottomSheet.Select
-             onChange={()=>{}}
-              value="0"
-              options={[
-                { name: '2024년', value: '0', hideUnCheckedCheckBox: true },
-                { name: '2025년', value: '1', hideUnCheckedCheckBox: true },
-                { name: '2026년', value: '2', hideUnCheckedCheckBox: true },
-              ]}
-            />
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <BottomSheet.Select 
-             onChange={()=>{}}
-              value="0" 
-              options={[
-                { name: '1월', value: '0', hideUnCheckedCheckBox: true },
-                { name: '2월', value: '1', hideUnCheckedCheckBox: true },
-                { name: '3월', value: '2', hideUnCheckedCheckBox: true },
-              ]}
-            />
-          </BottomSheet>
-        </>
-        <>
-          <BottomSheet
-            header={<BottomSheet.Header>타이틀 내용</BottomSheet.Header>}
-            open={true}
-            onClose={() => {}}
-            cta={
-              <BottomSheet.CTA color="primary" variant="fill" disabled={false}>
-                선택하기
-              </BottomSheet.CTA>
-            }
-          >
-            <>콘텐츠를 클릭해 확인해주세요</>
-          </BottomSheet>
-        </>
-        <Text color={adaptive.grey700} typography="st8" fontWeight="bold">
-          2024년 3월
-        </Text>
-        <ListRow
-          role="checkbox"
-          aria-checked={true}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2023년 12월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={true} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2024년 1월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2024년 2월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={true}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2024년"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={true} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2025년"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2026년"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={true}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="1월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={true} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="2월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
-        <ListRow
-          role="checkbox"
-          aria-checked={false}
-          contents={
-            <ListRow.Texts
-              type="1RowTypeA"
-              top="3월"
-              topProps={{ color: adaptive.grey700 }}
-            />
-          }
-          right={<Checkbox.Line size={20} checked={false} />}
-          verticalPadding="large"
-        />
+            {d}
+          </div>
+        ))}
       </div>
+
+      {/* 날짜 그리드 */}
+      <div className="mt-5 grid grid-cols-7 justify-items-center gap-y-4">
+        {cells.map((v, idx) => (
+          <div
+            key={idx}
+            className={[
+              "h-[32px] w-[32px] select-none text-center",
+              "text-[23px] font-normal leading-[32px] text-slate-700",
+              v == null ? "opacity-0" : "",
+            ].join(" ")}
+          >
+            {v ?? 0}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimeSection() {
+  return (
+    <>
       <Spacing size={39} />
       <Text color={adaptive.grey700} typography="st13" fontWeight="semibold">
         시작시간
@@ -345,8 +95,17 @@ export default function Page() {
       </Text>
       <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
         17:00
-      </Text> 
-    
+      </Text>
+    </>
+  );
+}
+
+export default function Page() {
+  return (
+    <div>
+      <Header />
+      <DateSection />
+      {/* <TimeSection /> */}
       {/* <FixedBottomCTA.Double
         leftButton={
           <CTAButton color="dark" variant="weak" display="block">
@@ -355,6 +114,6 @@ export default function Page() {
         }
         rightButton={<CTAButton display="block">생성하기</CTAButton>}
       /> */}
-    </>
+    </div>
   );
 }
