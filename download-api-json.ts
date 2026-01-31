@@ -1,8 +1,8 @@
 import { writeFile } from "node:fs/promises";
 
-// pnpm ts-node download-api-json.ts
+// pnpx tsx download-api-json.ts
 
-const URL = "http://localhost:3001/api";
+const URL = "http://localhost:3001/api-json";
 const OUTPUT = "api-json.json";
 
 async function main() {
