@@ -1,14 +1,16 @@
-import { Controller, Get, Post, Param, Body, Query } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiParam, ApiResponse, ApiQuery } from "@nestjs/swagger";
+import { Controller, Get, Post, Patch, Delete, Param, Body, HttpCode } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiParam, ApiResponse } from "@nestjs/swagger";
 import { RoomsService } from "./rooms.service";
 import { CreateRoomDto } from "./dto/create-room.dto";
 import { SubmitAvailabilityDto } from "./dto/submit-availability.dto";
+import { DeleteRoomDto, UpdateRoomNameDto, UpdateNicknameDto } from "./dto/room-request.dto";
 import {
   CreateRoomResponseDto,
   RoomDetailResponseDto,
   SubmitAvailabilityResponseDto,
-  OverlapResponseDto,
   ExtendRoomResponseDto,
+  UpdateRoomNameResponseDto,
+  UpdateNicknameResponseDto,
 } from "./dto/room-response.dto";
 
 @ApiTags("rooms")
@@ -46,20 +48,6 @@ export class RoomsController {
     return this.roomsService.submitAvailability(roomId, dto);
   }
 
-  @Get(":id/overlap")
-  @ApiOperation({ summary: "겹치는 시간 조회" })
-  @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
-  @ApiQuery({ name: "participantId", required: false, description: "특정 참여자 슬롯 기준으로 필터링" })
-  @ApiResponse({ status: 200, type: OverlapResponseDto })
-  @ApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
-  @ApiResponse({ status: 410, description: "만료된 방입니다" })
-  async getOverlap(
-    @Param("id") roomId: string,
-    @Query("participantId") participantId?: string,
-  ): Promise<OverlapResponseDto> {
-    return this.roomsService.getOverlap(roomId, participantId);
-  }
-
   @Post(":id/extend")
   @ApiOperation({ summary: "방 만료 기간 30일 연장" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
@@ -67,5 +55,35 @@ export class RoomsController {
   @ApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
   async extendRoom(@Param("id") roomId: string): Promise<ExtendRoomResponseDto> {
     return this.roomsService.extendRoom(roomId);
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @ApiOperation({ summary: "방 삭제 (생성자만)" })
+  @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
+  @ApiResponse({ status: 204, description: "삭제 완료" })
+  @ApiResponse({ status: 403, description: "방 생성자만 삭제할 수 있습니다" })
+  @ApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
+  async deleteRoom(@Param("id") roomId: string, @Body() dto: DeleteRoomDto): Promise<void> {
+    return this.roomsService.deleteRoom(roomId, dto);
+  }
+
+  @Patch(":id")
+  @ApiOperation({ summary: "방 이름 변경 (생성자만)" })
+  @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
+  @ApiResponse({ status: 200, type: UpdateRoomNameResponseDto })
+  @ApiResponse({ status: 403, description: "방 생성자만 이름을 변경할 수 있습니다" })
+  @ApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
+  async updateRoomName(@Param("id") roomId: string, @Body() dto: UpdateRoomNameDto): Promise<UpdateRoomNameResponseDto> {
+    return this.roomsService.updateRoomName(roomId, dto);
+  }
+
+  @Patch(":id/nickname")
+  @ApiOperation({ summary: "특정 방에서 유저 닉네임 변경" })
+  @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
+  @ApiResponse({ status: 200, type: UpdateNicknameResponseDto })
+  @ApiResponse({ status: 404, description: "해당 방에서 참여자를 찾을 수 없습니다" })
+  async updateNickname(@Param("id") roomId: string, @Body() dto: UpdateNicknameDto): Promise<UpdateNicknameResponseDto> {
+    return this.roomsService.updateNickname(roomId, dto);
   }
 }

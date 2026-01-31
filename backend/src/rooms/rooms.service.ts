@@ -1,15 +1,16 @@
-import { Injectable, NotFoundException, GoneException } from "@nestjs/common";
+import { Injectable, NotFoundException, GoneException, ForbiddenException } from "@nestjs/common";
 import { customAlphabet } from "nanoid";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateRoomDto } from "./dto/create-room.dto";
 import { SubmitAvailabilityDto } from "./dto/submit-availability.dto";
-import { OverlapSlotDto } from "../dto";
+import { DeleteRoomDto, UpdateRoomNameDto, UpdateNicknameDto } from "./dto/room-request.dto";
 import {
   RoomDetailResponseDto,
   CreateRoomResponseDto,
   SubmitAvailabilityResponseDto,
-  OverlapResponseDto,
   ExtendRoomResponseDto,
+  UpdateRoomNameResponseDto,
+  UpdateNicknameResponseDto,
 } from "./dto/room-response.dto";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -129,59 +130,6 @@ export class RoomsService {
     return { participantId: participant.id };
   }
 
-  async getOverlap(roomId: string, participantId?: string): Promise<OverlapResponseDto> {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-      include: {
-        participants: {
-          include: { availabilities: true },
-        },
-      },
-    });
-
-    if (!room) {
-      throw new NotFoundException("방을 찾을 수 없습니다");
-    }
-    this.assertNotExpired(room.expiresAt);
-
-    // participantId가 지정되면 해당 참여자의 슬롯만 기준으로 필터링
-    const targetSlotKeys = new Set<string>();
-    if (participantId) {
-      const target = room.participants.find((p) => p.id === participantId);
-      if (!target) {
-        throw new NotFoundException("참여자를 찾을 수 없습니다");
-      }
-      for (const a of target.availabilities) {
-        targetSlotKeys.add(`${a.date.toISOString().split("T")[0]}_${a.startTime}`);
-      }
-    }
-
-    // 슬롯별 참여자 집계
-    const slotMap = new Map<string, string[]>();
-
-    for (const participant of room.participants) {
-      for (const availability of participant.availabilities) {
-        const key = `${availability.date.toISOString().split("T")[0]}_${availability.startTime}`;
-        if (participantId && !targetSlotKeys.has(key)) continue;
-        const names = slotMap.get(key) ?? [];
-        names.push(participant.name);
-        slotMap.set(key, names);
-      }
-    }
-
-    const slots: OverlapSlotDto[] = Array.from(slotMap.entries())
-      .map(([key, participants]) => {
-        const [date, time] = key.split("_");
-        return { date, time, count: participants.length, participants };
-      })
-      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-
-    return {
-      totalParticipants: room.participants.length,
-      slots,
-    };
-  }
-
   async extendRoom(roomId: string): Promise<ExtendRoomResponseDto> {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) {
@@ -198,5 +146,50 @@ export class RoomsService {
     });
 
     return { expiresAt: newExpiresAt.toISOString() };
+  }
+
+  async deleteRoom(roomId: string, dto: DeleteRoomDto): Promise<void> {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) {
+      throw new NotFoundException("방을 찾을 수 없습니다");
+    }
+    if (room.creatorId !== dto.creatorId) {
+      throw new ForbiddenException("방 생성자만 삭제할 수 있습니다");
+    }
+
+    await this.prisma.room.delete({ where: { id: roomId } });
+  }
+
+  async updateRoomName(roomId: string, dto: UpdateRoomNameDto): Promise<UpdateRoomNameResponseDto> {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) {
+      throw new NotFoundException("방을 찾을 수 없습니다");
+    }
+    if (room.creatorId !== dto.creatorId) {
+      throw new ForbiddenException("방 생성자만 이름을 변경할 수 있습니다");
+    }
+
+    const updated = await this.prisma.room.update({
+      where: { id: roomId },
+      data: { name: dto.name },
+    });
+
+    return { name: updated.name };
+  }
+
+  async updateNickname(roomId: string, dto: UpdateNicknameDto): Promise<UpdateNicknameResponseDto> {
+    const participant = await this.prisma.participant.findUnique({
+      where: { roomId_userId: { roomId, userId: dto.userId } },
+    });
+    if (!participant) {
+      throw new NotFoundException("해당 방에서 참여자를 찾을 수 없습니다");
+    }
+
+    const updated = await this.prisma.participant.update({
+      where: { id: participant.id },
+      data: { name: dto.name },
+    });
+
+    return { participantId: updated.id, name: updated.name };
   }
 }

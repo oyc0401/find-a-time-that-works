@@ -1,12 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { RoomDto, ParticipantAvailabilityDto, OverlapSlotDto } from "../../dto";
+import { RoomDto, ParticipantDto } from "../../dto";
 
 export class RoomDetailResponseDto {
   @ApiProperty({ type: RoomDto })
   room: RoomDto;
 
-  @ApiProperty({ type: [ParticipantAvailabilityDto] })
-  participants: ParticipantAvailabilityDto[];
+  @ApiProperty({ type: [ParticipantDto] })
+  participants: ParticipantDto[];
 }
 
 export class CreateRoomResponseDto {
@@ -19,15 +19,20 @@ export class SubmitAvailabilityResponseDto {
   participantId: string;
 }
 
-export class OverlapResponseDto {
-  @ApiProperty({ example: 5, description: "총 참여자 수" })
-  totalParticipants: number;
-
-  @ApiProperty({ type: [OverlapSlotDto] })
-  slots: OverlapSlotDto[];
-}
-
 export class ExtendRoomResponseDto {
   @ApiProperty({ example: "2026-04-10T00:00:00.000Z", description: "새 만료 일시" })
   expiresAt: string;
+}
+
+export class UpdateRoomNameResponseDto {
+  @ApiProperty({ example: "새 회의 이름", description: "변경된 방 이름" })
+  name: string;
+}
+
+export class UpdateNicknameResponseDto {
+  @ApiProperty({ example: "participant-uuid-1234", description: "참여자 ID" })
+  participantId: string;
+
+  @ApiProperty({ example: "새 닉네임", description: "변경된 닉네임" })
+  name: string;
 }
