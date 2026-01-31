@@ -2,6 +2,7 @@
   "name": "findtime",
   "private": true,
   "scripts": {
+    "dev": "pnpm --parallel --filter frontend --filter backend dev",
     "frontend": "pnpm --filter frontend",
     "backend": "pnpm --filter backend"
   }
