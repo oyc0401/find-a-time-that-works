@@ -39,7 +39,7 @@ export class RoomsController {
   }
 
   @Post(":id/availability")
-  @ApiOperation({ summary: "가용 시간 입력 (같은 사용자 UUID면 덮어쓰기)" })
+  @ApiOperation({ summary: "가용 시간 입력" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 201, type: SubmitAvailabilityApiResponseDto })
   @SwaggerApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
@@ -64,7 +64,7 @@ export class RoomsController {
 
   @Delete(":id")
   @HttpCode(200)
-  @ApiOperation({ summary: "방 삭제 (생성자만)" })
+  @ApiOperation({ summary: "방 삭제" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 200, type: DeleteRoomApiResponseDto })
   @SwaggerApiResponse({ status: 403, description: "방 생성자만 삭제할 수 있습니다" })
@@ -75,7 +75,7 @@ export class RoomsController {
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "방 이름 변경 (생성자만)" })
+  @ApiOperation({ summary: "방 이름 변경" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 200, type: UpdateRoomNameApiResponseDto })
   @SwaggerApiResponse({ status: 403, description: "방 생성자만 이름을 변경할 수 있습니다" })
@@ -86,7 +86,7 @@ export class RoomsController {
   }
 
   @Patch(":id/nickname")
-  @ApiOperation({ summary: "특정 방에서 유저 닉네임 변경" })
+  @ApiOperation({ summary: "유저 닉네임 변경" })
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 200, type: UpdateNicknameApiResponseDto })
   @SwaggerApiResponse({ status: 404, description: "해당 방에서 참여자를 찾을 수 없습니다" })

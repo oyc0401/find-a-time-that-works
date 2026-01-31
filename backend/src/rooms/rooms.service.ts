@@ -40,7 +40,8 @@ export class RoomsService {
   async create(dto: CreateRoomDto): Promise<CreateRoomResponseDto> {
     const id = await this.generateUniqueId();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + INITIAL_EXPIRY_DAYS);
+    expiresAt.setDate(expiresAt.getDate() + INITIAL_EXPIRY_DAYS + 1);
+    expiresAt.setHours(0, 0, 0, 0);
 
     const room = await this.prisma.room.create({
       data: {
@@ -132,7 +133,8 @@ export class RoomsService {
 
     const baseDate = new Date() > room.expiresAt ? new Date() : room.expiresAt;
     const newExpiresAt = new Date(baseDate);
-    newExpiresAt.setDate(newExpiresAt.getDate() + EXTEND_DAYS);
+    newExpiresAt.setDate(newExpiresAt.getDate() + EXTEND_DAYS + 1);
+    newExpiresAt.setHours(0, 0, 0, 0);
 
     await this.prisma.room.update({
       where: { id: roomId },

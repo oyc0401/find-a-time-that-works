@@ -113,7 +113,7 @@
             "description": "방을 찾을 수 없습니다"
           }
         },
-        "summary": "방 삭제 (생성자만)",
+        "summary": "방 삭제",
         "tags": [
           "rooms"
         ]
@@ -160,7 +160,7 @@
             "description": "방을 찾을 수 없습니다"
           }
         },
-        "summary": "방 이름 변경 (생성자만)",
+        "summary": "방 이름 변경",
         "tags": [
           "rooms"
         ]
@@ -209,7 +209,7 @@
             "description": "만료된 방입니다"
           }
         },
-        "summary": "가용 시간 입력 (같은 사용자 UUID면 덮어쓰기)",
+        "summary": "가용 시간 입력",
         "tags": [
           "rooms"
         ]
@@ -291,7 +291,7 @@
             "description": "해당 방에서 참여자를 찾을 수 없습니다"
           }
         },
-        "summary": "특정 방에서 유저 닉네임 변경",
+        "summary": "유저 닉네임 변경",
         "tags": [
           "rooms"
         ]
