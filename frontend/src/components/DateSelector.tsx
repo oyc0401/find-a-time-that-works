@@ -207,7 +207,7 @@ export default function DateSelector() {
 
       {/* 날짜 그리드 */}
       <div
-        className="mt-3 grid grid-cols-7 place-items-center"
+        className="mt-3 grid grid-cols-7"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -218,23 +218,63 @@ export default function DateSelector() {
           const isConfirmed = selectedIndices.has(idx) && !cell.hidden;
           const isPreviewing = previewIndices.has(idx) && !cell.hidden;
 
-          // 셀의 최종 표시 상태 결정
-          let circleColor: string | undefined;
-          let textColor: string;
+          const sameRow = (i: number) =>
+            Math.floor(i / 7) === Math.floor(idx / 7);
+          const inBounds = (i: number) => i >= 0 && i < TOTAL_CELLS;
+          const notHidden = (i: number) => !cells[i]?.hidden;
 
-          if (isPreviewing && dragMode === "select" && !isConfirmed) {
-            // 선택 예정: 아직 선택 안 된 셀만
-            circleColor = adaptive.blue200;
-          } else if (isPreviewing && dragMode === "deselect" && isConfirmed) {
-            // 해제 예정: 이미 선택된 셀만
-            circleColor = adaptive.blue50;
-          } else if (isConfirmed) {
-            // 확정된 선택
-            circleColor = adaptive.blue300;
+          // --- 확정 레이어: 확정 선택만 기준 (해제 프리뷰 제외) ---
+          const isConfirmedActive = (i: number) => {
+            if (!inBounds(i) || !notHidden(i)) return false;
+            if (!selectedIndices.has(i)) return false;
+            // 해제 프리뷰 중이면 확정 레이어에서도 제외
+            if (dragMode === "deselect" && previewIndices.has(i)) return false;
+            return true;
+          };
+
+          const showConfirmed = isConfirmed && !(dragMode === "deselect" && isPreviewing);
+
+          const cTop = idx >= 7 && isConfirmedActive(idx - 7);
+          const cBottom = idx < TOTAL_CELLS - 7 && isConfirmedActive(idx + 7);
+          const cLeft = sameRow(idx - 1) && isConfirmedActive(idx - 1);
+          const cRight = sameRow(idx + 1) && isConfirmedActive(idx + 1);
+
+          // --- 프리뷰 레이어: 프리뷰 + 확정 영역 모두 인접으로 판단 ---
+          const isPreviewActive = (i: number) => {
+            if (!inBounds(i) || !notHidden(i)) return false;
+            if (dragMode === "select") {
+              return previewIndices.has(i) || selectedIndices.has(i);
+            }
+            // deselect: 해제 프리뷰 셀 + 해제 대상 아닌 확정 셀 모두 인접
+            const isDeselecting = previewIndices.has(i) && selectedIndices.has(i);
+            const isRemainingConfirmed = selectedIndices.has(i) && !previewIndices.has(i);
+            return isDeselecting || isRemainingConfirmed;
+          };
+
+          const pTop = idx >= 7 && isPreviewActive(idx - 7);
+          const pBottom = idx < TOTAL_CELLS - 7 && isPreviewActive(idx + 7);
+          const pLeft = sameRow(idx - 1) && isPreviewActive(idx - 1);
+          const pRight = sameRow(idx + 1) && isPreviewActive(idx + 1);
+
+          // 프리뷰 색상: 드래그 중이면 확정 셀도 프리뷰 색으로 칠함
+          const isDragging = previewIndices.size > 0;
+          let previewColor: string | undefined;
+          if (dragMode === "select" && isDragging && (isPreviewing || isConfirmed)) {
+            previewColor = adaptive.blue200;
+          } else if (dragMode === "deselect" && isDragging && (isPreviewing || isConfirmed)) {
+            previewColor = adaptive.blue50;
           }
 
-          if (circleColor === adaptive.blue300 || circleColor === adaptive.blue200) {
+          // 글씨색: 확정 레이어 우선
+          let textColor: string;
+          if (showConfirmed) {
             textColor = "#ffffff";
+          } else if (previewColor === adaptive.blue200) {
+            textColor = "#ffffff";
+          } else if (previewColor === adaptive.blue50) {
+            textColor = cell.isCurrentMonth
+              ? adaptive.grey800
+              : adaptive.grey400;
           } else {
             textColor = cell.isCurrentMonth
               ? adaptive.grey800
@@ -246,21 +286,37 @@ export default function DateSelector() {
               key={idx}
               data-cell-idx={idx}
               className={cn(
-                "relative select-none flex items-center justify-center py-2 w-full aspect-square",
+                "relative select-none flex items-center justify-center w-full aspect-square",
                 cell.hidden && "opacity-0 pointer-events-none",
               )}
             >
-              {circleColor && (
+              {/* 확정 선택 레이어 (최상단) */}
+              {showConfirmed && (
                 <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: 42,
-                    height: 42,
-                    backgroundColor: circleColor,
-                  }}
+                  className={cn(
+                    "absolute inset-0 z-20",
+                    !cTop && !cLeft && "rounded-tl-lg",
+                    !cTop && !cRight && "rounded-tr-lg",
+                    !cBottom && !cLeft && "rounded-bl-lg",
+                    !cBottom && !cRight && "rounded-br-lg",
+                  )}
+                  style={{ backgroundColor: adaptive.blue300 }}
                 />
               )}
-              {cell.isToday && !circleColor && (
+              {/* 프리뷰 레이어 (위) */}
+              {previewColor && (
+                <div
+                  className={cn(
+                    "absolute inset-0 z-10",
+                    !pTop && !pLeft && "rounded-tl-lg",
+                    !pTop && !pRight && "rounded-tr-lg",
+                    !pBottom && !pLeft && "rounded-bl-lg",
+                    !pBottom && !pRight && "rounded-br-lg",
+                  )}
+                  style={{ backgroundColor: previewColor }}
+                />
+              )}
+              {cell.isToday && !showConfirmed && !previewColor && (
                 <div
                   className="absolute rounded-full"
                   style={{
@@ -271,7 +327,7 @@ export default function DateSelector() {
                 />
               )}
               <span
-                className="relative"
+                className="relative z-30"
                 style={{
                   fontSize: 20,
                   lineHeight: "29px",
