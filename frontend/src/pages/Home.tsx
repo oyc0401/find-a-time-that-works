@@ -1,15 +1,7 @@
-import {
-  Asset,
-  Text,
-  Top,
-  BottomSheet,
-  ListRow,
-  Checkbox,
-  Spacing,
-  Paragraph,
-} from "@toss/tds-mobile";
+import { Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import DateSelector from "../components/DateSelector";
+import TimeSlider from "../components/TimeSlider";
 
 function Header() {
   return (
@@ -30,33 +22,12 @@ function Header() {
   );
 }
 
-function TimeSection() {
-  return (
-    <>
-      <Spacing size={39} />
-      <Text color={adaptive.grey700} typography="st13" fontWeight="semibold">
-        시작시간
-      </Text>
-      <Text color={adaptive.blue500} typography="t6" fontWeight="bold">
-        종료시간
-      </Text>
-      <Spacing size={41} />
-      <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-        0:00
-      </Text>
-      <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-        17:00
-      </Text>
-    </>
-  );
-}
-
 export default function Page() {
   return (
     <div className="h-screen">
       <Header />
       <DateSelector />
-      <TimeSection />
+      <TimeSlider />
       {/* <FixedBottomCTA.Double
         leftButton={
           <CTAButton color="dark" variant="weak" display="block">
