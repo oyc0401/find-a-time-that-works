@@ -77,12 +77,18 @@ interface CalendarGridProps {
   renderGrid: RenderCell[][];
   pointerHandlers?: PointerHandlers;
   colorOf: (owner: Owner) => { bg: string; whiteText: boolean };
+  onCellClick?: (cellIdx: number) => void;
+  onCellPressStart?: (cellIdx: number) => void;
+  onCellPressEnd?: () => void;
 }
 
 export default function CalendarGrid({
   renderGrid,
   pointerHandlers,
   colorOf,
+  onCellClick,
+  onCellPressStart,
+  onCellPressEnd,
 }: CalendarGridProps) {
   const cells = useMemo(() => buildCalendarCells(), []);
 
@@ -132,7 +138,12 @@ export default function CalendarGrid({
               className={cn(
                 "relative select-none flex items-center justify-center w-full aspect-square",
                 !valid && "opacity-0 pointer-events-none",
+                onCellClick && "cursor-pointer",
               )}
+              onClick={onCellClick ? () => onCellClick(idx) : undefined}
+              onPointerDown={onCellPressStart ? () => onCellPressStart(idx) : undefined}
+              onPointerUp={onCellPressEnd}
+              onPointerLeave={onCellPressEnd}
             >
               {/* Today ring */}
               {isToday && !filled && (

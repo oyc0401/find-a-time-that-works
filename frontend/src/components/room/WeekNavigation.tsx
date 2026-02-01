@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { BottomSheet } from "@toss/tds-mobile";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -13,6 +13,19 @@ export default function WeekNavigation() {
   const highlightedDates = useMemo(
     () => new Set(room?.dates ?? []),
     [room?.dates],
+  );
+
+  const handleDateClick = useCallback(
+    (dateKey: string) => {
+      const targetIdx = weeks.findIndex((w) =>
+        w.columns.some((col) => col.date === dateKey),
+      );
+      if (targetIdx !== -1) {
+        setWeekIdx(targetIdx);
+        setIsOpen(false);
+      }
+    },
+    [weeks, setWeekIdx],
   );
 
   if (weeks.length <= 1) return null;
@@ -41,13 +54,13 @@ export default function WeekNavigation() {
         >
           <ChevronLeft
             size={24}
-            color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey700}
+            color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey800}
           />
         </button>
         <button
           type="button"
           className="w-[140px] cursor-pointer text-center"
-          style={{ fontSize: 16, color: adaptive.grey700 }}
+          style={{ fontSize: 16, color: adaptive.grey800 }}
           onClick={() => setIsOpen(true)}
         >
           {weekLabel}
@@ -62,7 +75,7 @@ export default function WeekNavigation() {
           <ChevronRight
             size={24}
             color={
-              weekIdx === weeks.length - 1 ? adaptive.grey300 : adaptive.grey700
+              weekIdx === weeks.length - 1 ? adaptive.grey300 : adaptive.grey800
             }
           />
         </button>
@@ -73,7 +86,10 @@ export default function WeekNavigation() {
         onClose={() => setIsOpen(false)}
         header={<BottomSheet.Header>날짜 보기</BottomSheet.Header>}
       >
-        <CalendarView highlightedDates={highlightedDates} />
+        <CalendarView
+          highlightedDates={highlightedDates}
+          onDateClick={handleDateClick}
+        />
       </BottomSheet>
     </>
   );
