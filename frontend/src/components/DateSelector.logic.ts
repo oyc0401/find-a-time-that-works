@@ -16,17 +16,20 @@ export type NeighborInfo = { confirmed: boolean; preview: boolean };
  * - center가 채워진 셀 → outer corner 라운딩 판정 (상하좌우 4방향)
  * - center가 빈 셀     → concave corner 패치 판정 (8방향 전부)
  */
-export function buildRenderCell(p: {
-  center: NeighborInfo;
-  t: NeighborInfo;
-  b: NeighborInfo;
-  l: NeighborInfo;
-  r: NeighborInfo;
-  tl: NeighborInfo;
-  tr: NeighborInfo;
-  bl: NeighborInfo;
-  br: NeighborInfo;
-}): RenderCell {
+export function buildRenderCell(
+  p: {
+    center: NeighborInfo;
+    t: NeighborInfo;
+    b: NeighborInfo;
+    l: NeighborInfo;
+    r: NeighborInfo;
+    tl: NeighborInfo;
+    tr: NeighborInfo;
+    bl: NeighborInfo;
+    br: NeighborInfo;
+  },
+  dragMode: DragMode,
+): RenderCell {
   const centerOwner: Owner = p.center.confirmed
     ? "confirmed"
     : p.center.preview
@@ -67,8 +70,17 @@ export function buildRenderCell(p: {
     ) {
       return "confirmed";
     }
-    if (adj1.preview || adj2.preview || adj1.confirmed || adj2.confirmed)
-      return "preview";
+    // deselect 모드: confirmed 이웃 또는 (자신도 preview이고 이웃도 preview)인 경우 반영
+    // select 모드: preview 이웃도 반영
+    if (dragMode === "deselect") {
+      // confirmed 이웃이 있으면 preview
+      if (adj1.confirmed || adj2.confirmed) return "preview";
+      // 자신(center)이 preview이고 이웃도 preview면 preview (둘 다 지워지는 중)
+      if (p.center.preview && (adj1.preview || adj2.preview)) return "preview";
+    } else {
+      if (adj1.preview || adj2.preview || adj1.confirmed || adj2.confirmed)
+        return "preview";
+    }
     return "empty";
   };
 
@@ -82,18 +94,21 @@ export function buildRenderCell(p: {
   }
 
   // 빈 셀: concave corner 패치 판정
-  // 3칸이 모두 채워져 있으면 concave 필요, preview가 하나라도 있으면 preview 색상
+  // 3칸이 모두 채워져 있으면 concave 필요
   const concaveCorner = (
     adj1: NeighborInfo,
     adj2: NeighborInfo,
     diag: NeighborInfo,
   ): Owner => {
-    const filled1 = adj1.confirmed || adj1.preview;
-    const filled2 = adj2.confirmed || adj2.preview;
-    const filledDiag = diag.confirmed || diag.preview;
+    // deselect 모드에서는 preview를 "채워짐"으로 안 봄
+    const filled1 = adj1.confirmed || (dragMode === "select" && adj1.preview);
+    const filled2 = adj2.confirmed || (dragMode === "select" && adj2.preview);
+    const filledDiag =
+      diag.confirmed || (dragMode === "select" && diag.preview);
     if (!filled1 || !filled2 || !filledDiag) return "empty";
-    // 3칸 모두 채워짐 → preview가 하나라도 있으면 preview, 아니면 confirmed
-    if (adj1.preview || adj2.preview || diag.preview) return "preview";
+    // 3칸 모두 채워짐 → select 모드에서 preview가 하나라도 있으면 preview
+    if (dragMode === "select" && (adj1.preview || adj2.preview || diag.preview))
+      return "preview";
     return "confirmed";
   };
 
@@ -120,13 +135,6 @@ export function buildRenderCell(p: {
 export type DragMode = "select" | "deselect";
 
 const EMPTY_NEIGHBOR: NeighborInfo = { confirmed: false, preview: false };
-const EMPTY_QUAD: RenderQuad = { corner: "empty", center: "empty" };
-const EMPTY_CELL: RenderCell = {
-  lt: EMPTY_QUAD,
-  rt: EMPTY_QUAD,
-  lb: EMPTY_QUAD,
-  rb: EMPTY_QUAD,
-};
 
 /**
  * 2차원 confirmed/preview 배열 → RenderCell[][] 생성
@@ -144,6 +152,7 @@ export function buildRenderGrid(args: {
   const previewAdjOn: boolean[][] = [];
   const previewFillOn: boolean[][] = [];
 
+  // 1차: 기본 계산
   for (let r = 0; r < H; r++) {
     confirmedOn[r] = [];
     previewAdjOn[r] = [];
@@ -152,18 +161,45 @@ export function buildRenderGrid(args: {
       const isSel = confirmed[r][c];
       const isPrev = preview[r][c];
 
-      confirmedOn[r][c] =
-        isSel && !(dragMode === "deselect" && isPrev);
-      previewAdjOn[r][c] =
-        dragMode === "select" ? isSel || isPrev : isSel;
-      previewFillOn[r][c] =
-        dragMode === "select" ? isSel || isPrev : isSel;
+      confirmedOn[r][c] = isSel && !(dragMode === "deselect" && isPrev);
+      previewAdjOn[r][c] = dragMode === "select" ? isSel || isPrev : isSel;
+      previewFillOn[r][c] = dragMode === "select" ? isSel || isPrev : isSel;
+    }
+  }
+
+  // 2차: deselect 모드에서 지워지는 셀과 인접한 confirmed 셀도 preview로 표시
+  if (dragMode === "deselect") {
+    for (let r = 0; r < H; r++) {
+      for (let c = 0; c < W; c++) {
+        // 지워지는 셀인지 확인
+        if (confirmed[r][c] && preview[r][c]) {
+          // 인접 셀 중 confirmed지만 preview가 아닌 셀을 previewFillOn으로 표시
+          const neighbors = [
+            [r - 1, c],
+            [r + 1, c],
+            [r, c - 1],
+            [r, c + 1],
+          ];
+          for (const [nr, nc] of neighbors) {
+            if (nr >= 0 && nr < H && nc >= 0 && nc < W) {
+              if (confirmed[nr][nc] && !preview[nr][nc]) {
+                previewFillOn[nr][nc] = true;
+              }
+            }
+          }
+        }
+      }
     }
   }
 
   function infoAt(r: number, c: number): NeighborInfo {
     if (r < 0 || r >= H || c < 0 || c >= W) return EMPTY_NEIGHBOR;
-    return { confirmed: confirmedOn[r][c], preview: preview[r][c] };
+    // deselect 모드: 원래 confirmed였던 셀만 "지워지는 preview"로 인정
+    const isPreview =
+      dragMode === "deselect"
+        ? confirmed[r][c] && preview[r][c]
+        : preview[r][c];
+    return { confirmed: confirmedOn[r][c], preview: isPreview };
   }
 
   const grid: RenderCell[][] = [];
@@ -171,51 +207,27 @@ export function buildRenderGrid(args: {
     const row: RenderCell[] = [];
     for (let c = 0; c < W; c++) {
       row.push(
-        buildRenderCell({
-          center: { confirmed: confirmedOn[r][c], preview: previewFillOn[r][c] },
-          t: infoAt(r - 1, c),
-          b: infoAt(r + 1, c),
-          l: infoAt(r, c - 1),
-          r: infoAt(r, c + 1),
-          tl: infoAt(r - 1, c - 1),
-          tr: infoAt(r - 1, c + 1),
-          bl: infoAt(r + 1, c - 1),
-          br: infoAt(r + 1, c + 1),
-        }),
+        buildRenderCell(
+          {
+            center: {
+              confirmed: confirmedOn[r][c],
+              preview: previewFillOn[r][c],
+            },
+            t: infoAt(r - 1, c),
+            b: infoAt(r + 1, c),
+            l: infoAt(r, c - 1),
+            r: infoAt(r, c + 1),
+            tl: infoAt(r - 1, c - 1),
+            tr: infoAt(r - 1, c + 1),
+            bl: infoAt(r + 1, c - 1),
+            br: infoAt(r + 1, c + 1),
+          },
+          dragMode,
+        ),
       );
     }
     grid.push(row);
   }
 
   return grid;
-}
-
-/**
- * Set<number> 기반 1D 인덱스 → 2D boolean[][] 변환 후 buildRenderGrid 호출
- */
-export function buildRenderGridFromSets(args: {
-  H: number;
-  W: number;
-  isHidden: (idx: number) => boolean;
-  confirmed: Set<number>;
-  preview: Set<number>;
-  dragMode: DragMode;
-}): RenderCell[][] {
-  const { H, W, isHidden, confirmed, preview, dragMode } = args;
-
-  const confirmed2d: boolean[][] = [];
-  const preview2d: boolean[][] = [];
-
-  for (let r = 0; r < H; r++) {
-    confirmed2d[r] = [];
-    preview2d[r] = [];
-    for (let c = 0; c < W; c++) {
-      const idx = r * W + c;
-      const hidden = isHidden(idx);
-      confirmed2d[r][c] = !hidden && confirmed.has(idx);
-      preview2d[r][c] = !hidden && preview.has(idx);
-    }
-  }
-
-  return buildRenderGrid({ confirmed: confirmed2d, preview: preview2d, dragMode });
 }

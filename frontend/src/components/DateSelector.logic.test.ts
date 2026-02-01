@@ -114,4 +114,79 @@ describe("buildRenderGrid", () => {
     // 셀 2 (row=0, col=1): empty, lb 코너에 1(confirmed), 3(preview), 4(confirmed)
     expect(grid[0][1].lb).toEqual({ center: "empty", corner: "preview" });
   });
+
+  /**
+   * 2x2 그리드 deselect 모드:
+   * [1(confirmed+preview), 2(preview)]
+   * [3(empty),             4(empty)]
+   *
+   * 1은 원래 confirmed였고, 1,2가 preview(deselect 드래그 중)
+   * → 1은 deselect 프리뷰에 걸려 confirmed에서 제외됨
+   */
+  it("deselect 모드: 1=confirmed+preview, 2=preview일 때 2의 lt,lb와 4의 lt 검증", () => {
+    const confirmed = [
+      [true, false],
+      [true, false],
+    ];
+    const preview = [
+      [true, true],
+      [false, false],
+    ];
+
+    const grid = buildRenderGrid({
+      confirmed,
+      preview,
+      dragMode: "deselect",
+    });
+
+    // 셀 1 (row=0, col=0): deselect 프리뷰에 걸려 confirmed에서 제외 → center=empty
+    expect(grid[0][0]).toEqual({
+      lt: { center: "preview", corner: "empty" },
+      rt: { center: "preview", corner: "empty" },
+      lb: { center: "preview", corner: "preview" },
+      rb: { center: "preview", corner: "preview" },
+    });
+
+    // 셀 2 (row=0, col=1): deselect 모드에서 preview는 표시 안 됨, 1도 confirmed에서 제외
+    // → center=empty, lt/lb는 왼쪽(1)이 비워졌으니 empty
+    expect(grid[0][1].lt).toEqual({ center: "empty", corner: "empty" });
+    expect(grid[0][1].lb).toEqual({ center: "empty", corner: "empty" });
+
+    expect(grid[1][0].lt).toEqual({ center: "confirmed", corner: "preview" });
+    expect(grid[1][0].rt).toEqual({ center: "confirmed", corner: "preview" });
+
+    // 셀 4 (row=1, col=1): empty, 위(2)도 empty, 대각선(1)도 제외됨
+    expect(grid[1][1].lt).toEqual({ center: "empty", corner: "empty" });
+  });
+
+  /**
+   * 1x2 그리드: [1(confirmed), 2(confirmed)]
+   * deselect 모드로 1,2 모두 preview → 둘 다 지워짐
+   */
+  it("deselect 모드: 1,2 모두 confirmed+preview일 때 둘 다 empty", () => {
+    const confirmed = [[true, true]];
+    const preview = [[true, true]];
+
+    const grid = buildRenderGrid({
+      confirmed,
+      preview,
+      dragMode: "deselect",
+    });
+
+    // 셀 1
+    expect(grid[0][0]).toEqual({
+      lt: { center: "preview", corner: "empty" },
+      rt: { center: "preview", corner: "preview" },
+      lb: { center: "preview", corner: "empty" },
+      rb: { center: "preview", corner: "preview" },
+    });
+
+    // 셀 2
+    expect(grid[0][1]).toEqual({
+      lt: { center: "preview", corner: "preview" },
+      rt: { center: "preview", corner: "empty" },
+      lb: { center: "preview", corner: "preview" },
+      rb: { center: "preview", corner: "empty" },
+    });
+  });
 });

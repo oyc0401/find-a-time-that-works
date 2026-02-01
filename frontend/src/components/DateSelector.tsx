@@ -6,13 +6,47 @@ import {
   type Owner,
   type RenderCell,
   type DragMode,
-  buildRenderGridFromSets,
+  buildRenderGrid,
 } from "./DateSelector.logic";
 
 const TOTAL_CELLS = 35; // 5x7
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
 const H = 5;
+
+/**
+ * Set<number> 기반 1D 인덱스 → 2D boolean[][] 변환 후 buildRenderGrid 호출
+ */
+function buildRenderGridFromSets(args: {
+  H: number;
+  W: number;
+  isHidden: (idx: number) => boolean;
+  confirmed: Set<number>;
+  preview: Set<number>;
+  dragMode: DragMode;
+}): RenderCell[][] {
+  const { H, W, isHidden, confirmed, preview, dragMode } = args;
+
+  const confirmed2d: boolean[][] = [];
+  const preview2d: boolean[][] = [];
+
+  for (let r = 0; r < H; r++) {
+    confirmed2d[r] = [];
+    preview2d[r] = [];
+    for (let c = 0; c < W; c++) {
+      const idx = r * W + c;
+      const hidden = isHidden(idx);
+      confirmed2d[r][c] = !hidden && confirmed.has(idx);
+      preview2d[r][c] = !hidden && preview.has(idx);
+    }
+  }
+
+  return buildRenderGrid({
+    confirmed: confirmed2d,
+    preview: preview2d,
+    dragMode,
+  });
+}
 
 // =====================
 // Calendar Cells (meta)
@@ -93,6 +127,9 @@ function rowOf(i: number) {
 }
 function colOf(i: number) {
   return i % W;
+}
+function idxOf(r: number, c: number) {
+  return r * W + c;
 }
 
 // =====================
