@@ -59,14 +59,15 @@ export function buildRenderCell(
     adj2: NeighborInfo,
     diag: NeighborInfo,
   ): Owner => {
-    // 3칸 모두 confirmed(preview 아님)이면 confirmed
+    // select 모드: 3칸 모두 confirmed면 confirmed (preview 여부 무관)
+    // deselect 모드: 3칸 모두 confirmed이고 preview 아니어야 confirmed
+    const isEffectivelyConfirmed = (n: NeighborInfo) =>
+      dragMode === "select" ? n.confirmed : n.confirmed && !n.preview;
+
     if (
-      adj1.confirmed &&
-      !adj1.preview &&
-      adj2.confirmed &&
-      !adj2.preview &&
-      diag.confirmed &&
-      !diag.preview
+      isEffectivelyConfirmed(adj1) &&
+      isEffectivelyConfirmed(adj2) &&
+      isEffectivelyConfirmed(diag)
     ) {
       return "confirmed";
     }

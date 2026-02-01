@@ -160,6 +160,37 @@ describe("buildRenderGrid", () => {
   });
 
   /**
+   * 2x2 그리드 select 모드:
+   * [1(preview), 2(confirmed)]
+   * [3(confirmed), 4(confirmed)]
+   *
+   * 2,3,4가 confirmed 상태에서 1을 select 드래그
+   * → 셀1의 rb는 corner=preview (셀1 자체가 preview)
+   */
+  it("select 모드: 2,3,4=confirmed에서 1 선택 시 셀1의 rb는 corner=preview", () => {
+    const confirmed = [
+      [false, true],
+      [true, true],
+    ];
+    const preview = [
+      [true, true],
+      [true, true],
+    ];
+
+    const grid = buildRenderGrid({
+      confirmed,
+      preview,
+      dragMode: "select",
+    });
+
+    // 셀 1 (row=0, col=0): preview
+    expect(grid[0][0].rb).toEqual({
+      center: "preview",
+      corner: "confirmed",
+    });
+  });
+
+  /**
    * 2x2 그리드 deselect 모드:
    * [1(confirmed), 2(empty)]
    * [3(confirmed+preview), 4(confirmed+preview)]
