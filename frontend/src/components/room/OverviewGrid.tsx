@@ -5,6 +5,7 @@ import { BottomSheet } from "@toss/tds-mobile";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
+import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
@@ -71,33 +72,6 @@ function intensityColor(count: number, max: number): string {
   return heatColor(count / max);
 }
 
-// count 기반 코너 타입 계산
-// "outer": 현재 셀이 인접 셀보다 높음 → 바깥 라운딩
-// "concave": 현재 셀이 인접 3칸보다 낮고, 인접 3칸이 같은 count → 오목 라운딩
-// "none": 같은 count끼리 이어짐 또는 처리 불필요
-type CornerType = "outer" | "concave" | "none";
-
-function getCornerType(
-  centerCount: number,
-  adj1Count: number,
-  adj2Count: number,
-  diagCount: number,
-): CornerType {
-  // 현재 셀이 인접 2개 모두보다 높으면 outer 라운딩
-  if (centerCount > adj1Count && centerCount > adj2Count) {
-    return "outer";
-  }
-  // 현재 셀이 인접 3칸보다 낮고, 인접 3칸이 모두 같은 count(>0)면 concave 라운딩
-  if (
-    adj1Count > centerCount &&
-    adj1Count === adj2Count &&
-    adj1Count === diagCount
-  ) {
-    return "concave";
-  }
-  return "none";
-}
-
 export default function OverviewGrid() {
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
@@ -141,9 +115,8 @@ export default function OverviewGrid() {
     return result;
   }, [rows, displayCols, columns, timeSlots, countMap]);
 
-  // count 기반 인접 셀 조회 헬퍼
-  const getCount = useCallback(
-    (r: number, c: number) => countGrid[r]?.[c] ?? 0,
+  const renderGrid = useMemo(
+    () => (countGrid.length > 0 ? buildRenderGrid2(countGrid) : []),
     [countGrid],
   );
 
@@ -437,27 +410,13 @@ export default function OverviewGrid() {
               style={{ minWidth: 44 }}
             >
               {timeSlots.map((slot, rowIdx) => {
-                const count = getCount(rowIdx, displayIdx);
+                const rc = renderGrid[rowIdx]?.[displayIdx];
+                if (!rc) return null;
+
+                const count = rc.center;
                 const isHour = slot.endsWith(":00");
                 const isFilled = count > 0;
                 const cellBg = intensityColor(count, maxCount);
-
-                // 각 코너의 인접 셀 count 계산
-                const tCount = getCount(rowIdx - 1, displayIdx);
-                const bCount = getCount(rowIdx + 1, displayIdx);
-                const lCount = getCount(rowIdx, displayIdx - 1);
-                const rCount = getCount(rowIdx, displayIdx + 1);
-                const tlCount = getCount(rowIdx - 1, displayIdx - 1);
-                const trCount = getCount(rowIdx - 1, displayIdx + 1);
-                const blCount = getCount(rowIdx + 1, displayIdx - 1);
-                const brCount = getCount(rowIdx + 1, displayIdx + 1);
-
-                const cornerTypes: Record<CornerPos, CornerType> = {
-                  lt: getCornerType(count, tCount, lCount, tlCount),
-                  rt: getCornerType(count, tCount, rCount, trCount),
-                  lb: getCornerType(count, bCount, lCount, blCount),
-                  rb: getCornerType(count, bCount, rCount, brCount),
-                };
 
                 return (
                   <div
@@ -482,25 +441,15 @@ export default function OverviewGrid() {
 
                     {/* Corner rendering */}
                     {CORNERS.map((pos) => {
-                      const cornerType = cornerTypes[pos];
-                      if (cornerType === "none") return null;
-
-                      // 인접 셀의 count (concave용)
-                      const adjCount =
-                        pos === "lt"
-                          ? tlCount
-                          : pos === "rt"
-                            ? trCount
-                            : pos === "lb"
-                              ? blCount
-                              : brCount;
+                      const cornerCount = rc[pos];
+                      if (cornerCount === count) return null;
 
                       const outerColor =
-                        cornerType === "outer"
+                        cornerCount < count
                           ? baseBg
-                          : intensityColor(adjCount, maxCount);
+                          : intensityColor(cornerCount, maxCount);
                       const innerColor =
-                        cornerType === "outer" ? cellBg : baseBg;
+                        cornerCount < count ? cellBg : baseBg;
 
                       return (
                         <div key={`corner-${pos}`}>

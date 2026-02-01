@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { buildCalendarCells } from "@/lib/calendar";
-import type { Owner, RenderCell } from "@/lib/renderGrid";
+import type { Owner, RenderCell } from "@/lib/renderDragGrid";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
@@ -41,10 +41,19 @@ function cornerStyle(pos: CornerPos): React.CSSProperties {
     height: 8,
     pointerEvents: "none",
   };
-  if (pos === "lt") { s.top = 0; s.left = 0; }
-  else if (pos === "rt") { s.top = 0; s.right = 0; }
-  else if (pos === "lb") { s.bottom = 0; s.left = 0; }
-  else { s.bottom = 0; s.right = 0; }
+  if (pos === "lt") {
+    s.top = 0;
+    s.left = 0;
+  } else if (pos === "rt") {
+    s.top = 0;
+    s.right = 0;
+  } else if (pos === "lb") {
+    s.bottom = 0;
+    s.left = 0;
+  } else {
+    s.bottom = 0;
+    s.right = 0;
+  }
   return s;
 }
 
@@ -83,7 +92,10 @@ interface PointerHandlers {
 interface CalendarGridProps {
   renderGrid: RenderCell[][];
   pointerHandlers?: PointerHandlers;
-  colorOf: (owner: Owner, dateKey?: string) => { bg: string; whiteText: boolean; text?: string };
+  colorOf: (
+    owner: Owner,
+    dateKey?: string,
+  ) => { bg: string; whiteText: boolean; text?: string };
   onCellClick?: (cellIdx: number) => void;
   onCellPressStart?: (cellIdx: number) => void;
   onCellPressEnd?: () => void;
@@ -120,10 +132,7 @@ export default function CalendarGrid({
         ))}
       </div>
 
-      <div
-        className="mt-3 grid grid-cols-7"
-        {...pointerHandlers}
-      >
+      <div className="mt-3 grid grid-cols-7" {...pointerHandlers}>
         {cells.map((cell, idx) => {
           const rc = renderGrid[rowOf(idx)][colOf(idx)];
           const valid = !(cell.hidden ?? true);
@@ -132,7 +141,11 @@ export default function CalendarGrid({
           const dateKey = toDateKey(cell.date);
 
           const center = centerOwner(rc);
-          const { bg: centerBg, whiteText, text: customText } = colorOf(center, dateKey);
+          const {
+            bg: centerBg,
+            whiteText,
+            text: customText,
+          } = colorOf(center, dateKey);
           const filled = center !== "empty";
 
           let textColor: string;
@@ -149,7 +162,9 @@ export default function CalendarGrid({
                 onCellClick && "cursor-pointer",
               )}
               onClick={onCellClick ? () => onCellClick(idx) : undefined}
-              onPointerDown={onCellPressStart ? () => onCellPressStart(idx) : undefined}
+              onPointerDown={
+                onCellPressStart ? () => onCellPressStart(idx) : undefined
+              }
               onPointerUp={onCellPressEnd}
               onPointerLeave={onCellPressEnd}
             >

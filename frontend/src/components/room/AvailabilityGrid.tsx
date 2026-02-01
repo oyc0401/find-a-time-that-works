@@ -7,8 +7,8 @@ import {
   type Owner,
   type RenderCell,
   type DragMode,
-  buildRenderGrid,
-} from "@/lib/renderGrid";
+  buildRenderDragGrid,
+} from "@/lib/renderDragGrid";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -144,7 +144,7 @@ export default function AvailabilityGrid() {
   const renderGrid = useMemo(
     () =>
       displayCols > 0 && rows > 0
-        ? buildRenderGrid({
+        ? buildRenderDragGrid({
             confirmed: displayConfirmed,
             preview: preview.length > 0 ? preview : makeEmptyPreview(),
             dragMode,

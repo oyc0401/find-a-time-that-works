@@ -79,14 +79,14 @@ describe("buildRenderGrid2", () => {
       lt: 0,
       rt: 0,
       lb: 1,
-      rb: 0,
+      rb: 1,
     });
 
     expect(grid[0][1].lt).toBe(0);
     expect(grid[0][1].lb).toBe(0);
 
     expect(grid[1][0].lt).toBe(1);
-    expect(grid[1][0].rt).toBe(0);
+    expect(grid[1][0].rt).toBe(1);
 
     expect(grid[1][1].lt).toBe(0);
   });

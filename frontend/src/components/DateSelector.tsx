@@ -11,8 +11,8 @@ import {
   type Owner,
   type DragMode,
   type RenderCell,
-  buildRenderGrid,
-} from "@/lib/renderGrid";
+  buildRenderDragGrid,
+} from "@/lib/renderDragGrid";
 import CalendarGrid2, { type CalendarCellModel } from "./CalendarGrid2";
 
 // =====================
@@ -48,11 +48,7 @@ function getRect(startIdx: number, endIdx: number): Rect {
   };
 }
 
-function applyRect(
-  grid: boolean[][],
-  rect: Rect,
-  value: boolean,
-): boolean[][] {
+function applyRect(grid: boolean[][], rect: Rect, value: boolean): boolean[][] {
   const next = grid.map((row) => [...row]);
   for (let r = rect.r0; r <= rect.r1; r++) {
     for (let c = rect.c0; c <= rect.c1; c++) {
@@ -72,8 +68,7 @@ function getCellIdxFromPoint(x: number, y: number): number | undefined {
 }
 
 function ownerColor(owner: Owner, dragMode: DragMode) {
-  if (owner === "confirmed")
-    return { bg: adaptive.blue300, whiteText: true };
+  if (owner === "confirmed") return { bg: adaptive.blue300, whiteText: true };
   if (owner === "preview")
     return dragMode === "select"
       ? { bg: adaptive.blue200, whiteText: true }
@@ -230,7 +225,7 @@ export default function DateSelector() {
   } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
 
   const renderGrid = useMemo(
-    () => buildRenderGrid({ confirmed, preview, dragMode }),
+    () => buildRenderDragGrid({ confirmed, preview, dragMode }),
     [confirmed, preview, dragMode],
   );
 

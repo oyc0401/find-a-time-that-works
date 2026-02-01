@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildRenderGrid } from "./renderGrid";
+import { buildRenderDragGrid } from "./renderDragGrid";
 
-describe("buildRenderGrid", () => {
+describe("buildRenderDragGrid", () => {
   /**
    * 1x4 그리드: [1(preview), 2(confirmed), 3(empty), 4(empty)]
    */
@@ -9,7 +9,7 @@ describe("buildRenderGrid", () => {
     const confirmed = [[false, true, false, false]];
     const preview = [[true, false, false, false]];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "select",
@@ -40,7 +40,7 @@ describe("buildRenderGrid", () => {
     const confirmed = [[true, true, false, false]];
     const preview = [[false, false, false, false]];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "select",
@@ -78,7 +78,7 @@ describe("buildRenderGrid", () => {
       [true, false],
     ];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "select",
@@ -105,7 +105,7 @@ describe("buildRenderGrid", () => {
       [true, false],
     ];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "select",
@@ -133,7 +133,7 @@ describe("buildRenderGrid", () => {
       [false, false],
     ];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "deselect",
@@ -177,7 +177,7 @@ describe("buildRenderGrid", () => {
       [true, true],
     ];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "select",
@@ -208,7 +208,7 @@ describe("buildRenderGrid", () => {
       [true, true],
     ];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "deselect",
@@ -226,7 +226,7 @@ describe("buildRenderGrid", () => {
     const confirmed = [[true, true]];
     const preview = [[true, true]];
 
-    const grid = buildRenderGrid({
+    const grid = buildRenderDragGrid({
       confirmed,
       preview,
       dragMode: "deselect",

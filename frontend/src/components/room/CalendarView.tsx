@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { type CalendarCell, buildCalendarCells } from "@/lib/calendar";
-import { type Owner, type RenderCell, buildRenderGrid } from "@/lib/renderGrid";
+import { type RenderCell2, buildRenderGrid2 } from "@/lib/renderGrid2";
 import CalendarGrid2, { type CalendarCellModel } from "../CalendarGrid2";
 
 const W = 7;
@@ -29,15 +29,16 @@ interface CellStyle {
   text?: string;
 }
 
-function ownerColor(owner: Owner) {
-  if (owner === "confirmed") return { bg: adaptive.blue300, whiteText: true };
-  if (owner === "preview") return { bg: adaptive.blue200, whiteText: true };
+// count → 색상 변환 (0=empty, 1=preview, 2=confirmed)
+function countColor(count: number) {
+  if (count === 2) return { bg: adaptive.blue300, whiteText: true };
+  if (count === 1) return { bg: adaptive.blue200, whiteText: true };
   return { bg: "white", whiteText: false };
 }
 
 function buildCalendarCellModels(
   cells: CalendarCell[],
-  renderGrid: RenderCell[][],
+  renderGrid: RenderCell2[][],
   cellStyleMap?: Map<string, CellStyle>,
 ): CalendarCellModel[] {
   const today = new Date();
@@ -49,7 +50,7 @@ function buildCalendarCellModels(
     const rc = renderGrid[r][c];
     const dateKey = toDateKey(cell.date);
 
-    const center = rc.lt.center;
+    const center = rc.center;
     const isCurrentMonth = cell.date.getMonth() === currentMonth;
 
     // cellStyleMap에서 커스텀 스타일 확인
@@ -58,15 +59,15 @@ function buildCalendarCellModels(
     let textColor: string;
     let text: string | number | undefined;
 
-    if (customStyle && center !== "empty") {
+    if (customStyle && center > 0) {
       centerBg = customStyle.bg;
       textColor = customStyle.textColor;
       text = customStyle.text;
     } else {
-      const { bg, whiteText } = ownerColor(center);
-      centerBg = center !== "empty" ? bg : undefined;
+      const { bg, whiteText } = countColor(center);
+      centerBg = center > 0 ? bg : undefined;
       textColor =
-        center !== "empty" && whiteText
+        center > 0 && whiteText
           ? "#ffffff"
           : isCurrentMonth
             ? adaptive.grey800
@@ -74,10 +75,10 @@ function buildCalendarCellModels(
     }
 
     // Corner colors
-    const lt = ownerColor(rc.lt.corner).bg;
-    const rt = ownerColor(rc.rt.corner).bg;
-    const lb = ownerColor(rc.lb.corner).bg;
-    const rb = ownerColor(rc.rb.corner).bg;
+    const lt = countColor(rc.lt).bg;
+    const rt = countColor(rc.rt).bg;
+    const lb = countColor(rc.lb).bg;
+    const rb = countColor(rc.rb).bg;
 
     return {
       hidden: cell.hidden,
@@ -117,28 +118,26 @@ export default function CalendarView({
   const cells = useMemo(() => buildCalendarCells(), []);
   const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
-  const { confirmed, preview } = useMemo(() => {
-    const conf: boolean[][] = Array.from({ length: H }, () =>
-      Array(W).fill(false),
-    );
-    const prev: boolean[][] = Array.from({ length: H }, () =>
-      Array(W).fill(false),
-    );
+  // boolean[][] → number[][] 변환 (confirmed=2, preview=1, empty=0)
+  const countGrid = useMemo(() => {
+    const grid: number[][] = Array.from({ length: H }, () => Array(W).fill(0));
     for (let i = 0; i < cells.length; i++) {
       if (highlightedDates.has(toDateKey(cells[i].date))) {
+        const r = Math.floor(i / W);
+        const c = i % W;
         if (i === pressedIdx) {
-          prev[Math.floor(i / W)][i % W] = true;
+          grid[r][c] = 1; // preview
         } else {
-          conf[Math.floor(i / W)][i % W] = true;
+          grid[r][c] = 2; // confirmed
         }
       }
     }
-    return { confirmed: conf, preview: prev };
+    return grid;
   }, [cells, highlightedDates, pressedIdx]);
 
   const renderGrid = useMemo(
-    () => buildRenderGrid({ confirmed, preview, dragMode: "select" }),
-    [confirmed, preview],
+    () => buildRenderGrid2(countGrid),
+    [countGrid],
   );
 
   const calendarCells = useMemo(
