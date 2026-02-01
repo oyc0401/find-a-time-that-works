@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
@@ -6,6 +7,7 @@ import {
   type RenderCell,
   buildRenderGrid,
 } from "@/lib/renderGrid";
+import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import WeekNavigation from "./WeekNavigation";
@@ -53,7 +55,9 @@ function intensityColor(count: number, max: number): string {
 }
 
 export default function OverviewGrid() {
-  const { room, participants, weeks, weekIdx } = useRoomStore();
+  const { id } = useParams<{ id: string }>();
+  const { room, participants, weeks } = useRoomData(id);
+  const { weekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(

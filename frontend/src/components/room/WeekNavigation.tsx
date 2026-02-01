@@ -1,13 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomSheet } from "@toss/tds-mobile";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDateHeader } from "@/lib/timeSlots";
+import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import CalendarView from "./CalendarView";
 
 export default function WeekNavigation() {
-  const { room, weeks, weekIdx, setWeekIdx } = useRoomStore();
+  const { id } = useParams<{ id: string }>();
+  const { room, weeks } = useRoomData(id);
+  const { weekIdx, setWeekIdx } = useRoomStore();
   const [isOpen, setIsOpen] = useState(false);
 
   const highlightedDates = useMemo(

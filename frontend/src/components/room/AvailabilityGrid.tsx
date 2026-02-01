@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
@@ -9,6 +10,7 @@ import {
   buildRenderGrid,
 } from "@/lib/renderGrid";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
+import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import WeekNavigation from "./WeekNavigation";
@@ -95,7 +97,9 @@ function needsCornerOp(center: Owner, corner: Owner) {
 }
 
 export default function AvailabilityGrid() {
-  const { room, weeks, weekIdx } = useRoomStore();
+  const { id } = useParams<{ id: string }>();
+  const { room, weeks } = useRoomData(id);
+  const { weekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
   const totalCols = room?.dates.length ?? 0;
 

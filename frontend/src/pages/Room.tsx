@@ -1,9 +1,8 @@
 import { useParams } from "react-router-dom";
 import { Tab, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import { useRoomsControllerFindById } from "../api/model/rooms/rooms";
 import { useEffect, useRef, useState } from "react";
-import { useRoomStore } from "@/stores/useRoomStore";
+import { useRoomData } from "@/hooks/useRoomData";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/lib/userId";
@@ -13,38 +12,33 @@ import OverviewGrid from "../components/room/OverviewGrid";
 
 export default function Room() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isLoading } = useRoomsControllerFindById(id!);
+  const { room, participants, isLoading } = useRoomData(id);
   const [selected, setSelected] = useState(0);
-  const { room, setRoom } = useRoomStore();
-  const { enable } = useSubmitAvailability();
+  const { enable } = useSubmitAvailability(id);
 
   const loadedRef = useRef(false);
 
   useEffect(() => {
-    if (response?.status === 200) {
-      const { room: roomData, participants } = response.data.data;
-      setRoom(roomData, participants);
+    if (!room) return;
 
-      const timeSlots = generateTimeSlots(roomData.startTime, roomData.endTime);
-      const store = useAvailabilityStore.getState();
+    const timeSlots = generateTimeSlots(room.startTime, room.endTime);
+    const store = useAvailabilityStore.getState();
 
-      if (!loadedRef.current) {
-        loadedRef.current = true;
-        // init으로 grid 초기화
-        store.init(timeSlots.length, roomData.dates.length);
+    if (!loadedRef.current) {
+      loadedRef.current = true;
+      store.init(timeSlots.length, room.dates.length);
 
-        getUserId().then((userId) => {
-          const myParticipant = participants.find((p) => p.userId === userId);
-          if (myParticipant && myParticipant.slots.length > 0) {
-            useAvailabilityStore
-              .getState()
-              .loadFromSlots(myParticipant.slots, roomData.dates, timeSlots);
-          }
-          enable();
-        });
-      }
+      getUserId().then((userId) => {
+        const myParticipant = participants.find((p) => p.userId === userId);
+        if (myParticipant && myParticipant.slots.length > 0) {
+          useAvailabilityStore
+            .getState()
+            .loadFromSlots(myParticipant.slots, room.dates, timeSlots);
+        }
+        enable();
+      });
     }
-  }, [response, setRoom, enable]);
+  }, [room, participants, enable]);
 
   if (isLoading) {
     return (
@@ -54,7 +48,7 @@ export default function Room() {
     );
   }
 
-  if (!response || response.status !== 200 || !room) {
+  if (!room) {
     return (
       <div className="flex h-screen items-center justify-center">
         <span style={{ color: adaptive.grey500 }}>방을 찾을 수 없습니다</span>

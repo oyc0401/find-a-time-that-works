@@ -3,10 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getRoomsControllerFindByIdQueryKey,
   useRoomsControllerSubmitAvailability,
+  type RoomsControllerFindByIdQueryResult,
 } from "@/api/model/rooms/rooms";
 import type { AvailabilitySlotDto } from "@/api/model/models";
 import { getUserId } from "@/lib/userId";
-import { useRoomStore } from "@/stores/useRoomStore";
 import { generateTimeSlots } from "@/lib/timeSlots";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 
@@ -26,11 +26,13 @@ function gridToSlots(
   return slots;
 }
 
-export function useSubmitAvailability() {
+export function useSubmitAvailability(roomId?: string) {
   const queryClient = useQueryClient();
   const { mutate } = useRoomsControllerSubmitAvailability();
   const userIdRef = useRef<string>();
   const enabledRef = useRef(false);
+  const roomIdRef = useRef(roomId);
+  roomIdRef.current = roomId;
 
   // 초기 로드(init + loadFromSlots) 완료 후 호출하여 전송 활성화
   const enable = useCallback(() => {
@@ -42,9 +44,14 @@ export function useSubmitAvailability() {
       if (state.grid === prev.grid) return;
       if (!enabledRef.current) return;
 
-      const room = useRoomStore.getState().room;
-      if (!room) return;
+      const id = roomIdRef.current;
+      if (!id) return;
 
+      const queryKey = getRoomsControllerFindByIdQueryKey(id);
+      const cached = queryClient.getQueryData<RoomsControllerFindByIdQueryResult>(queryKey);
+      if (!cached || cached.status !== 200) return;
+
+      const room = cached.data.data.room;
       const timeSlots = generateTimeSlots(room.startTime, room.endTime);
       const slots = gridToSlots(state.grid, room.dates, timeSlots);
 
@@ -67,9 +74,9 @@ export function useSubmitAvailability() {
       if (userIdRef.current) {
         doSubmit(userIdRef.current);
       } else {
-        getUserId().then((id) => {
-          userIdRef.current = id;
-          doSubmit(id);
+        getUserId().then((uid) => {
+          userIdRef.current = uid;
+          doSubmit(uid);
         });
       }
     });
