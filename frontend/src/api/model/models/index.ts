@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
+export * from './availabilitySlotDto';
 export * from './createRoomApiResponseDto';
 export * from './createRoomDataDto';
 export * from './createRoomDto';

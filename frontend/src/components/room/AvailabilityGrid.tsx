@@ -107,13 +107,7 @@ export default function AvailabilityGrid() {
   const rows = timeSlots.length;
   const displayCols = columns.length;
 
-  const { grid, init, select, deselect } = useAvailabilityStore();
-
-  useEffect(() => {
-    if (totalCols > 0) {
-      init(rows, totalCols);
-    }
-  }, [rows, totalCols, init]);
+  const { grid, select, deselect } = useAvailabilityStore();
 
   const [preview, setPreview] = useState<boolean[][]>([]);
   const [dragMode, setDragMode] = useState<DragMode>("select");

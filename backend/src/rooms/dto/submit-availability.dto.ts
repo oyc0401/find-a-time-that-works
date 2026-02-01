@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsArray, ValidateNested, Matches } from "class-validator";
 import { Type } from "class-transformer";
 
-class AvailabilitySlotDto {
+export class AvailabilitySlotDto {
   @ApiProperty({ example: "2026-03-04", description: "날짜 (YYYY-MM-DD)" })
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "날짜는 YYYY-MM-DD 형식이어야 합니다" })
@@ -24,6 +24,7 @@ export class SubmitAvailabilityDto {
   participantName: string;
 
   @ApiProperty({
+    type: [AvailabilitySlotDto],
     example: [
       { date: "2026-03-04", time: "14:00" },
       { date: "2026-03-04", time: "14:30" },

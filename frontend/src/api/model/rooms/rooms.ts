@@ -42,6 +42,8 @@ import type {
 import { customFetch } from '../../client';
 
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 
 
 /**
@@ -83,15 +85,15 @@ export const roomsControllerCreate = async (createRoomDto: CreateRoomDto, option
 
 
 export const getRoomsControllerCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerCreate>>, TError,{data: CreateRoomDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerCreate>>, TError,{data: CreateRoomDto}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerCreate>>, TError,{data: CreateRoomDto}, TContext> => {
 
 const mutationKey = ['roomsControllerCreate'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -99,7 +101,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerCreate>>, {data: CreateRoomDto}> = (props) => {
           const {data} = props ?? {};
 
-          return  roomsControllerCreate(data,)
+          return  roomsControllerCreate(data,requestOptions)
         }
 
 
@@ -117,7 +119,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 방 생성
  */
 export const useRoomsControllerCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerCreate>>, TError,{data: CreateRoomDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerCreate>>, TError,{data: CreateRoomDto}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerCreate>>,
         TError,
@@ -183,16 +185,16 @@ export const getRoomsControllerFindByIdQueryKey = (id: string,) => {
     }
 
     
-export const getRoomsControllerFindByIdQueryOptions = <TData = Awaited<ReturnType<typeof roomsControllerFindById>>, TError = void>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, }
+export const getRoomsControllerFindByIdQueryOptions = <TData = Awaited<ReturnType<typeof roomsControllerFindById>>, TError = void>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getRoomsControllerFindByIdQueryKey(id);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof roomsControllerFindById>>> = ({ signal }) => roomsControllerFindById(id, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof roomsControllerFindById>>> = ({ signal }) => roomsControllerFindById(id, { signal, ...requestOptions });
 
       
 
@@ -212,7 +214,7 @@ export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roo
           TError,
           Awaited<ReturnType<typeof roomsControllerFindById>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roomsControllerFindById>>, TError = void>(
@@ -222,11 +224,11 @@ export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roo
           TError,
           Awaited<ReturnType<typeof roomsControllerFindById>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roomsControllerFindById>>, TError = void>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, }
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -234,7 +236,7 @@ export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roo
  */
 
 export function useRoomsControllerFindById<TData = Awaited<ReturnType<typeof roomsControllerFindById>>, TError = void>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, }
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof roomsControllerFindById>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -300,15 +302,15 @@ export const roomsControllerDeleteRoom = async (id: string,
 
 
 export const getRoomsControllerDeleteRoomMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, TError,{id: string;data: DeleteRoomDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, TError,{id: string;data: DeleteRoomDto}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, TError,{id: string;data: DeleteRoomDto}, TContext> => {
 
 const mutationKey = ['roomsControllerDeleteRoom'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -316,7 +318,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, {id: string;data: DeleteRoomDto}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  roomsControllerDeleteRoom(id,data,)
+          return  roomsControllerDeleteRoom(id,data,requestOptions)
         }
 
 
@@ -334,7 +336,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 방 삭제
  */
 export const useRoomsControllerDeleteRoom = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, TError,{id: string;data: DeleteRoomDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerDeleteRoom>>, TError,{id: string;data: DeleteRoomDto}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerDeleteRoom>>,
         TError,
@@ -395,15 +397,15 @@ export const roomsControllerUpdateRoomName = async (id: string,
 
 
 export const getRoomsControllerUpdateRoomNameMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, TError,{id: string;data: UpdateRoomNameDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, TError,{id: string;data: UpdateRoomNameDto}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, TError,{id: string;data: UpdateRoomNameDto}, TContext> => {
 
 const mutationKey = ['roomsControllerUpdateRoomName'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -411,7 +413,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, {id: string;data: UpdateRoomNameDto}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  roomsControllerUpdateRoomName(id,data,)
+          return  roomsControllerUpdateRoomName(id,data,requestOptions)
         }
 
 
@@ -429,7 +431,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 방 이름 변경
  */
 export const useRoomsControllerUpdateRoomName = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, TError,{id: string;data: UpdateRoomNameDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>, TError,{id: string;data: UpdateRoomNameDto}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerUpdateRoomName>>,
         TError,
@@ -490,15 +492,15 @@ export const roomsControllerSubmitAvailability = async (id: string,
 
 
 export const getRoomsControllerSubmitAvailabilityMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, TError,{id: string;data: SubmitAvailabilityDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, TError,{id: string;data: SubmitAvailabilityDto}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, TError,{id: string;data: SubmitAvailabilityDto}, TContext> => {
 
 const mutationKey = ['roomsControllerSubmitAvailability'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -506,7 +508,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, {id: string;data: SubmitAvailabilityDto}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  roomsControllerSubmitAvailability(id,data,)
+          return  roomsControllerSubmitAvailability(id,data,requestOptions)
         }
 
 
@@ -524,7 +526,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 가용 시간 입력
  */
 export const useRoomsControllerSubmitAvailability = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, TError,{id: string;data: SubmitAvailabilityDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>, TError,{id: string;data: SubmitAvailabilityDto}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerSubmitAvailability>>,
         TError,
@@ -578,15 +580,15 @@ export const roomsControllerExtendRoom = async (id: string, options?: RequestIni
 
 
 export const getRoomsControllerExtendRoomMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, TError,{id: string}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, TError,{id: string}, TContext> => {
 
 const mutationKey = ['roomsControllerExtendRoom'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -594,7 +596,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, {id: string}> = (props) => {
           const {id} = props ?? {};
 
-          return  roomsControllerExtendRoom(id,)
+          return  roomsControllerExtendRoom(id,requestOptions)
         }
 
 
@@ -612,7 +614,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 방 만료 기간 30일 연장
  */
 export const useRoomsControllerExtendRoom = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, TError,{id: string}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerExtendRoom>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerExtendRoom>>,
         TError,
@@ -668,15 +670,15 @@ export const roomsControllerUpdateNickname = async (id: string,
 
 
 export const getRoomsControllerUpdateNicknameMutationOptions = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, TError,{id: string;data: UpdateNicknameDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, TError,{id: string;data: UpdateNicknameDto}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, TError,{id: string;data: UpdateNicknameDto}, TContext> => {
 
 const mutationKey = ['roomsControllerUpdateNickname'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
       
 
@@ -684,7 +686,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, {id: string;data: UpdateNicknameDto}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  roomsControllerUpdateNickname(id,data,)
+          return  roomsControllerUpdateNickname(id,data,requestOptions)
         }
 
 
@@ -702,7 +704,7 @@ const {mutation: mutationOptions} = options ?
  * @summary 유저 닉네임 변경
  */
 export const useRoomsControllerUpdateNickname = <TError = void,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, TError,{id: string;data: UpdateNicknameDto}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof roomsControllerUpdateNickname>>, TError,{id: string;data: UpdateNicknameDto}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof roomsControllerUpdateNickname>>,
         TError,

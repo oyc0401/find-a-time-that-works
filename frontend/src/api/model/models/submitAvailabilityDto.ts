@@ -5,10 +5,11 @@
  * 겹치는 시간 찾기 API
  * OpenAPI spec version: 1.0
  */
+import type { AvailabilitySlotDto } from './availabilitySlotDto';
 
 export interface SubmitAvailabilityDto {
   /** 프론트에서 생성한 UUID */
   participantId: string;
   participantName: string;
-  slots: string[];
+  slots: AvailabilitySlotDto[];
 }
