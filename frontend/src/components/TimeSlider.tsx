@@ -168,7 +168,7 @@ export default function TimeSlider() {
             className="absolute flex items-center justify-center"
             style={{
               width: 44,
-              height: 44,
+              height: 88,
               top: "50%",
               left: toTrackPos(startPercent),
               transform: "translate(-50%, -50%)",
@@ -192,7 +192,7 @@ export default function TimeSlider() {
             className="absolute flex items-center justify-center"
             style={{
               width: 44,
-              height: 44,
+              height: 88,
               top: "50%",
               left: toTrackPos(endPercent),
               transform: "translate(-50%, -50%)",
@@ -213,7 +213,7 @@ export default function TimeSlider() {
         </div>
 
         {/* Labels */}
-        <div className="relative" style={{ height: 24, marginTop: 16 }}>
+        <div className="pointer-events-none relative" style={{ height: 24, marginTop: 16 }}>
           <div
             ref={startLabelRef}
             className="absolute whitespace-nowrap"
