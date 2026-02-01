@@ -1,16 +1,76 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { buildCalendarCells } from "@/lib/calendar";
+import {
+  type Rect,
+  useDateSelectionStore,
+} from "@/stores/useDateSelectionStore";
+import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import {
   type Owner,
   type RenderCell,
   type DragMode,
   buildRenderGrid,
 } from "./DateSelector.logic";
-import { rowOf, colOf, useDateDragSelection } from "./DateSelector.drag";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
+// =====================
+// Grid constants
+// =====================
+
+const W = 7;
+const H = 5;
+
+function createEmptyPreview(): boolean[][] {
+  return Array.from({ length: H }, () => Array(W).fill(false));
+}
+
+function rowOf(i: number) {
+  return (i / W) | 0;
+}
+
+function colOf(i: number) {
+  return i % W;
+}
+
+function getRect(startIdx: number, endIdx: number): Rect {
+  const sr = rowOf(startIdx);
+  const sc = colOf(startIdx);
+  const er = rowOf(endIdx);
+  const ec = colOf(endIdx);
+
+  return {
+    r0: Math.min(sr, er),
+    r1: Math.max(sr, er),
+    c0: Math.min(sc, ec),
+    c1: Math.max(sc, ec),
+  };
+}
+
+function applyRect(
+  grid: boolean[][],
+  rect: Rect,
+  value: boolean,
+): boolean[][] {
+  const next = grid.map((row) => [...row]);
+  for (let r = rect.r0; r <= rect.r1; r++) {
+    for (let c = rect.c0; c <= rect.c1; c++) {
+      next[r][c] = value;
+    }
+  }
+  return next;
+}
+
+function getCellIdxFromPoint(x: number, y: number): number | undefined {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return undefined;
+  const cellEl = el.closest("[data-cell-idx]");
+  if (!cellEl) return undefined;
+  const idx = Number(cellEl.getAttribute("data-cell-idx"));
+  return Number.isNaN(idx) ? undefined : idx;
+}
 
 // =====================
 // View: 5-band zIndex
@@ -61,6 +121,7 @@ function roundClass(pos: CornerPos) {
 function centerOwner(rc: RenderCell): Owner {
   return rc.lt.center;
 }
+
 function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
   if (pos === "lt") return rc.lt.corner;
   if (pos === "rt") return rc.rt.corner;
@@ -83,6 +144,91 @@ function ownerBg(owner: Owner, dragMode: DragMode) {
 function needsCornerOp(center: Owner, corner: Owner) {
   if (center !== "empty") return corner !== center;
   return corner !== "empty";
+}
+
+function useDateDragSelection(isHidden: (idx: number) => boolean) {
+  const { confirmed, select, deselect } = useDateSelectionStore();
+
+  const [preview, setPreview] = useState<boolean[][]>(createEmptyPreview);
+  const [dragMode, setDragMode] = useState<DragMode>("select");
+
+  const dragStartIdx = useRef<number | undefined>(undefined);
+  const currentRect = useRef<Rect | undefined>(undefined);
+
+  const getCellFromPoint = useCallback(
+    (x: number, y: number) => {
+      const idx = getCellIdxFromPoint(x, y);
+      if (idx === undefined || isHidden(idx)) return undefined;
+      return idx;
+    },
+    [isHidden],
+  );
+
+  const handleLongPressStart = useCallback(
+    (idx: number) => {
+      dragStartIdx.current = idx;
+
+      const r = rowOf(idx);
+      const c = colOf(idx);
+      const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
+      setDragMode(mode);
+
+      const rect = getRect(idx, idx);
+      currentRect.current = rect;
+      setPreview(applyRect(createEmptyPreview(), rect, true));
+    },
+    [confirmed],
+  );
+
+  const handleDrag = useCallback((idx: number) => {
+    if (dragStartIdx.current === undefined) return;
+
+    const rect = getRect(dragStartIdx.current, idx);
+    currentRect.current = rect;
+    setPreview(applyRect(createEmptyPreview(), rect, true));
+  }, []);
+
+  const handleTap = useCallback(
+    (idx: number) => {
+      const r = rowOf(idx);
+      const c = colOf(idx);
+      const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
+      const rect = getRect(idx, idx);
+
+      if (mode === "select") select(rect);
+      else deselect(rect);
+    },
+    [confirmed, select, deselect],
+  );
+
+  const handleEnd = useCallback(() => {
+    const rect = currentRect.current;
+    if (rect) {
+      if (dragMode === "select") select(rect);
+      else deselect(rect);
+    }
+
+    dragStartIdx.current = undefined;
+    currentRect.current = undefined;
+    setPreview(createEmptyPreview());
+  }, [dragMode, select, deselect]);
+
+  const { onPointerDown, onPointerMove, onPointerUp } = useLongPressDrag({
+    getCellFromPoint,
+    onLongPressStart: handleLongPressStart,
+    onDrag: handleDrag,
+    onTap: handleTap,
+    onEnd: handleEnd,
+  });
+
+  return {
+    confirmed,
+    preview,
+    dragMode,
+    handlePointerDown: onPointerDown,
+    handlePointerMove: onPointerMove,
+    handlePointerUp: onPointerUp,
+  };
 }
 
 export default function DateSelector() {

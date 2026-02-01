@@ -218,7 +218,6 @@ export default function AvailabilityGrid() {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
-          style={{ touchAction: "none" }}
         >
           {columns.map((col, displayIdx) => (
             <div
