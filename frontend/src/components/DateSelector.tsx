@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { useDateSelectionStore } from "@/stores/useDateSelectionStore";
 
 const TOTAL_CELLS = 35; // 5줄 × 7칸
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+const W = 7;
 
 type Cell = {
   day: number;
@@ -23,7 +24,6 @@ function useCalendarCells(): Cell[] {
     const firstDay = new Date(year, month, 1).getDay(); // 이번달 1일의 요일
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 이번달 전체 셀 생성
     const allCells: Cell[] = [];
 
     // 이번달 1일 이전 빈칸 (이전달)
@@ -47,9 +47,7 @@ function useCalendarCells(): Cell[] {
       });
     }
 
-    // 오늘 이전 날짜가 숨겨져서 줄이 줄어든 만큼 다음달로 채움
-    // 숨겨진 날짜가 있는 첫 줄이 완전히 숨겨지면 그 줄을 제거하고 다음달을 추가
-    // 먼저: 앞쪽에서 완전히 hidden인 줄(7칸) 수 계산
+    // 앞쪽에서 완전히 hidden인 줄(7칸) 수 계산
     let hiddenRows = 0;
     for (let row = 0; row < 5; row++) {
       const rowCells = allCells.slice(row * 7, row * 7 + 7);
@@ -74,7 +72,6 @@ function useCalendarCells(): Cell[] {
       });
     }
 
-    // 정확히 35개만
     return trimmed.slice(0, TOTAL_CELLS);
   }, []);
 }
@@ -151,17 +148,18 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
   );
 
   const handlePointerUp = useCallback(() => {
-    if (isDragging.current && previewIndices.size > 0) {
-      if (dragMode === "select") {
-        select(previewIndices);
-      } else {
-        deselect(previewIndices);
-      }
-    }
+    // previewIndices는 최신 상태가 아닐 수 있으니 setState 콜백 없이 “현재 렌더 기준”으로만 커밋
+    // (기존 코드 유지하고 싶으면 그대로 사용해도 됨)
     isDragging.current = false;
     dragStartIdx.current = undefined;
-    setPreviewIndices(new Set());
-  }, [previewIndices, dragMode, select, deselect]);
+    setPreviewIndices((prev) => {
+      if (prev.size > 0) {
+        if (dragMode === "select") select(prev);
+        else deselect(prev);
+      }
+      return new Set();
+    });
+  }, [dragMode, select, deselect]);
 
   return {
     selectedIndices,
@@ -171,6 +169,241 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
     handlePointerMove,
     handlePointerUp,
   };
+}
+
+// --- 마스크(배열) 기반 레이어 상태 생성 ---
+
+type LayerMasks = {
+  valid: boolean[]; // !hidden
+  confirmedOn: boolean[]; // 확정 fill 대상
+  previewAdjOn: boolean[]; // 프리뷰 연결 판단 대상
+  previewFillOn: boolean[]; // 프리뷰 실제 fill 대상(드래그 중)
+};
+
+function buildLayerMasks(args: {
+  cells: Cell[];
+  selected: Set<number>;
+  preview: Set<number>;
+  dragMode: DragMode;
+}): LayerMasks {
+  const { cells, selected, preview, dragMode } = args;
+  const n = cells.length;
+
+  const valid = new Array<boolean>(n);
+  for (let i = 0; i < n; i++) valid[i] = !cells[i]?.hidden;
+
+  const isDragging = preview.size > 0;
+
+  const confirmedOn = new Array<boolean>(n).fill(false);
+  const previewAdjOn = new Array<boolean>(n).fill(false);
+  const previewFillOn = new Array<boolean>(n).fill(false);
+
+  for (let i = 0; i < n; i++) {
+    if (!valid[i]) continue;
+
+    const isSel = selected.has(i);
+    const isPrev = preview.has(i);
+
+    // 확정 레이어: deselect 프리뷰에 걸린 확정은 확정칠에서 제외
+    confirmedOn[i] = isSel && !(dragMode === "deselect" && isPrev);
+
+    // 프리뷰 연결 판단 레이어 (기존 로직과 동치)
+    if (dragMode === "select") {
+      previewAdjOn[i] = isSel || isPrev;
+    } else {
+      const isDeselecting = isPrev && isSel;
+      const isRemaining = isSel && !isPrev;
+      previewAdjOn[i] = isDeselecting || isRemaining;
+    }
+
+    // 프리뷰 실제 fill: 드래그 중이면 확정 셀도 프리뷰 색으로 칠함(기존 유지)
+    if (isDragging) {
+      previewFillOn[i] = isSel || isPrev;
+    }
+  }
+
+  return { valid, confirmedOn, previewAdjOn, previewFillOn };
+}
+
+// --- 코너/오목 패치 계산 (6/8 그대로 사용) ---
+
+type Corners = { tl: boolean; tr: boolean; bl: boolean; br: boolean };
+
+function rowOf(i: number) {
+  return (i / W) | 0;
+}
+function colOf(i: number) {
+  return i % W;
+}
+function inBounds(i: number, n: number) {
+  return i >= 0 && i < n;
+}
+
+function computeOuterCorners(
+  on: boolean[],
+  valid: boolean[],
+  idx: number,
+): Corners & {
+  diagTL: boolean;
+  diagTR: boolean;
+  diagBL: boolean;
+  diagBR: boolean;
+  top: boolean;
+  bottom: boolean;
+  left: boolean;
+  right: boolean;
+} {
+  const n = on.length;
+  if (!valid[idx] || !on[idx]) {
+    return {
+      tl: false,
+      tr: false,
+      bl: false,
+      br: false,
+      diagTL: false,
+      diagTR: false,
+      diagBL: false,
+      diagBR: false,
+      top: false,
+      bottom: false,
+      left: false,
+      right: false,
+    };
+  }
+
+  const r = rowOf(idx);
+  const c = colOf(idx);
+
+  const up = idx - 7;
+  const down = idx + 7;
+  const leftI = idx - 1;
+  const rightI = idx + 1;
+
+  const top = r > 0 && valid[up] && on[up];
+  const bottom = r < 4 && valid[down] && on[down];
+  const left = c > 0 && valid[leftI] && on[leftI];
+  const right = c < 6 && valid[rightI] && on[rightI];
+
+  const tl = !top && !left;
+  const tr = !top && !right;
+  const bl = !bottom && !left;
+  const br = !bottom && !right;
+
+  // 대각(6/8) 그대로
+  const diagTLi = idx - 8;
+  const diagTRi = idx - 6;
+  const diagBLi = idx + 6;
+  const diagBRi = idx + 8;
+
+  const diagTL =
+    r > 0 &&
+    c > 0 &&
+    inBounds(diagTLi, n) &&
+    valid[diagTLi] &&
+    on[diagTLi] &&
+    !top &&
+    !left;
+  const diagTR =
+    r > 0 &&
+    c < 6 &&
+    inBounds(diagTRi, n) &&
+    valid[diagTRi] &&
+    on[diagTRi] &&
+    !top &&
+    !right;
+  const diagBL =
+    r < 4 &&
+    c > 0 &&
+    inBounds(diagBLi, n) &&
+    valid[diagBLi] &&
+    on[diagBLi] &&
+    !bottom &&
+    !left;
+  const diagBR =
+    r < 4 &&
+    c < 6 &&
+    inBounds(diagBRi, n) &&
+    valid[diagBRi] &&
+    on[diagBRi] &&
+    !bottom &&
+    !right;
+
+  return {
+    tl,
+    tr,
+    bl,
+    br,
+    diagTL,
+    diagTR,
+    diagBL,
+    diagBR,
+    top,
+    bottom,
+    left,
+    right,
+  };
+}
+
+function computeInnerConcavePatches(
+  adjOn: boolean[],
+  valid: boolean[],
+  idx: number,
+  selfOn: boolean,
+): Corners {
+  if (selfOn) return { tl: false, tr: false, bl: false, br: false };
+
+  const r = rowOf(idx);
+  const c = colOf(idx);
+
+  const up = idx - 7;
+  const down = idx + 7;
+  const leftI = idx - 1;
+  const rightI = idx + 1;
+
+  const upOn = r > 0 && valid[up] && adjOn[up];
+  const downOn = r < 4 && valid[down] && adjOn[down];
+  const leftOn = c > 0 && valid[leftI] && adjOn[leftI];
+  const rightOn = c < 6 && valid[rightI] && adjOn[rightI];
+
+  // 대각선 셀도 켜져 있어야 오목 패치 적용 (순수 대각 연결 방지)
+  const diagTL = idx - 8;
+  const diagTR = idx - 6;
+  const diagBL = idx + 6;
+  const diagBR = idx + 8;
+
+  return {
+    tl: r > 0 && c > 0 && upOn && leftOn && inBounds(diagTL, adjOn.length) && valid[diagTL] && adjOn[diagTL],
+    tr: r > 0 && c < 6 && upOn && rightOn && inBounds(diagTR, adjOn.length) && valid[diagTR] && adjOn[diagTR],
+    bl: r < 4 && c > 0 && downOn && leftOn && inBounds(diagBL, adjOn.length) && valid[diagBL] && adjOn[diagBL],
+    br: r < 4 && c < 6 && downOn && rightOn && inBounds(diagBR, adjOn.length) && valid[diagBR] && adjOn[diagBR],
+  };
+}
+
+// --- 코너 패치 렌더링 헬퍼 (기존 그대로) ---
+
+const corners: ("tl" | "tr" | "bl" | "br")[] = ["tl", "tr", "bl", "br"];
+
+function cornerStyle(pos: "tl" | "tr" | "bl" | "br"): React.CSSProperties {
+  const base: React.CSSProperties = {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    overflow: "hidden",
+  };
+  if (pos.includes("t")) base.top = 0;
+  else base.bottom = 0;
+
+  if (pos.includes("l")) base.left = 0;
+  else base.right = 0;
+
+  return base;
+}
+
+function concaveInnerRound(pos: "tl" | "tr" | "bl" | "br") {
+  if (pos === "tl") return "rounded-tl-lg";
+  if (pos === "tr") return "rounded-tr-lg";
+  if (pos === "bl") return "rounded-bl-lg";
+  return "rounded-br-lg";
 }
 
 // --- 컴포넌트 ---
@@ -186,6 +419,21 @@ export default function DateSelector() {
     handlePointerMove,
     handlePointerUp,
   } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
+
+  const masks = useMemo(
+    () =>
+      buildLayerMasks({
+        cells,
+        selected: selectedIndices,
+        preview: previewIndices,
+        dragMode,
+      }),
+    [cells, selectedIndices, previewIndices, dragMode],
+  );
+
+  const isDragging = previewIndices.size > 0;
+  const previewBg = dragMode === "select" ? adaptive.blue200 : adaptive.blue50;
+  const confirmedBg = adaptive.blue300;
 
   return (
     <div className="w-full px-5 py-4">
@@ -215,66 +463,35 @@ export default function DateSelector() {
         style={{ touchAction: "none" }}
       >
         {cells.map((cell, idx) => {
-          const isConfirmed = selectedIndices.has(idx) && !cell.hidden;
-          const isPreviewing = previewIndices.has(idx) && !cell.hidden;
+          const valid = masks.valid[idx];
 
-          const sameRow = (i: number) =>
-            Math.floor(i / 7) === Math.floor(idx / 7);
-          const inBounds = (i: number) => i >= 0 && i < TOTAL_CELLS;
-          const notHidden = (i: number) => !cells[i]?.hidden;
+          const showConfirmed = masks.confirmedOn[idx];
+          const showPreview = isDragging && masks.previewFillOn[idx];
 
-          // --- 확정 레이어: 확정 선택만 기준 (해제 프리뷰 제외) ---
-          const isConfirmedActive = (i: number) => {
-            if (!inBounds(i) || !notHidden(i)) return false;
-            if (!selectedIndices.has(i)) return false;
-            // 해제 프리뷰 중이면 확정 레이어에서도 제외
-            if (dragMode === "deselect" && previewIndices.has(i)) return false;
-            return true;
-          };
+          // 확정/프리뷰 코너 계산 (프리뷰 코너는 "연결 판단 레이어" 기준)
+          const c = computeOuterCorners(masks.confirmedOn, masks.valid, idx);
+          const p = computeOuterCorners(masks.previewAdjOn, masks.valid, idx);
 
-          const showConfirmed = isConfirmed && !(dragMode === "deselect" && isPreviewing);
+          // 내부 오목 패치
+          const confirmedInner = computeInnerConcavePatches(
+            masks.confirmedOn,
+            masks.valid,
+            idx,
+            showConfirmed,
+          );
+          const previewInner = computeInnerConcavePatches(
+            masks.previewAdjOn,
+            masks.valid,
+            idx,
+            showPreview,
+          );
 
-          const cTop = idx >= 7 && isConfirmedActive(idx - 7);
-          const cBottom = idx < TOTAL_CELLS - 7 && isConfirmedActive(idx + 7);
-          const cLeft = sameRow(idx - 1) && isConfirmedActive(idx - 1);
-          const cRight = sameRow(idx + 1) && isConfirmedActive(idx + 1);
-
-          // --- 프리뷰 레이어: 프리뷰 + 확정 영역 모두 인접으로 판단 ---
-          const isPreviewActive = (i: number) => {
-            if (!inBounds(i) || !notHidden(i)) return false;
-            if (dragMode === "select") {
-              return previewIndices.has(i) || selectedIndices.has(i);
-            }
-            // deselect: 해제 프리뷰 셀 + 해제 대상 아닌 확정 셀 모두 인접
-            const isDeselecting = previewIndices.has(i) && selectedIndices.has(i);
-            const isRemainingConfirmed = selectedIndices.has(i) && !previewIndices.has(i);
-            return isDeselecting || isRemainingConfirmed;
-          };
-
-          const pTop = idx >= 7 && isPreviewActive(idx - 7);
-          const pBottom = idx < TOTAL_CELLS - 7 && isPreviewActive(idx + 7);
-          const pLeft = sameRow(idx - 1) && isPreviewActive(idx - 1);
-          const pRight = sameRow(idx + 1) && isPreviewActive(idx + 1);
-
-          // 프리뷰 색상: 드래그 중이면 확정 셀도 프리뷰 색으로 칠함
-          const isDragging = previewIndices.size > 0;
-          let previewColor: string | undefined;
-          if (dragMode === "select" && isDragging && (isPreviewing || isConfirmed)) {
-            previewColor = adaptive.blue200;
-          } else if (dragMode === "deselect" && isDragging && (isPreviewing || isConfirmed)) {
-            previewColor = adaptive.blue50;
-          }
-
-          // 글씨색: 확정 레이어 우선
+          // 텍스트 색
           let textColor: string;
           if (showConfirmed) {
             textColor = "#ffffff";
-          } else if (previewColor === adaptive.blue200) {
+          } else if (showPreview && dragMode === "select") {
             textColor = "#ffffff";
-          } else if (previewColor === adaptive.blue50) {
-            textColor = cell.isCurrentMonth
-              ? adaptive.grey800
-              : adaptive.grey400;
           } else {
             textColor = cell.isCurrentMonth
               ? adaptive.grey800
@@ -287,45 +504,89 @@ export default function DateSelector() {
               data-cell-idx={idx}
               className={cn(
                 "relative select-none flex items-center justify-center w-full aspect-square",
-                cell.hidden && "opacity-0 pointer-events-none",
+                !valid && "opacity-0 pointer-events-none",
               )}
             >
-              {/* 확정 선택 레이어 (최상단) */}
+              {/* 프리뷰 레이어 */}
+              {showPreview && (
+                <div
+                  className={cn(
+                    "absolute inset-0 z-10",
+                    p.tl && "rounded-tl-lg",
+                    p.tr && "rounded-tr-lg",
+                    p.bl && "rounded-bl-lg",
+                    p.br && "rounded-br-lg",
+                  )}
+                  style={{ backgroundColor: previewBg }}
+                />
+              )}
+
+              {/* 프리뷰 내부 오목 코너 패치 */}
+              {isDragging &&
+                corners.map((pos) => {
+                  if (!previewInner[pos]) return null;
+                  return (
+                    <div
+                      key={`p-${pos}`}
+                      className="z-10"
+                      style={{
+                        ...cornerStyle(pos),
+                        backgroundColor: previewBg,
+                      }}
+                    >
+                      <div
+                        className={cn("h-full w-full", concaveInnerRound(pos))}
+                        style={{ backgroundColor: "white" }}
+                      />
+                    </div>
+                  );
+                })}
+
+              {/* 확정 선택 레이어 */}
               {showConfirmed && (
                 <div
                   className={cn(
                     "absolute inset-0 z-20",
-                    !cTop && !cLeft && "rounded-tl-lg",
-                    !cTop && !cRight && "rounded-tr-lg",
-                    !cBottom && !cLeft && "rounded-bl-lg",
-                    !cBottom && !cRight && "rounded-br-lg",
+                    c.tl && "rounded-tl-lg",
+                    c.tr && "rounded-tr-lg",
+                    c.bl && "rounded-bl-lg",
+                    c.br && "rounded-br-lg",
                   )}
-                  style={{ backgroundColor: adaptive.blue300 }}
+                  style={{ backgroundColor: confirmedBg }}
                 />
               )}
-              {/* 프리뷰 레이어 (위) */}
-              {previewColor && (
-                <div
-                  className={cn(
-                    "absolute inset-0 z-10",
-                    !pTop && !pLeft && "rounded-tl-lg",
-                    !pTop && !pRight && "rounded-tr-lg",
-                    !pBottom && !pLeft && "rounded-bl-lg",
-                    !pBottom && !pRight && "rounded-br-lg",
-                  )}
-                  style={{ backgroundColor: previewColor }}
-                />
-              )}
-              {cell.isToday && !showConfirmed && !previewColor && (
+
+              {/* 확정 내부 오목 코너 패치 */}
+              {corners.map((pos) => {
+                if (!confirmedInner[pos]) return null;
+                return (
+                  <div
+                    key={`c-${pos}`}
+                    className="z-20"
+                    style={{
+                      ...cornerStyle(pos),
+                      backgroundColor: confirmedBg,
+                    }}
+                  >
+                    <div
+                      className={cn("h-full w-full", concaveInnerRound(pos))}
+                      style={{ backgroundColor: "white" }}
+                    />
+                  </div>
+                );
+              })}
+
+              {cell.isToday && !showConfirmed && !showPreview && (
                 <div
                   className="absolute rounded-full"
                   style={{
                     width: 42,
                     height: 42,
-                    border: `2px solid ${adaptive.blue300}`,
+                    border: `2px solid ${confirmedBg}`,
                   }}
                 />
               )}
+
               <span
                 className="relative z-30"
                 style={{
