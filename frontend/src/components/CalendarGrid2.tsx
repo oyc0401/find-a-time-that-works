@@ -61,6 +61,7 @@ export interface PointerHandlers {
   onPointerMove: React.PointerEventHandler;
   onPointerUp: React.PointerEventHandler;
   onPointerCancel: React.PointerEventHandler;
+  onLostPointerCapture: React.PointerEventHandler;
 }
 
 export type CalendarCellModel = {

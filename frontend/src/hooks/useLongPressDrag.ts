@@ -8,6 +8,7 @@ type PointerHandlers = {
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: () => void;
   onPointerCancel: () => void;
+  onLostPointerCapture: () => void;
 };
 
 export function useLongPressDrag<TCell>({
@@ -57,8 +58,32 @@ export function useLongPressDrag<TCell>({
     };
   }, []);
 
+  const resetDragState = useCallback(() => {
+    clearTimer();
+    const wasDragging = isDraggingRef.current;
+    isDraggingRef.current = false;
+    startCellRef.current = undefined;
+    pointerIdRef.current = undefined;
+    containerRef.current = undefined;
+    hasMovedRef.current = false;
+    return wasDragging;
+  }, [clearTimer]);
+
+  const onLostPointerCapture = useCallback(() => {
+    if (isDraggingRef.current) {
+      resetDragState();
+      onEnd();
+    }
+  }, [resetDragState, onEnd]);
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // 이전 드래그가 정리되지 않고 남아있으면 강제 정리
+      if (isDraggingRef.current) {
+        resetDragState();
+        onEnd();
+      }
+
       const cell = getCellFromPoint(e.clientX, e.clientY);
       if (cell === undefined) return;
 
@@ -81,7 +106,7 @@ export function useLongPressDrag<TCell>({
         onLongPressStart(startCellRef.current, e);
       }, duration);
     },
-    [getCellFromPoint, onLongPressStart, duration, clearTimer],
+    [getCellFromPoint, onLongPressStart, duration, clearTimer, resetDragState, onEnd],
   );
 
   const onPointerMove = useCallback(
@@ -114,46 +139,31 @@ export function useLongPressDrag<TCell>({
   );
 
   const onPointerUp = useCallback(() => {
-    clearTimer();
-
-    const wasDragging = isDraggingRef.current;
     const startCell = startCellRef.current;
     const hasMoved = hasMovedRef.current;
-
-    isDraggingRef.current = false;
-    startCellRef.current = undefined;
-    pointerIdRef.current = undefined;
-    containerRef.current = undefined;
-    hasMovedRef.current = false;
+    const wasDragging = resetDragState();
 
     if (wasDragging) {
       onEnd();
     } else if (startCell !== undefined && !hasMoved) {
       onTap(startCell);
     }
-  }, [onEnd, onTap, clearTimer]);
+  }, [onEnd, onTap, resetDragState]);
 
   const onPointerCancel = useCallback(() => {
-    clearTimer();
-
-    const wasDragging = isDraggingRef.current;
-
-    isDraggingRef.current = false;
-    startCellRef.current = undefined;
-    pointerIdRef.current = undefined;
-    containerRef.current = undefined;
-    hasMovedRef.current = false;
+    const wasDragging = resetDragState();
 
     // cancel 시에는 드래그 중이었을 때만 onEnd, 탭은 무시
     if (wasDragging) {
       onEnd();
     }
-  }, [onEnd, clearTimer]);
+  }, [onEnd, resetDragState]);
 
   return {
     onPointerDown,
     onPointerMove,
     onPointerUp,
     onPointerCancel,
+    onLostPointerCapture,
   };
 }

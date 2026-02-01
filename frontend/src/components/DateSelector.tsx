@@ -143,7 +143,7 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
     setPreview(createEmptyPreview());
   }, [dragMode, select, deselect]);
 
-  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
+  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture } =
     useLongPressDrag({
       getCellFromPoint,
       onLongPressStart: handleLongPressStart,
@@ -160,6 +160,7 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
     handlePointerMove: onPointerMove,
     handlePointerUp: onPointerUp,
     handlePointerCancel: onPointerCancel,
+    handleLostPointerCapture: onLostPointerCapture,
   };
 }
 
@@ -222,6 +223,7 @@ export default function DateSelector() {
     handlePointerMove,
     handlePointerUp,
     handlePointerCancel,
+    handleLostPointerCapture,
   } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
 
   const renderGrid = useMemo(
@@ -242,6 +244,7 @@ export default function DateSelector() {
         onPointerMove: handlePointerMove,
         onPointerUp: handlePointerUp,
         onPointerCancel: handlePointerCancel,
+        onLostPointerCapture: handleLostPointerCapture,
       }}
     />
   );
