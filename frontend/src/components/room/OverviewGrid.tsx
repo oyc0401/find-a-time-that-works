@@ -5,7 +5,6 @@ import { BottomSheet } from "@toss/tds-mobile";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
-import { type Owner, type RenderCell, buildRenderGrid } from "@/lib/renderGrid";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
@@ -72,20 +71,31 @@ function intensityColor(count: number, max: number): string {
   return heatColor(count / max);
 }
 
-function centerOwner(rc: RenderCell): Owner {
-  return rc.lt.center;
-}
+// count 기반 코너 타입 계산
+// "outer": 현재 셀이 인접 셀보다 높음 → 바깥 라운딩
+// "concave": 현재 셀이 인접 3칸보다 낮고, 인접 3칸이 같은 count → 오목 라운딩
+// "none": 같은 count끼리 이어짐 또는 처리 불필요
+type CornerType = "outer" | "concave" | "none";
 
-function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
-  if (pos === "lt") return rc.lt.corner;
-  if (pos === "rt") return rc.rt.corner;
-  if (pos === "lb") return rc.lb.corner;
-  return rc.rb.corner;
-}
-
-function needsCornerOp(center: Owner, corner: Owner) {
-  if (center !== "empty") return corner !== center;
-  return corner !== "empty";
+function getCornerType(
+  centerCount: number,
+  adj1Count: number,
+  adj2Count: number,
+  diagCount: number,
+): CornerType {
+  // 현재 셀이 인접 2개 모두보다 높으면 outer 라운딩
+  if (centerCount > adj1Count && centerCount > adj2Count) {
+    return "outer";
+  }
+  // 현재 셀이 인접 3칸보다 낮고, 인접 3칸이 모두 같은 count(>0)면 concave 라운딩
+  if (
+    adj1Count > centerCount &&
+    adj1Count === adj2Count &&
+    adj1Count === diagCount
+  ) {
+    return "concave";
+  }
+  return "none";
 }
 
 export default function OverviewGrid() {
@@ -131,8 +141,9 @@ export default function OverviewGrid() {
     return result;
   }, [rows, displayCols, columns, timeSlots, countMap]);
 
-  const filledGrid = useMemo(
-    () => countGrid.map((row) => row.map((c) => c > 0)),
+  // count 기반 인접 셀 조회 헬퍼
+  const getCount = useCallback(
+    (r: number, c: number) => countGrid[r]?.[c] ?? 0,
     [countGrid],
   );
 
@@ -196,28 +207,6 @@ export default function OverviewGrid() {
 
   const startCell = useRef<Cell | undefined>(undefined);
   const currentRect = useRef<Rect>();
-
-  // ── RenderGrid ──
-  const emptyPreview = useMemo(
-    () =>
-      Array.from(
-        { length: rows },
-        () => Array(displayCols).fill(false) as boolean[],
-      ),
-    [rows, displayCols],
-  );
-
-  const heatRenderGrid = useMemo(
-    () =>
-      displayCols > 0 && rows > 0
-        ? buildRenderGrid({
-            confirmed: filledGrid,
-            preview: emptyPreview,
-            dragMode: "select",
-          })
-        : [],
-    [filledGrid, emptyPreview, displayCols, rows],
-  );
 
   // ── Drag handlers ──
   const handleLongPressStart = useCallback((cell: Cell) => {
@@ -448,15 +437,27 @@ export default function OverviewGrid() {
               style={{ minWidth: 44 }}
             >
               {timeSlots.map((slot, rowIdx) => {
-                const count = countGrid[rowIdx]?.[displayIdx] ?? 0;
+                const count = getCount(rowIdx, displayIdx);
                 const isHour = slot.endsWith(":00");
-                const rc: RenderCell | undefined =
-                  heatRenderGrid[rowIdx]?.[displayIdx];
-                if (!rc) return null;
-
                 const isFilled = count > 0;
                 const cellBg = intensityColor(count, maxCount);
-                const center = centerOwner(rc);
+
+                // 각 코너의 인접 셀 count 계산
+                const tCount = getCount(rowIdx - 1, displayIdx);
+                const bCount = getCount(rowIdx + 1, displayIdx);
+                const lCount = getCount(rowIdx, displayIdx - 1);
+                const rCount = getCount(rowIdx, displayIdx + 1);
+                const tlCount = getCount(rowIdx - 1, displayIdx - 1);
+                const trCount = getCount(rowIdx - 1, displayIdx + 1);
+                const blCount = getCount(rowIdx + 1, displayIdx - 1);
+                const brCount = getCount(rowIdx + 1, displayIdx + 1);
+
+                const cornerTypes: Record<CornerPos, CornerType> = {
+                  lt: getCornerType(count, tCount, lCount, tlCount),
+                  rt: getCornerType(count, tCount, rCount, trCount),
+                  lb: getCornerType(count, bCount, lCount, blCount),
+                  rb: getCornerType(count, bCount, rCount, brCount),
+                };
 
                 return (
                   <div
@@ -479,60 +480,50 @@ export default function OverviewGrid() {
                       />
                     )}
 
-                    {/* Corner color band */}
+                    {/* Corner rendering */}
                     {CORNERS.map((pos) => {
-                      const corner = cornerOwner(rc, pos);
-                      if (!needsCornerOp(center, corner)) return null;
+                      const cornerType = cornerTypes[pos];
+                      if (cornerType === "none") return null;
 
-                      let outerColor: string;
-                      if (center !== "empty" && corner === "empty") {
-                        outerColor = baseBg;
-                      } else if (center !== "empty") {
-                        outerColor = cellBg;
-                      } else {
-                        const nr =
-                          pos === "lt" || pos === "rt"
-                            ? rowIdx - 1
-                            : rowIdx + 1;
-                        const nc =
-                          pos === "lt" || pos === "lb"
-                            ? displayIdx - 1
-                            : displayIdx + 1;
-                        const nCount = countGrid[nr]?.[nc] ?? 0;
-                        outerColor = intensityColor(nCount, maxCount);
-                      }
+                      // 인접 셀의 count (concave용)
+                      const adjCount =
+                        pos === "lt"
+                          ? tlCount
+                          : pos === "rt"
+                            ? trCount
+                            : pos === "lb"
+                              ? blCount
+                              : brCount;
+
+                      const outerColor =
+                        cornerType === "outer"
+                          ? baseBg
+                          : intensityColor(adjCount, maxCount);
+                      const innerColor =
+                        cornerType === "outer" ? cellBg : baseBg;
 
                       return (
-                        <div
-                          key={`corner-color-${pos}`}
-                          className="pointer-events-none"
-                          style={{
-                            ...cornerStyle(pos),
-                            backgroundColor: outerColor,
-                          }}
-                        />
-                      );
-                    })}
-
-                    {/* Corner cut band */}
-                    {CORNERS.map((pos) => {
-                      const corner = cornerOwner(rc, pos);
-                      if (!needsCornerOp(center, corner)) return null;
-
-                      const innerColor = center !== "empty" ? cellBg : baseBg;
-
-                      return (
-                        <div
-                          key={`corner-cut-${pos}`}
-                          className={cn(
-                            "absolute pointer-events-none",
-                            roundClass(pos),
-                          )}
-                          style={{
-                            ...cornerStyle(pos),
-                            backgroundColor: innerColor,
-                          }}
-                        />
+                        <div key={`corner-${pos}`}>
+                          {/* Corner color band */}
+                          <div
+                            className="pointer-events-none"
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: outerColor,
+                            }}
+                          />
+                          {/* Corner cut band */}
+                          <div
+                            className={cn(
+                              "absolute pointer-events-none",
+                              roundClass(pos),
+                            )}
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: innerColor,
+                            }}
+                          />
+                        </div>
                       );
                     })}
 

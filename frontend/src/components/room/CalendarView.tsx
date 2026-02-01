@@ -1,11 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
-import { buildCalendarCells } from "@/lib/calendar";
-import { type Owner, buildRenderGrid } from "@/lib/renderGrid";
-import CalendarGrid from "../CalendarGrid";
+import { type CalendarCell, buildCalendarCells } from "@/lib/calendar";
+import { type Owner, type RenderCell, buildRenderGrid } from "@/lib/renderGrid";
+import CalendarGrid2, { type CalendarCellModel } from "../CalendarGrid2";
 
 const W = 7;
 const H = 5;
+
+function rowOf(i: number) {
+  return (i / W) | 0;
+}
+
+function colOf(i: number) {
+  return i % W;
+}
 
 function toDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -19,6 +27,71 @@ interface CellStyle {
   bg: string;
   textColor: string;
   text?: string;
+}
+
+function ownerColor(owner: Owner) {
+  if (owner === "confirmed") return { bg: adaptive.blue300, whiteText: true };
+  if (owner === "preview") return { bg: adaptive.blue200, whiteText: true };
+  return { bg: "white", whiteText: false };
+}
+
+function buildCalendarCellModels(
+  cells: CalendarCell[],
+  renderGrid: RenderCell[][],
+  cellStyleMap?: Map<string, CellStyle>,
+): CalendarCellModel[] {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+
+  return cells.map((cell, idx) => {
+    const r = rowOf(idx);
+    const c = colOf(idx);
+    const rc = renderGrid[r][c];
+    const dateKey = toDateKey(cell.date);
+
+    const center = rc.lt.center;
+    const isCurrentMonth = cell.date.getMonth() === currentMonth;
+
+    // cellStyleMap에서 커스텀 스타일 확인
+    const customStyle = cellStyleMap?.get(dateKey);
+    let centerBg: string | undefined;
+    let textColor: string;
+    let text: string | number | undefined;
+
+    if (customStyle && center !== "empty") {
+      centerBg = customStyle.bg;
+      textColor = customStyle.textColor;
+      text = customStyle.text;
+    } else {
+      const { bg, whiteText } = ownerColor(center);
+      centerBg = center !== "empty" ? bg : undefined;
+      textColor =
+        center !== "empty" && whiteText
+          ? "#ffffff"
+          : isCurrentMonth
+            ? adaptive.grey800
+            : adaptive.grey400;
+    }
+
+    // Corner colors
+    const lt = ownerColor(rc.lt.corner).bg;
+    const rt = ownerColor(rc.rt.corner).bg;
+    const lb = ownerColor(rc.lb.corner).bg;
+    const rb = ownerColor(rc.rb.corner).bg;
+
+    return {
+      hidden: cell.hidden,
+      day: cell.day,
+      text,
+      isToday: cell.isToday,
+      textColor,
+      center: centerBg,
+      lt,
+      rt,
+      lb,
+      rb,
+    };
+  });
 }
 
 interface CalendarViewProps {
@@ -40,6 +113,7 @@ export default function CalendarView({
     }
     return map;
   }, [cellStyles]);
+
   const cells = useMemo(() => buildCalendarCells(), []);
   const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
@@ -67,25 +141,9 @@ export default function CalendarView({
     [confirmed, preview],
   );
 
-  const colorOf = useCallback(
-    (owner: Owner, dateKey?: string) => {
-      // cellStyleMap이 있고 해당 날짜에 스타일이 있으면 사용
-      if (cellStyleMap && dateKey) {
-        const style = cellStyleMap.get(dateKey);
-        if (style && owner !== "empty") {
-          const whiteText = style.textColor === "#ffffff" || style.textColor === "#fff";
-          return { bg: style.bg, whiteText, text: style.text };
-        }
-      }
-
-      // 기본 색상
-      if (owner === "confirmed")
-        return { bg: adaptive.blue300, whiteText: true };
-      if (owner === "preview")
-        return { bg: adaptive.blue200, whiteText: true };
-      return { bg: "white", whiteText: false };
-    },
-    [cellStyleMap],
+  const calendarCells = useMemo(
+    () => buildCalendarCellModels(cells, renderGrid, cellStyleMap),
+    [cells, renderGrid, cellStyleMap],
   );
 
   const handlePressStart = useCallback(
@@ -115,9 +173,8 @@ export default function CalendarView({
   );
 
   return (
-    <CalendarGrid
-      renderGrid={renderGrid}
-      colorOf={colorOf}
+    <CalendarGrid2
+      cells={calendarCells}
       onCellClick={handleCellClick}
       onCellPressStart={handlePressStart}
       onCellPressEnd={handlePressEnd}
