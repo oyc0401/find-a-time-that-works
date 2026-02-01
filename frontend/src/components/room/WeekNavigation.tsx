@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { IconButton } from "@toss/tds-mobile";
-
 import { formatDateHeader } from "@/lib/timeSlots";
+import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
+import ArrowLeftIcon from "@/assets/icon-arrow-left-sidebar-mono,화살표,arrow,left,왼쪽.svg";
+import ArrowRightIcon from "@/assets/icon-arrow-right-sidebar-mono,화살표,arrow,오른쪽,right.svg";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 
@@ -59,32 +60,35 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
   if (!weekLabel) return null;
 
   return (
-    <div className="flex items-center justify-between pt-3 pb-1 pl-4 pr-4">
+    <div className="flex items-center justify-between pt-3 pl-4 pr-4 pb-1">
       <button
         type="button"
-        className="cursor-pointer"
+        className="flex items-center gap-0.5 cursor-pointer whitespace-nowrap shrink-0"
         style={{ fontSize: 20, fontWeight: 500 }}
         onClick={onDateClick}
       >
         {weekLabel}
+        <img src={ArrowDownIcon} alt="" width={24} height={24} />
       </button>
       <div className="flex items-center">
-        <IconButton
-          src="https://static.toss.im/icons/svg/icon-arrow-left-sidebar-mono.svg"
-          variant="clear"
-          aria-label="이전 주"
+        <button
+          type="button"
+          className="flex items-center justify-center cursor-pointer"
+          style={{ width: 44, height: 44, opacity: weekIdx === 0 ? 0.3 : 1 }}
           disabled={weekIdx === 0}
           onClick={() => setWeekIdx(weekIdx - 1)}
-          style={{ opacity: weekIdx === 0 ? 0.3 : 1 }}
-        />
-        <IconButton
-          src="https://static.toss.im/icons/svg/icon-arrow-right-sidebar-mono.svg"
-          variant="clear"
-          aria-label="다음 주"
+        >
+          <img src={ArrowLeftIcon} alt="이전 주" width={24} height={24} />
+        </button>
+        <button
+          type="button"
+          className="flex items-center justify-center cursor-pointer"
+          style={{ width: 44, height: 44, opacity: weekIdx === weeks.length - 1 ? 0.3 : 1 }}
           disabled={weekIdx === weeks.length - 1}
           onClick={() => setWeekIdx(weekIdx + 1)}
-          style={{ opacity: weekIdx === weeks.length - 1 ? 0.3 : 1 }}
-        />
+        >
+          <img src={ArrowRightIcon} alt="다음 주" width={24} height={24} />
+        </button>
       </div>
     </div>
   );

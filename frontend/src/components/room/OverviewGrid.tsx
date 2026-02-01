@@ -15,7 +15,7 @@ import HeatmapCalendarView from "./HeatmapCalendarView";
 import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
-const CORNER_SIZE = 4;
+const CORNER_SIZE = 0;
 const TIME_WIDTH = 16;
 
 type Cell = { row: number; col: number };
@@ -312,7 +312,7 @@ export default function OverviewGrid() {
   const overlayRect = previewRect ?? selectionRect;
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-16">
       <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       <div className="bg-white px-4">
         {/* Participant badges */}
@@ -398,6 +398,20 @@ export default function OverviewGrid() {
               </div>
             );
           })}
+          {/* End time label */}
+          <div className="relative" style={{ height: 0 }}>
+            <span
+              className="absolute right-1.5"
+              style={{
+                top: -8,
+                fontSize: 12,
+                lineHeight: "16px",
+                color: adaptive.grey500,
+              }}
+            >
+              {Number.parseInt(room?.endTime?.split(":")[0] ?? "18")}
+            </span>
+          </div>
         </div>
 
         {/* Cells */}
@@ -502,38 +516,6 @@ export default function OverviewGrid() {
           )}
         </div>
       </div>
-
-      {/* Legend */}
-      {participants.length > 0 && (
-        <div
-          className="mt-3 px-4 flex items-center justify-end gap-2"
-          style={{ fontSize: 11, color: adaptive.grey500 }}
-        >
-          <span>0/{maxCount}</span>
-          <div className="flex">
-            {Array.from({ length: 7 }, (_, i) => {
-              const ratio = (i + 1) / 7;
-              return (
-                <div
-                  key={i}
-                  style={{
-                    width: 10,
-                    height: 12,
-                    backgroundColor: heatColor(ratio),
-                  }}
-                  className={cn(
-                    i === 0 && "rounded-l-sm",
-                    i === 6 && "rounded-r-sm",
-                  )}
-                />
-              );
-            })}
-          </div>
-          <span>
-            {maxCount}/{maxCount}
-          </span>
-        </div>
-      )}
 
       {/* Heatmap Calendar BottomSheet */}
       <BottomSheet

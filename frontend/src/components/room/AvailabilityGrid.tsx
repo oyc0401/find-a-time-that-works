@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomSheet } from "@toss/tds-mobile";
+import { BottomSheet, TextButton } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import {
@@ -18,7 +18,7 @@ import WeekNavigation from "./WeekNavigation";
 import CalendarView from "./CalendarView";
 
 const CELL_H = 20;
-const CORNER_SIZE = 4;
+const CORNER_SIZE = 0;
 
 type Cell = { row: number; col: number };
 
@@ -280,12 +280,18 @@ export default function AvailabilityGrid() {
 
   const TIME_WIDTH = 16;
   return (
-    <div className="w-full">
-      <div className="pb-2">
+    <div className="w-full pb-16">
+      <div className="">
         <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       </div>
+      {/* Nickname */}
+      <div className="flex items-center pl-4 pr-2 pt-2 pb-4">
+        <TextButton size="medium" variant="arrow">
+          행복한 하마
+        </TextButton>
+      </div>
 
-      <div className=" bg-white px-4">
+      <div className="bg-white px-4">
         {/* Date headers */}
         <div className="flex " style={{ paddingLeft: TIME_WIDTH }}>
           {dateHeaders.map((h, i) => (
@@ -326,6 +332,20 @@ export default function AvailabilityGrid() {
               </div>
             );
           })}
+          {/* End time label */}
+          <div className="relative" style={{ height: 0 }}>
+            <span
+              className="absolute right-1.5"
+              style={{
+                top: -8,
+                fontSize: 12,
+                lineHeight: "16px",
+                color: adaptive.grey500,
+              }}
+            >
+              {Number.parseInt(room?.endTime?.split(":")[0] ?? "18")}
+            </span>
+          </div>
         </div>
 
         {/* Cells */}
