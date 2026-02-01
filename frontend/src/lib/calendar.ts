@@ -31,7 +31,7 @@ export function buildCalendarCells(): CalendarCell[] {
       date: new Date(year, month - 1, day),
       day,
       isCurrentMonth: false,
-      hidden: true,
+      hidden: false,
       isToday: false,
     });
   }
@@ -42,26 +42,15 @@ export function buildCalendarCells(): CalendarCell[] {
       date: new Date(year, month, d),
       day: d,
       isCurrentMonth: true,
-      hidden: d < todayDate,
+      hidden: false,
       isToday: d === todayDate,
     });
   }
 
-  // count fully hidden leading rows
-  let hiddenRows = 0;
-  for (let row = 0; row < H; row++) {
-    const rowCells = allCells.slice(row * W, row * W + W);
-    if (rowCells.length === W && rowCells.every((c) => c.hidden))
-      hiddenRows++;
-    else break;
-  }
-
-  const trimmed = allCells.slice(hiddenRows * W);
-
   // fill next month
   let nextDay = 1;
-  while (trimmed.length < TOTAL_CELLS) {
-    trimmed.push({
+  while (allCells.length < TOTAL_CELLS) {
+    allCells.push({
       date: new Date(year, month + 1, nextDay),
       day: nextDay++,
       isCurrentMonth: false,
@@ -70,7 +59,7 @@ export function buildCalendarCells(): CalendarCell[] {
     });
   }
 
-  return trimmed.slice(0, TOTAL_CELLS);
+  return allCells.slice(0, TOTAL_CELLS);
 }
 
 export function getSelectedDates(
