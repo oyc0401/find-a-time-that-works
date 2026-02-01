@@ -1,7 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
-import { useDateSelectionStore } from "@/stores/useDateSelectionStore";
+import {
+  type Rect,
+  useDateSelectionStore,
+} from "@/stores/useDateSelectionStore";
 import {
   type Owner,
   type RenderCell,
@@ -14,38 +17,8 @@ const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
 const H = 5;
 
-/**
- * Set<number> 기반 1D 인덱스 → 2D boolean[][] 변환 후 buildRenderGrid 호출
- */
-function buildRenderGridFromSets(args: {
-  H: number;
-  W: number;
-  isHidden: (idx: number) => boolean;
-  confirmed: Set<number>;
-  preview: Set<number>;
-  dragMode: DragMode;
-}): RenderCell[][] {
-  const { H, W, isHidden, confirmed, preview, dragMode } = args;
-
-  const confirmed2d: boolean[][] = [];
-  const preview2d: boolean[][] = [];
-
-  for (let r = 0; r < H; r++) {
-    confirmed2d[r] = [];
-    preview2d[r] = [];
-    for (let c = 0; c < W; c++) {
-      const idx = r * W + c;
-      const hidden = isHidden(idx);
-      confirmed2d[r][c] = !hidden && confirmed.has(idx);
-      preview2d[r][c] = !hidden && preview.has(idx);
-    }
-  }
-
-  return buildRenderGrid({
-    confirmed: confirmed2d,
-    preview: preview2d,
-    dragMode,
-  });
+function createEmptyPreview(): boolean[][] {
+  return Array.from({ length: H }, () => Array(W).fill(false));
 }
 
 // =====================
@@ -128,30 +101,33 @@ function rowOf(i: number) {
 function colOf(i: number) {
   return i % W;
 }
-function idxOf(r: number, c: number) {
-  return r * W + c;
-}
 
 // =====================
 // Drag Hook
 // =====================
 
-function getRectIndices(startIdx: number, endIdx: number): Set<number> {
+function getRect(startIdx: number, endIdx: number): Rect {
   const sr = rowOf(startIdx);
   const sc = colOf(startIdx);
   const er = rowOf(endIdx);
   const ec = colOf(endIdx);
 
-  const r0 = Math.min(sr, er);
-  const r1 = Math.max(sr, er);
-  const c0 = Math.min(sc, ec);
-  const c1 = Math.max(sc, ec);
+  return {
+    r0: Math.min(sr, er),
+    r1: Math.max(sr, er),
+    c0: Math.min(sc, ec),
+    c1: Math.max(sc, ec),
+  };
+}
 
-  const indices = new Set<number>();
-  for (let r = r0; r <= r1; r++) {
-    for (let c = c0; c <= c1; c++) indices.add(idxOf(r, c));
+function applyRect(grid: boolean[][], rect: Rect, value: boolean): boolean[][] {
+  const next = grid.map((row) => [...row]);
+  for (let r = rect.r0; r <= rect.r1; r++) {
+    for (let c = rect.c0; c <= rect.c1; c++) {
+      next[r][c] = value;
+    }
   }
-  return indices;
+  return next;
 }
 
 function getCellIdxFromPoint(x: number, y: number): number | undefined {
@@ -164,12 +140,13 @@ function getCellIdxFromPoint(x: number, y: number): number | undefined {
 }
 
 function useDateDragSelection(isHidden: (idx: number) => boolean) {
-  const { selectedIndices, select, deselect } = useDateSelectionStore();
+  const { confirmed, select, deselect } = useDateSelectionStore();
 
-  const [previewIndices, setPreviewIndices] = useState<Set<number>>(new Set());
+  const [preview, setPreview] = useState<boolean[][]>(createEmptyPreview);
   const [dragMode, setDragMode] = useState<DragMode>("select");
 
   const dragStartIdx = useRef<number | undefined>(undefined);
+  const currentRect = useRef<Rect | undefined>(undefined);
   const isDraggingRef = useRef(false);
 
   const handlePointerDown = useCallback(
@@ -180,13 +157,17 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
       isDraggingRef.current = true;
       dragStartIdx.current = idx;
 
-      const mode: DragMode = selectedIndices.has(idx) ? "deselect" : "select";
+      const r = rowOf(idx);
+      const c = colOf(idx);
+      const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
       setDragMode(mode);
 
-      setPreviewIndices(new Set([idx]));
+      const rect = getRect(idx, idx);
+      currentRect.current = rect;
+      setPreview(applyRect(createEmptyPreview(), rect, true));
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [isHidden, selectedIndices],
+    [isHidden, confirmed],
   );
 
   const handlePointerMove = useCallback(
@@ -196,7 +177,9 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
       const idx = getCellIdxFromPoint(e.clientX, e.clientY);
       if (idx === undefined || isHidden(idx)) return;
 
-      setPreviewIndices(getRectIndices(dragStartIdx.current, idx));
+      const rect = getRect(dragStartIdx.current, idx);
+      currentRect.current = rect;
+      setPreview(applyRect(createEmptyPreview(), rect, true));
     },
     [isHidden],
   );
@@ -205,18 +188,18 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
     isDraggingRef.current = false;
     dragStartIdx.current = undefined;
 
-    setPreviewIndices((prev) => {
-      if (prev.size > 0) {
-        if (dragMode === "select") select(prev);
-        else deselect(prev);
-      }
-      return new Set();
-    });
+    const rect = currentRect.current;
+    if (rect) {
+      if (dragMode === "select") select(rect);
+      else deselect(rect);
+    }
+    currentRect.current = undefined;
+    setPreview(createEmptyPreview());
   }, [dragMode, select, deselect]);
 
   return {
-    selectedIndices,
-    previewIndices,
+    confirmed,
+    preview,
     dragMode,
     handlePointerDown,
     handlePointerMove,
@@ -301,8 +284,8 @@ export default function DateSelector() {
   const cells = useCalendarCells();
 
   const {
-    selectedIndices,
-    previewIndices,
+    confirmed,
+    preview,
     dragMode,
     handlePointerDown,
     handlePointerMove,
@@ -310,16 +293,8 @@ export default function DateSelector() {
   } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
 
   const renderGrid = useMemo(
-    () =>
-      buildRenderGridFromSets({
-        H,
-        W,
-        isHidden: (idx) => cells[idx]?.hidden ?? true,
-        confirmed: selectedIndices,
-        preview: previewIndices,
-        dragMode,
-      }),
-    [cells, selectedIndices, previewIndices, dragMode],
+    () => buildRenderGrid({ confirmed, preview, dragMode }),
+    [confirmed, preview, dragMode],
   );
 
   const baseBg = "white";

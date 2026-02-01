@@ -160,6 +160,34 @@ describe("buildRenderGrid", () => {
   });
 
   /**
+   * 2x2 그리드 deselect 모드:
+   * [1(confirmed), 2(empty)]
+   * [3(confirmed+preview), 4(confirmed+preview)]
+   *
+   * 1,3,4가 confirmed 상태에서 3,4를 deselect 드래그
+   * → 셀2의 lb는 corner=preview (왼쪽아래 셀3이 deselect preview)
+   */
+  it("deselect 모드: 1,3,4=confirmed에서 3,4 제거 시 셀2의 lb는 corner=preview", () => {
+    const confirmed = [
+      [true, false],
+      [true, true],
+    ];
+    const preview = [
+      [false, false],
+      [true, true],
+    ];
+
+    const grid = buildRenderGrid({
+      confirmed,
+      preview,
+      dragMode: "deselect",
+    });
+
+    // 셀 2 (row=0, col=1): empty, lb 코너에 3(deselect preview)가 있음
+    expect(grid[0][1].lb).toEqual({ center: "empty", corner: "preview" });
+  });
+
+  /**
    * 1x2 그리드: [1(confirmed), 2(confirmed)]
    * deselect 모드로 1,2 모두 preview → 둘 다 지워짐
    */

@@ -100,15 +100,14 @@ export function buildRenderCell(
     adj2: NeighborInfo,
     diag: NeighborInfo,
   ): Owner => {
-    // deselect 모드에서는 preview를 "채워짐"으로 안 봄
-    const filled1 = adj1.confirmed || (dragMode === "select" && adj1.preview);
-    const filled2 = adj2.confirmed || (dragMode === "select" && adj2.preview);
-    const filledDiag =
-      diag.confirmed || (dragMode === "select" && diag.preview);
+    // select/deselect 모두: confirmed 또는 preview면 "채워짐"으로 봄
+    // (deselect 모드에서 preview = 지워지는 중인 셀, 아직은 채워져 있음)
+    const filled1 = adj1.confirmed || adj1.preview;
+    const filled2 = adj2.confirmed || adj2.preview;
+    const filledDiag = diag.confirmed || diag.preview;
     if (!filled1 || !filled2 || !filledDiag) return "empty";
-    // 3칸 모두 채워짐 → select 모드에서 preview가 하나라도 있으면 preview
-    if (dragMode === "select" && (adj1.preview || adj2.preview || diag.preview))
-      return "preview";
+    // 3칸 모두 채워짐 → preview가 하나라도 있으면 preview
+    if (adj1.preview || adj2.preview || diag.preview) return "preview";
     return "confirmed";
   };
 

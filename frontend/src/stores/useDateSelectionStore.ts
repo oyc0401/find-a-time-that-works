@@ -1,24 +1,47 @@
 import { create } from "zustand";
 
+const H = 5;
+const W = 7;
+
+function createEmpty(): boolean[][] {
+  return Array.from({ length: H }, () => Array(W).fill(false));
+}
+
+export interface Rect {
+  r0: number;
+  r1: number;
+  c0: number;
+  c1: number;
+}
+
 interface DateSelectionState {
-  /** 확정된 선택 인덱스 */
-  selectedIndices: Set<number>;
-  select: (indices: Set<number>) => void;
-  deselect: (indices: Set<number>) => void;
+  confirmed: boolean[][];
+  select: (rect: Rect) => void;
+  deselect: (rect: Rect) => void;
   clear: () => void;
 }
 
 export const useDateSelectionStore = create<DateSelectionState>((set) => ({
-  selectedIndices: new Set(),
-  select: (indices) =>
-    set((state) => ({
-      selectedIndices: new Set([...state.selectedIndices, ...indices]),
-    })),
-  deselect: (indices) =>
-    set((state) => ({
-      selectedIndices: new Set(
-        [...state.selectedIndices].filter((i) => !indices.has(i)),
-      ),
-    })),
-  clear: () => set({ selectedIndices: new Set() }),
+  confirmed: createEmpty(),
+  select: (rect) =>
+    set((state) => {
+      const next = state.confirmed.map((row) => [...row]);
+      for (let r = rect.r0; r <= rect.r1; r++) {
+        for (let c = rect.c0; c <= rect.c1; c++) {
+          next[r][c] = true;
+        }
+      }
+      return { confirmed: next };
+    }),
+  deselect: (rect) =>
+    set((state) => {
+      const next = state.confirmed.map((row) => [...row]);
+      for (let r = rect.r0; r <= rect.r1; r++) {
+        for (let c = rect.c0; c <= rect.c1; c++) {
+          next[r][c] = false;
+        }
+      }
+      return { confirmed: next };
+    }),
+  clear: () => set({ confirmed: createEmpty() }),
 }));
