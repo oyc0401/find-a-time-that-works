@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
+import { BottomSheet } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import {
@@ -14,6 +15,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import WeekNavigation from "./WeekNavigation";
+import CalendarView from "./CalendarView";
 
 const CELL_H = 20;
 const CORNER_SIZE = 4;
@@ -99,7 +101,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
 export default function AvailabilityGrid() {
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { weekIdx } = useRoomStore();
+  const { weekIdx, setWeekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -246,6 +248,26 @@ export default function AvailabilityGrid() {
       onEnd: handleEnd,
     });
 
+  // ── Calendar bottom sheet ──
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const highlightedDates = useMemo(
+    () => new Set(room?.dates ?? []),
+    [room?.dates],
+  );
+
+  const handleCalendarDateClick = useCallback(
+    (dateKey: string) => {
+      const targetIdx = weeks.findIndex((w) =>
+        w.columns.some((col) => col.date === dateKey),
+      );
+      if (targetIdx !== -1) {
+        setWeekIdx(targetIdx);
+        setIsCalendarOpen(false);
+      }
+    },
+    [weeks, setWeekIdx],
+  );
+
   if (grid.length === 0) return null;
 
   const dateHeaders = columns.map((col) => formatDateHeader(col.date));
@@ -255,7 +277,7 @@ export default function AvailabilityGrid() {
   return (
     <div className="w-full">
       <div className=" bg-white px-4">
-        <WeekNavigation />
+        <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
         {/* Date headers */}
         <div className="flex " style={{ paddingLeft: TIME_WIDTH }}>
           {dateHeaders.map((h, i) => (
@@ -394,6 +416,17 @@ export default function AvailabilityGrid() {
           ))}
         </div>
       </div>
+
+      <BottomSheet
+        open={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        header={<BottomSheet.Header>날짜 보기</BottomSheet.Header>}
+      >
+        <CalendarView
+          highlightedDates={highlightedDates}
+          onDateClick={handleCalendarDateClick}
+        />
+      </BottomSheet>
     </div>
   );
 }

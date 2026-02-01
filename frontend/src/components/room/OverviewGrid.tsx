@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomSheet } from "@toss/tds-mobile";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
@@ -11,6 +10,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import HeatmapCalendarView from "./HeatmapCalendarView";
+import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
 const CORNER_SIZE = 4;
@@ -263,58 +263,7 @@ export default function OverviewGrid() {
     <div className="w-full">
       <div className="bg-white px-4">
         <div className="flex items-center gap-2">
-          {/* Week Navigation */}
-          {weeks.length > 1 && (
-            <div className="flex items-center py-3">
-              <button
-                type="button"
-                className="flex cursor-pointer items-center justify-center"
-                style={{ width: 44, height: 44 }}
-                disabled={weekIdx === 0}
-                onClick={() => setWeekIdx(weekIdx - 1)}
-              >
-                <ChevronLeft
-                  size={24}
-                  color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey800}
-                />
-              </button>
-              <button
-                type="button"
-                className="w-[140px] cursor-pointer text-center"
-                style={{ fontSize: 16, color: adaptive.grey800 }}
-                onClick={() => setIsCalendarOpen(true)}
-              >
-                {(() => {
-                  const currentWeek = weeks[weekIdx];
-                  if (!currentWeek) return null;
-                  const firstDate = currentWeek.columns[0].date;
-                  const lastDate =
-                    currentWeek.columns[currentWeek.columns.length - 1].date;
-                  const firstHeader = formatDateHeader(firstDate);
-                  const lastHeader = formatDateHeader(lastDate);
-                  return currentWeek.columns.length === 1
-                    ? firstHeader.label
-                    : `${firstHeader.label} - ${lastHeader.label}`;
-                })()}
-              </button>
-              <button
-                type="button"
-                className="flex cursor-pointer items-center justify-center"
-                style={{ width: 44, height: 44 }}
-                disabled={weekIdx === weeks.length - 1}
-                onClick={() => setWeekIdx(weekIdx + 1)}
-              >
-                <ChevronRight
-                  size={24}
-                  color={
-                    weekIdx === weeks.length - 1
-                      ? adaptive.grey300
-                      : adaptive.grey800
-                  }
-                />
-              </button>
-            </div>
-          )}
+          <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
           {/* Participant badges */}
           <div className="flex flex-1 flex-wrap items-center gap-1.5 overflow-hidden">
             {participantCoverage.map((p) => (
