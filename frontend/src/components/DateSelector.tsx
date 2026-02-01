@@ -1,13 +1,19 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
+import type { CalendarCell } from "@/lib/calendar";
 import { buildCalendarCells } from "@/lib/calendar";
 import {
   type Rect,
   useDateSelectionStore,
 } from "@/stores/useDateSelectionStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
-import { type Owner, type DragMode, buildRenderGrid } from "@/lib/renderGrid";
-import CalendarGrid from "./CalendarGrid";
+import {
+  type Owner,
+  type DragMode,
+  type RenderCell,
+  buildRenderGrid,
+} from "@/lib/renderGrid";
+import CalendarGrid2, { type CalendarCellModel } from "./CalendarGrid2";
 
 // =====================
 // Grid constants
@@ -162,6 +168,54 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
   };
 }
 
+function buildCalendarCellModels(
+  cells: CalendarCell[],
+  renderGrid: RenderCell[][],
+  dragMode: DragMode,
+): CalendarCellModel[] {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+
+  return cells.map((cell, idx) => {
+    const r = rowOf(idx);
+    const c = colOf(idx);
+    const rc = renderGrid[r][c];
+
+    const center = rc.lt.center;
+    const { bg: centerBg, whiteText } = ownerColor(center, dragMode);
+    const isCurrentMonth = cell.date.getMonth() === currentMonth;
+
+    let textColor: string;
+    if (center !== "empty") {
+      textColor = whiteText
+        ? "#ffffff"
+        : isCurrentMonth
+          ? adaptive.grey800
+          : adaptive.grey400;
+    } else {
+      textColor = isCurrentMonth ? adaptive.grey800 : adaptive.grey400;
+    }
+
+    // Corner colors - 항상 색상 설정 (empty는 white)
+    const lt = ownerColor(rc.lt.corner, dragMode).bg;
+    const rt = ownerColor(rc.rt.corner, dragMode).bg;
+    const lb = ownerColor(rc.lb.corner, dragMode).bg;
+    const rb = ownerColor(rc.rb.corner, dragMode).bg;
+
+    return {
+      hidden: cell.hidden,
+      day: cell.day,
+      isToday: cell.isToday,
+      textColor,
+      center: center !== "empty" ? centerBg : undefined,
+      lt,
+      rt,
+      lb,
+      rb,
+    };
+  });
+}
+
 export default function DateSelector() {
   const cells = useMemo(() => buildCalendarCells(), []);
 
@@ -180,15 +234,14 @@ export default function DateSelector() {
     [confirmed, preview, dragMode],
   );
 
-  const colorOf = useCallback(
-    (owner: Owner) => ownerColor(owner, dragMode),
-    [dragMode],
+  const calendarCells = useMemo(
+    () => buildCalendarCellModels(cells, renderGrid, dragMode),
+    [cells, renderGrid, dragMode],
   );
 
   return (
-    <CalendarGrid
-      renderGrid={renderGrid}
-      colorOf={colorOf}
+    <CalendarGrid2
+      cells={calendarCells}
       pointerHandlers={{
         onPointerDown: handlePointerDown,
         onPointerMove: handlePointerMove,
