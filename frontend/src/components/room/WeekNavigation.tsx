@@ -22,9 +22,7 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     const lastDate = currentWeek.columns[currentWeek.columns.length - 1].date;
     const firstHeader = formatDateHeader(firstDate);
     const lastHeader = formatDateHeader(lastDate);
-    return currentWeek.columns.length === 1
-      ? firstHeader.label
-      : `${firstHeader.label} - ${lastHeader.label}`;
+    return `${firstHeader.label} - ${lastHeader.label}`;
   }, [weeks, weekIdx]);
 
   if (weeks.length <= 1) return null;
@@ -32,40 +30,51 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
 
   return (
     <div className="flex items-center py-3">
-      <button
-        type="button"
-        className="flex cursor-pointer items-center justify-center"
-        style={{ width: 44, height: 44 }}
-        disabled={weekIdx === 0}
-        onClick={() => setWeekIdx(weekIdx - 1)}
+      <div
+        className="flex items-center rounded-full"
+        style={{ backgroundColor: adaptive.grey100 }}
       >
-        <ChevronLeft
-          size={24}
-          color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey800}
-        />
-      </button>
-      <button
-        type="button"
-        className="w-[140px] cursor-pointer text-center"
-        style={{ fontSize: 16, color: adaptive.grey800 }}
-        onClick={onDateClick}
-      >
-        {weekLabel}
-      </button>
-      <button
-        type="button"
-        className="flex cursor-pointer items-center justify-center"
-        style={{ width: 44, height: 44 }}
-        disabled={weekIdx === weeks.length - 1}
-        onClick={() => setWeekIdx(weekIdx + 1)}
-      >
-        <ChevronRight
-          size={24}
-          color={
-            weekIdx === weeks.length - 1 ? adaptive.grey300 : adaptive.grey800
-          }
-        />
-      </button>
+        <button
+          type="button"
+          className="flex cursor-pointer items-center justify-center rounded-full"
+          style={{ width: 44, height: 44 }}
+          disabled={weekIdx === 0}
+          onClick={() => setWeekIdx(weekIdx - 1)}
+        >
+          <ChevronLeft
+            size={20}
+            color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey600}
+          />
+        </button>
+        <button
+          type="button"
+          className="cursor-pointer text-center"
+          style={{
+            minWidth: 100,
+            height: 44,
+            fontSize: 14,
+            fontWeight: 600,
+            color: adaptive.grey800,
+          }}
+          onClick={onDateClick}
+        >
+          {weekLabel}
+        </button>
+        <button
+          type="button"
+          className="flex cursor-pointer items-center justify-center rounded-full"
+          style={{ width: 44, height: 44 }}
+          disabled={weekIdx === weeks.length - 1}
+          onClick={() => setWeekIdx(weekIdx + 1)}
+        >
+          <ChevronRight
+            size={20}
+            color={
+              weekIdx === weeks.length - 1 ? adaptive.grey300 : adaptive.grey600
+            }
+          />
+        </button>
+      </div>
     </div>
   );
 }

@@ -87,19 +87,30 @@ export default function OverviewGrid() {
   const rows = timeSlots.length;
   const displayCols = columns.length;
 
+  // ── Filter by participant ──
+  const [selectedName, setSelectedName] = useState<string>();
+
+  const filteredParticipants = useMemo(
+    () =>
+      selectedName
+        ? participants.filter((p) => p.name === selectedName)
+        : participants,
+    [participants, selectedName],
+  );
+
   // ── Heatmap data ──
   const countMap = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of participants) {
+    for (const p of filteredParticipants) {
       for (const slot of p.slots) {
         const key = `${slot.date}|${slot.time}`;
         map.set(key, (map.get(key) ?? 0) + 1);
       }
     }
     return map;
-  }, [participants]);
+  }, [filteredParticipants]);
 
-  const maxCount = participants.length;
+  const maxCount = selectedName ? 1 : participants.length;
 
   const countGrid = useMemo(() => {
     const result: number[][] = [];
@@ -130,7 +141,7 @@ export default function OverviewGrid() {
   // 날짜별 참여자 수 (시간 무관)
   const dateCountMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
-    for (const p of participants) {
+    for (const p of filteredParticipants) {
       for (const slot of p.slots) {
         if (!map.has(slot.date)) {
           map.set(slot.date, new Set());
@@ -143,7 +154,7 @@ export default function OverviewGrid() {
       result.set(date, names.size);
     }
     return result;
-  }, [participants]);
+  }, [filteredParticipants]);
 
   const handleCalendarDateClick = useCallback(
     (dateKey: string) => {
@@ -265,20 +276,33 @@ export default function OverviewGrid() {
         <div className="flex items-center gap-2">
           <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
           {/* Participant badges */}
-          <div className="flex flex-1 flex-wrap items-center gap-1.5 overflow-hidden">
-            {participantCoverage.map((p) => (
-              <span
-                key={p.name}
-                className="shrink-0 rounded-full px-2.5 py-1"
-                style={{
-                  fontSize: 12,
-                  backgroundColor: adaptive.grey100,
-                  color: adaptive.grey700,
-                }}
-              >
-                {p.name}
-              </span>
-            ))}
+          <div className="flex flex-1 flex-wrap items-center gap-1.5">
+            {(activeRect ? participantCoverage : participants).map((p) => {
+              const name = p.name;
+              const isSelected = selectedName === name;
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className="shrink-0 cursor-pointer px-6"
+                  style={{
+                    height: 44,
+                    borderRadius: 999,
+                    fontSize: 14,
+                    fontWeight: isSelected ? 600 : 400,
+                    backgroundColor: isSelected
+                      ? adaptive.blue400
+                      : adaptive.grey100,
+                    color: isSelected ? "#fff" : adaptive.grey700,
+                  }}
+                  onClick={() =>
+                    setSelectedName(isSelected ? undefined : name)
+                  }
+                >
+                  {name}
+                </button>
+              );
+            })}
           </div>
         </div>
         <button
@@ -410,19 +434,6 @@ export default function OverviewGrid() {
                       );
                     })}
 
-                    {/* Count label */}
-                    {count > 0 && (
-                      <span
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                        style={{
-                          fontSize: 10,
-                          color:
-                            count / maxCount > 0.5 ? "#fff" : adaptive.grey600,
-                        }}
-                      >
-                        {count}
-                      </span>
-                    )}
                   </div>
                 );
               })}
