@@ -3,7 +3,7 @@ import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { useRoomStore } from "@/stores/useRoomStore";
-import WeekNavigation from "./room/WeekNavigation";
+import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 24;
 

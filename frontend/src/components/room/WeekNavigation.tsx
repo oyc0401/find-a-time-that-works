@@ -21,7 +21,7 @@ export default function WeekNavigation() {
       : `${firstHeader.label} - ${lastHeader.label}`;
 
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-center gap-4 px-4 py-3">
+    <div className="flex items-center justify-center gap-4 px-4 py-3">
       <button
         type="button"
         className="cursor-pointer p-1"

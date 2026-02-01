@@ -141,14 +141,11 @@ export default function AvailabilityGrid() {
 
   const TIME_WIDTH = 16;
   return (
-    <div className="bg-gray-100">
-      <WeekNavigation />
-      <div className="w-full px-4 bg-gray-400">
+    <>
+      <div className=" bg-white px-4">
+        <WeekNavigation />
         {/* Date headers */}
-        <div
-          className="sticky top-0 z-10 flex "
-          style={{ paddingLeft: TIME_WIDTH }}
-        >
+        <div className="flex " style={{ paddingLeft: TIME_WIDTH }}>
           {dateHeaders.map((h, i) => (
             <div
               key={columns[i].date}
@@ -161,9 +158,11 @@ export default function AvailabilityGrid() {
             </div>
           ))}
         </div>
+      </div>
 
+      <div className="w-full">
         {/* Grid body */}
-        <div className="mt-2 flex">
+        <div className="mt-2 px-4 flex">
           {/* Time labels */}
           <div className="shrink-0" style={{ width: TIME_WIDTH }}>
             {timeSlots.map((slot) => {
@@ -241,6 +240,6 @@ export default function AvailabilityGrid() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
