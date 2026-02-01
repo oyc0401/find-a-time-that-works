@@ -29,25 +29,20 @@ function gridToSlots(
 export function useSubmitAvailability(roomId?: string) {
   const queryClient = useQueryClient();
   const { mutate } = useRoomsControllerSubmitAvailability();
-  const userIdRef = useRef<string>();
   const enabledRef = useRef(false);
-  const roomIdRef = useRef(roomId);
-  roomIdRef.current = roomId;
 
-  // 초기 로드(init + loadFromSlots) 완료 후 호출하여 전송 활성화
   const enable = useCallback(() => {
     enabledRef.current = true;
   }, []);
 
   useEffect(() => {
+    if (!roomId) return;
+
     const unsub = useAvailabilityStore.subscribe((state, prev) => {
       if (state.grid === prev.grid) return;
       if (!enabledRef.current) return;
 
-      const id = roomIdRef.current;
-      if (!id) return;
-
-      const queryKey = getRoomsControllerFindByIdQueryKey(id);
+      const queryKey = getRoomsControllerFindByIdQueryKey(roomId);
       const cached = queryClient.getQueryData<RoomsControllerFindByIdQueryResult>(queryKey);
       if (!cached || cached.status !== 200) return;
 
@@ -55,34 +50,25 @@ export function useSubmitAvailability(roomId?: string) {
       const timeSlots = generateTimeSlots(room.startTime, room.endTime);
       const slots = gridToSlots(state.grid, room.dates, timeSlots);
 
-      const doSubmit = (participantId: string) => {
+      getUserId().then((userId) => {
         mutate(
           {
             id: room.id,
-            data: { participantId, participantName: "익명", slots },
+            data: { participantId: userId, participantName: "익명", slots },
           },
           {
             onSuccess: () => {
               queryClient.invalidateQueries({
-                queryKey: getRoomsControllerFindByIdQueryKey(room.id),
+                queryKey: getRoomsControllerFindByIdQueryKey(roomId),
               });
             },
           },
         );
-      };
-
-      if (userIdRef.current) {
-        doSubmit(userIdRef.current);
-      } else {
-        getUserId().then((uid) => {
-          userIdRef.current = uid;
-          doSubmit(uid);
-        });
-      }
+      });
     });
 
     return unsub;
-  }, [mutate, queryClient]);
+  }, [roomId, mutate, queryClient]);
 
   return { enable };
 }
