@@ -7,6 +7,13 @@ import type { Owner, RenderCell } from "@/lib/renderGrid";
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
 
+function toDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function rowOf(i: number) {
   return (i / W) | 0;
 }
@@ -76,7 +83,7 @@ interface PointerHandlers {
 interface CalendarGridProps {
   renderGrid: RenderCell[][];
   pointerHandlers?: PointerHandlers;
-  colorOf: (owner: Owner) => { bg: string; whiteText: boolean };
+  colorOf: (owner: Owner, dateKey?: string) => { bg: string; whiteText: boolean; text?: string };
   onCellClick?: (cellIdx: number) => void;
   onCellPressStart?: (cellIdx: number) => void;
   onCellPressEnd?: () => void;
@@ -122,9 +129,10 @@ export default function CalendarGrid({
           const valid = !(cell.hidden ?? true);
           const isCurrentMonth = cell.date.getMonth() === currentMonth;
           const isToday = cell.isToday;
+          const dateKey = toDateKey(cell.date);
 
           const center = centerOwner(rc);
-          const { bg: centerBg, whiteText } = colorOf(center);
+          const { bg: centerBg, whiteText, text: customText } = colorOf(center, dateKey);
           const filled = center !== "empty";
 
           let textColor: string;
@@ -220,7 +228,7 @@ export default function CalendarGrid({
                   color: textColor,
                 }}
               >
-                {cell.day}
+                {customText ?? cell.day}
               </span>
             </div>
           );

@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
+import { BottomSheet } from "@toss/tds-mobile";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { type Owner, type RenderCell, buildRenderGrid } from "@/lib/renderGrid";
@@ -8,7 +10,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
-import WeekNavigation from "./WeekNavigation";
+import CalendarView from "./CalendarView";
 
 const CELL_H = 20;
 const CORNER_SIZE = 4;
@@ -89,7 +91,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
 export default function OverviewGrid() {
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const { weekIdx } = useRoomStore();
+  const { weekIdx, setWeekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -132,6 +134,60 @@ export default function OverviewGrid() {
   const filledGrid = useMemo(
     () => countGrid.map((row) => row.map((c) => c > 0)),
     [countGrid],
+  );
+
+  // ── Calendar bottom sheet ──
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const highlightedDates = useMemo(
+    () => new Set(room?.dates ?? []),
+    [room?.dates],
+  );
+
+  // 날짜별 참여자 수 (시간 무관)
+  const dateCountMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const p of participants) {
+      for (const slot of p.slots) {
+        if (!map.has(slot.date)) {
+          map.set(slot.date, new Set());
+        }
+        map.get(slot.date)?.add(p.name);
+      }
+    }
+    const result = new Map<string, number>();
+    for (const [date, names] of map) {
+      result.set(date, names.size);
+    }
+    return result;
+  }, [participants]);
+
+  // 히트맵 캘린더용 셀 스타일
+  const cellStyles = useMemo(() => {
+    const styles: { date: string; bg: string; textColor: string; text: string }[] = [];
+    for (const date of highlightedDates) {
+      const count = dateCountMap.get(date) ?? 0;
+      const ratio = maxCount > 0 ? count / maxCount : 0;
+      styles.push({
+        date,
+        bg: heatColor(ratio),
+        textColor: ratio > 0.5 ? "#fff" : "#191f28",
+        text: String(count),
+      });
+    }
+    return styles.length > 0 ? styles : undefined;
+  }, [highlightedDates, dateCountMap, maxCount]);
+
+  const handleCalendarDateClick = useCallback(
+    (dateKey: string) => {
+      const targetIdx = weeks.findIndex((w) =>
+        w.columns.some((col) => col.date === dateKey),
+      );
+      if (targetIdx !== -1) {
+        setWeekIdx(targetIdx);
+        setIsCalendarOpen(false);
+      }
+    },
+    [weeks, setWeekIdx],
   );
 
   // ── Selection state ──
@@ -260,8 +316,82 @@ export default function OverviewGrid() {
   return (
     <div className="w-full">
       <div className="bg-white px-4">
-        <WeekNavigation />
-        <div className="flex" style={{ paddingLeft: TIME_WIDTH }}>
+        <div className="flex items-center gap-2">
+          {/* Week Navigation */}
+          {weeks.length > 1 && (
+            <div className="flex items-center py-3">
+              <button
+                type="button"
+                className="flex cursor-pointer items-center justify-center"
+                style={{ width: 44, height: 44 }}
+                disabled={weekIdx === 0}
+                onClick={() => setWeekIdx(weekIdx - 1)}
+              >
+                <ChevronLeft
+                  size={24}
+                  color={weekIdx === 0 ? adaptive.grey300 : adaptive.grey800}
+                />
+              </button>
+              <button
+                type="button"
+                className="w-[140px] cursor-pointer text-center"
+                style={{ fontSize: 16, color: adaptive.grey800 }}
+                onClick={() => setIsCalendarOpen(true)}
+              >
+                {(() => {
+                  const currentWeek = weeks[weekIdx];
+                  if (!currentWeek) return null;
+                  const firstDate = currentWeek.columns[0].date;
+                  const lastDate =
+                    currentWeek.columns[currentWeek.columns.length - 1].date;
+                  const firstHeader = formatDateHeader(firstDate);
+                  const lastHeader = formatDateHeader(lastDate);
+                  return currentWeek.columns.length === 1
+                    ? firstHeader.label
+                    : `${firstHeader.label} - ${lastHeader.label}`;
+                })()}
+              </button>
+              <button
+                type="button"
+                className="flex cursor-pointer items-center justify-center"
+                style={{ width: 44, height: 44 }}
+                disabled={weekIdx === weeks.length - 1}
+                onClick={() => setWeekIdx(weekIdx + 1)}
+              >
+                <ChevronRight
+                  size={24}
+                  color={
+                    weekIdx === weeks.length - 1
+                      ? adaptive.grey300
+                      : adaptive.grey800
+                  }
+                />
+              </button>
+            </div>
+          )}
+          {/* Participant badges */}
+          <div className="flex flex-1 flex-wrap items-center gap-1.5 overflow-hidden">
+            {participantCoverage.map((p) => (
+              <span
+                key={p.name}
+                className="shrink-0 rounded-full px-2.5 py-1"
+                style={{
+                  fontSize: 12,
+                  backgroundColor: adaptive.grey100,
+                  color: adaptive.grey700,
+                }}
+              >
+                {p.name}
+              </span>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="flex w-full cursor-pointer"
+          style={{ paddingLeft: TIME_WIDTH }}
+          onClick={() => setIsCalendarOpen(true)}
+        >
           {dateHeaders.map((h, i) => (
             <div
               key={columns[i].date}
@@ -273,7 +403,7 @@ export default function OverviewGrid() {
               </div>
             </div>
           ))}
-        </div>
+        </button>
       </div>
 
       {/* Grid body */}
@@ -474,29 +604,18 @@ export default function OverviewGrid() {
         </div>
       )}
 
-      {/* Participant panel */}
-      {participantCoverage.length > 0 && (
-        <div className="mt-4 mx-4 rounded-xl bg-gray-50 p-4">
-          <div
-            style={{ fontSize: 13, color: adaptive.grey600 }}
-            className="mb-2"
-          >
-            선택한 {selectedSlots.length}개 슬롯에 참여 가능한 사람
-          </div>
-          <div className="flex flex-col gap-2">
-            {participantCoverage.map((p) => (
-              <div key={p.name} className="flex items-center justify-between">
-                <span style={{ fontSize: 14, color: adaptive.grey900 }}>
-                  {p.name}
-                </span>
-                <span style={{ fontSize: 13, color: adaptive.grey500 }}>
-                  {p.covered}/{p.total}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Heatmap Calendar BottomSheet */}
+      <BottomSheet
+        open={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        header={<BottomSheet.Header>참여 현황</BottomSheet.Header>}
+      >
+        <CalendarView
+          highlightedDates={highlightedDates}
+          cellStyles={cellStyles}
+          onDateClick={handleCalendarDateClick}
+        />
+      </BottomSheet>
     </div>
   );
 }

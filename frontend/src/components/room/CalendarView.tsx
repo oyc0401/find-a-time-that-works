@@ -14,12 +14,32 @@ function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+interface CellStyle {
+  date: string;
+  bg: string;
+  textColor: string;
+  text?: string;
+}
+
 interface CalendarViewProps {
   highlightedDates: Set<string>;
+  cellStyles?: CellStyle[];
   onDateClick?: (dateKey: string) => void;
 }
 
-export default function CalendarView({ highlightedDates, onDateClick }: CalendarViewProps) {
+export default function CalendarView({
+  highlightedDates,
+  cellStyles,
+  onDateClick,
+}: CalendarViewProps) {
+  const cellStyleMap = useMemo(() => {
+    if (!cellStyles) return undefined;
+    const map = new Map<string, CellStyle>();
+    for (const style of cellStyles) {
+      map.set(style.date, style);
+    }
+    return map;
+  }, [cellStyles]);
   const cells = useMemo(() => buildCalendarCells(), []);
   const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
@@ -47,13 +67,26 @@ export default function CalendarView({ highlightedDates, onDateClick }: Calendar
     [confirmed, preview],
   );
 
-  const colorOf = useCallback((owner: Owner) => {
-    if (owner === "confirmed")
-      return { bg: adaptive.blue300, whiteText: true };
-    if (owner === "preview")
-      return { bg: adaptive.blue200, whiteText: true };
-    return { bg: "white", whiteText: false };
-  }, []);
+  const colorOf = useCallback(
+    (owner: Owner, dateKey?: string) => {
+      // cellStyleMap이 있고 해당 날짜에 스타일이 있으면 사용
+      if (cellStyleMap && dateKey) {
+        const style = cellStyleMap.get(dateKey);
+        if (style && owner !== "empty") {
+          const whiteText = style.textColor === "#ffffff" || style.textColor === "#fff";
+          return { bg: style.bg, whiteText, text: style.text };
+        }
+      }
+
+      // 기본 색상
+      if (owner === "confirmed")
+        return { bg: adaptive.blue300, whiteText: true };
+      if (owner === "preview")
+        return { bg: adaptive.blue200, whiteText: true };
+      return { bg: "white", whiteText: false };
+    },
+    [cellStyleMap],
+  );
 
   const handlePressStart = useCallback(
     (idx: number) => {
