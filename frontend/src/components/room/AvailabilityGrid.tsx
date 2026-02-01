@@ -242,7 +242,7 @@ export default function AvailabilityGrid() {
     setPreview(makeEmptyPreview());
   }, [applySelection, makeEmptyPreview]);
 
-  const { onPointerDown, onPointerMove, onPointerUp } = useLongPressDrag({
+  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useLongPressDrag({
     getCellFromPoint,
     isSameCell,
     onLongPressStart: handleLongPressStart,
@@ -309,7 +309,7 @@ export default function AvailabilityGrid() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          onPointerCancel={onPointerCancel}
         >
           {columns.map((col, displayIdx) => (
             <div

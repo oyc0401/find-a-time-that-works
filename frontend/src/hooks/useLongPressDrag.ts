@@ -7,6 +7,7 @@ type PointerHandlers = {
   onPointerDown: (e: React.PointerEvent) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: () => void;
+  onPointerCancel: () => void;
 };
 
 export function useLongPressDrag<TCell>({
@@ -132,9 +133,27 @@ export function useLongPressDrag<TCell>({
     }
   }, [onEnd, onTap, clearTimer]);
 
+  const onPointerCancel = useCallback(() => {
+    clearTimer();
+
+    const wasDragging = isDraggingRef.current;
+
+    isDraggingRef.current = false;
+    startCellRef.current = undefined;
+    pointerIdRef.current = undefined;
+    containerRef.current = undefined;
+    hasMovedRef.current = false;
+
+    // cancel 시에는 드래그 중이었을 때만 onEnd, 탭은 무시
+    if (wasDragging) {
+      onEnd();
+    }
+  }, [onEnd, clearTimer]);
+
   return {
     onPointerDown,
     onPointerMove,
     onPointerUp,
+    onPointerCancel,
   };
 }
