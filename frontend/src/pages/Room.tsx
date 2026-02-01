@@ -1,12 +1,14 @@
 import { useParams } from "react-router-dom";
 import { Tab, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/lib/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
+import { handleShare } from "@/lib/share";
+import { copyToClipboard } from "@/lib/clipboard";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
 
@@ -56,6 +58,23 @@ export default function Room() {
     );
   }
 
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const handlePointerDown = useCallback(() => {
+    longPressTimer.current = setTimeout(async () => {
+      await copyToClipboard(id ?? "");
+      alert(`Room ID: ${id}`);
+      longPressTimer.current = undefined;
+    }, 3000);
+  }, [id]);
+
+  const handlePointerUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = undefined;
+    }
+  }, []);
+
   return (
     <div className="flex h-screen flex-col">
       <Top
@@ -63,6 +82,16 @@ export default function Room() {
           <Top.TitleParagraph size={28} color={adaptive.grey900}>
             {room.name}
           </Top.TitleParagraph>
+        }
+        right={
+          <Top.RightButton
+            onClick={() => handleShare(id ?? "")}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            초대하기
+          </Top.RightButton>
         }
       />
       <Tab size="large" onChange={(index) => setSelected(index)}>

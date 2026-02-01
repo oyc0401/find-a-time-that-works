@@ -305,11 +305,9 @@ export default function OverviewGrid() {
             })}
           </div>
         </div>
-        <button
-          type="button"
-          className="flex w-full cursor-pointer"
+        <div
+          className="flex w-full"
           style={{ paddingLeft: TIME_WIDTH }}
-          onClick={() => setIsCalendarOpen(true)}
         >
           {dateHeaders.map((h, i) => (
             <div
@@ -322,7 +320,7 @@ export default function OverviewGrid() {
               </div>
             </div>
           ))}
-        </button>
+        </div>
       </div>
 
       {/* Grid body */}
