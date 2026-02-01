@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
+import { adaptive } from "@toss/tds-colors";
 import { formatDateHeader } from "@/lib/timeSlots";
-import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
-import ArrowLeftIcon from "@/assets/icon-arrow-left-sidebar-mono,화살표,arrow,left,왼쪽.svg";
-import ArrowRightIcon from "@/assets/icon-arrow-right-sidebar-mono,화살표,arrow,오른쪽,right.svg";
+import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg?react";
+import ArrowLeftIcon from "@/assets/icon-arrow-left-sidebar-mono,화살표,arrow,left,왼쪽.svg?react";
+import ArrowRightIcon from "@/assets/icon-arrow-right-sidebar-mono,화살표,arrow,오른쪽,right.svg?react";
+
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 
@@ -68,26 +70,37 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
         onClick={onDateClick}
       >
         {weekLabel}
-        <img src={ArrowDownIcon} alt="" width={24} height={24} />
+        <ArrowDownIcon width={24} height={24} />
       </button>
       <div className="flex items-center">
         <button
           type="button"
           className="flex items-center justify-center cursor-pointer"
-          style={{ width: 44, height: 44, opacity: weekIdx === 0 ? 0.3 : 1 }}
+          style={{
+            width: 44,
+            height: 44,
+            color: weekIdx === 0 ? adaptive.grey300 : adaptive.blue400,
+          }}
           disabled={weekIdx === 0}
           onClick={() => setWeekIdx(weekIdx - 1)}
         >
-          <img src={ArrowLeftIcon} alt="이전 주" width={24} height={24} />
+          <ArrowLeftIcon width={24} height={24} />
         </button>
         <button
           type="button"
           className="flex items-center justify-center cursor-pointer"
-          style={{ width: 44, height: 44, opacity: weekIdx === weeks.length - 1 ? 0.3 : 1 }}
+          style={{
+            width: 44,
+            height: 44,
+            color:
+              weekIdx === weeks.length - 1
+                ? adaptive.grey300
+                : adaptive.blue400,
+          }}
           disabled={weekIdx === weeks.length - 1}
           onClick={() => setWeekIdx(weekIdx + 1)}
         >
-          <img src={ArrowRightIcon} alt="다음 주" width={24} height={24} />
+          <ArrowRightIcon width={24} height={24} />
         </button>
       </div>
     </div>
