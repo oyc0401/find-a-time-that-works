@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRenderGrid } from "./DateSelector.logic";
+import { buildRenderGrid } from "./renderGrid";
 
 describe("buildRenderGrid", () => {
   /**

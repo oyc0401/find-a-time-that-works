@@ -12,7 +12,7 @@ import {
   type RenderCell,
   type DragMode,
   buildRenderGrid,
-} from "./DateSelector.logic";
+} from "@/lib/renderGrid";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 

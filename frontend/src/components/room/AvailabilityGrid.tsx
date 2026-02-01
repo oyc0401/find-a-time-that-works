@@ -2,14 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
+import {
+  type Owner,
+  type RenderCell,
+  type DragMode,
+  buildRenderGrid,
+} from "@/lib/renderGrid";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
+const CORNER_SIZE = 4;
 
-type DragMode = "select" | "deselect";
 type Cell = { row: number; col: number };
 
 function getCellFromPoint(x: number, y: number): Cell | undefined {
@@ -26,6 +32,66 @@ function getCellFromPoint(x: number, y: number): Cell | undefined {
 
 function isSameCell(a: Cell, b: Cell): boolean {
   return a.row === b.row && a.col === b.col;
+}
+
+// =====================
+// Corner rendering
+// =====================
+
+type CornerPos = "lt" | "rt" | "lb" | "rb";
+const CORNERS: CornerPos[] = ["lt", "rt", "lb", "rb"];
+
+function cornerStyle(pos: CornerPos): React.CSSProperties {
+  const s: React.CSSProperties = {
+    position: "absolute",
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    pointerEvents: "none",
+  };
+  if (pos === "lt") {
+    s.top = 0;
+    s.left = 0;
+  } else if (pos === "rt") {
+    s.top = 0;
+    s.right = 0;
+  } else if (pos === "lb") {
+    s.bottom = 0;
+    s.left = 0;
+  } else {
+    s.bottom = 0;
+    s.right = 0;
+  }
+  return s;
+}
+
+function roundClass(pos: CornerPos) {
+  if (pos === "lt") return "rounded-tl";
+  if (pos === "rt") return "rounded-tr";
+  if (pos === "lb") return "rounded-bl";
+  return "rounded-br";
+}
+
+function centerOwner(rc: RenderCell): Owner {
+  return rc.lt.center;
+}
+
+function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
+  if (pos === "lt") return rc.lt.corner;
+  if (pos === "rt") return rc.rt.corner;
+  if (pos === "lb") return rc.lb.corner;
+  return rc.rb.corner;
+}
+
+function ownerBg(owner: Owner, dragMode: DragMode) {
+  if (owner === "confirmed") return adaptive.blue400;
+  if (owner === "preview")
+    return dragMode === "select" ? adaptive.blue200 : adaptive.blue100;
+  return "transparent";
+}
+
+function needsCornerOp(center: Owner, corner: Owner) {
+  if (center !== "empty") return corner !== center;
+  return corner !== "empty";
 }
 
 export default function AvailabilityGrid() {
@@ -63,6 +129,31 @@ export default function AvailabilityGrid() {
   const makeEmptyPreview = useCallback(
     () => Array.from({ length: rows }, () => Array(displayCols).fill(false)),
     [rows, displayCols],
+  );
+
+  // storeCol → displayCol 변환된 confirmed 배열
+  const displayConfirmed = useMemo(() => {
+    const result: boolean[][] = [];
+    for (let r = 0; r < rows; r++) {
+      result[r] = [];
+      for (let dc = 0; dc < displayCols; dc++) {
+        const sc = columns[dc]?.storeColIdx;
+        result[r][dc] = sc !== undefined && (grid[r]?.[sc] ?? false);
+      }
+    }
+    return result;
+  }, [grid, rows, displayCols, columns]);
+
+  const renderGrid = useMemo(
+    () =>
+      displayCols > 0 && rows > 0
+        ? buildRenderGrid({
+            confirmed: displayConfirmed,
+            preview: preview.length > 0 ? preview : makeEmptyPreview(),
+            dragMode,
+          })
+        : [],
+    [displayConfirmed, preview, dragMode, displayCols, rows, makeEmptyPreview],
   );
 
   const applySelection = useCallback(
@@ -163,6 +254,7 @@ export default function AvailabilityGrid() {
   if (grid.length === 0) return null;
 
   const dateHeaders = columns.map((col) => formatDateHeader(col.date));
+  const baseBg = "white";
 
   const TIME_WIDTH = 16;
   return (
@@ -226,35 +318,77 @@ export default function AvailabilityGrid() {
               style={{ minWidth: 44 }}
             >
               {timeSlots.map((slot, rowIdx) => {
-                const isSelected = grid[rowIdx]?.[col.storeColIdx];
-                const isPreviewing = preview[rowIdx]?.[displayIdx];
-                const isHour = slot.endsWith(":00");
+                const rc = renderGrid[rowIdx]?.[displayIdx];
+                if (!rc) return null;
 
-                let bg = "transparent";
-                if (isSelected && isPreviewing && dragMode === "deselect") {
-                  bg = adaptive.blue100;
-                } else if (isSelected) {
-                  bg = adaptive.blue400;
-                } else if (isPreviewing) {
-                  bg = adaptive.blue200;
-                }
+                const isHour = slot.endsWith(":00");
+                const center = centerOwner(rc);
+                const centerBg = ownerBg(center, dragMode);
 
                 return (
                   <div
                     key={slot}
                     data-cell={`${rowIdx},${displayIdx}`}
                     className={cn(
-                      "border-r border-gray-300",
+                      "relative border-r border-gray-300",
                       isHour && "border-t border-gray-300",
                       displayIdx === 0 && "border-l border-gray-300",
                       rowIdx === timeSlots.length - 1 &&
                         "border-b border-gray-300",
                     )}
-                    style={{
-                      height: CELL_H,
-                      backgroundColor: bg,
-                    }}
-                  />
+                    style={{ height: CELL_H }}
+                  >
+                    {/* Center fill */}
+                    {center !== "empty" && (
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ backgroundColor: centerBg }}
+                      />
+                    )}
+
+                    {/* Corner Color band */}
+                    {CORNERS.map((pos) => {
+                      const corner = cornerOwner(rc, pos);
+                      if (!needsCornerOp(center, corner)) return null;
+
+                      const outerColor =
+                        center !== "empty"
+                          ? corner === "empty"
+                            ? baseBg
+                            : ownerBg(corner, dragMode)
+                          : ownerBg(corner, dragMode);
+
+                      return (
+                        <div
+                          key={`corner-color-${pos}`}
+                          className="pointer-events-none"
+                          style={{
+                            ...cornerStyle(pos),
+                            backgroundColor: outerColor,
+                          }}
+                        />
+                      );
+                    })}
+
+                    {/* Corner Cut band */}
+                    {CORNERS.map((pos) => {
+                      const corner = cornerOwner(rc, pos);
+                      if (!needsCornerOp(center, corner)) return null;
+
+                      const innerColor = center !== "empty" ? centerBg : baseBg;
+
+                      return (
+                        <div
+                          key={`corner-cut-${pos}`}
+                          className={cn("absolute pointer-events-none", roundClass(pos))}
+                          style={{
+                            ...cornerStyle(pos),
+                            backgroundColor: innerColor,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 );
               })}
             </div>

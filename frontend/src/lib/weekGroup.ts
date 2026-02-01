@@ -4,19 +4,18 @@ export interface WeekColumn {
 }
 
 export interface WeekGroup {
-  monday: string;
+  sunday: string;
   columns: WeekColumn[];
 }
 
-function getMondayOf(dateStr: string): string {
+function getSundayOf(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + diff);
-  const y = monday.getFullYear();
-  const m = String(monday.getMonth() + 1).padStart(2, "0");
-  const dd = String(monday.getDate()).padStart(2, "0");
+  const day = d.getDay(); // 0=Sunday
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - day);
+  const y = sunday.getFullYear();
+  const m = String(sunday.getMonth() + 1).padStart(2, "0");
+  const dd = String(sunday.getDate()).padStart(2, "0");
   return `${y}-${m}-${dd}`;
 }
 
@@ -25,16 +24,16 @@ export function groupDatesByWeek(dates: string[]): WeekGroup[] {
   const weekOrder: string[] = [];
 
   for (let i = 0; i < dates.length; i++) {
-    const monday = getMondayOf(dates[i]);
-    if (!weekMap.has(monday)) {
-      weekMap.set(monday, []);
-      weekOrder.push(monday);
+    const sunday = getSundayOf(dates[i]);
+    if (!weekMap.has(sunday)) {
+      weekMap.set(sunday, []);
+      weekOrder.push(sunday);
     }
-    weekMap.get(monday)!.push({ date: dates[i], storeColIdx: i });
+    weekMap.get(sunday)!.push({ date: dates[i], storeColIdx: i });
   }
 
-  return weekOrder.map((monday) => ({
-    monday,
-    columns: weekMap.get(monday)!,
+  return weekOrder.map((sunday) => ({
+    sunday,
+    columns: weekMap.get(sunday)!,
   }));
 }
