@@ -51,8 +51,10 @@ export default function Room() {
         <Tab.Item selected={selected === 2}>참여자</Tab.Item>
       </Tab>
 
-      {selected === 0 && <AvailabilityGrid />}
-      {selected === 1 && <OverviewGrid />}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {selected === 0 && <AvailabilityGrid />}
+        {selected === 1 && <OverviewGrid />}
+      </div>
     </div>
   );
 }

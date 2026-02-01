@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { useCallback, useRef, useState } from "react";
 import {
   type Rect,
   useDateSelectionStore,
 } from "@/stores/useDateSelectionStore";
+import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import type { DragMode } from "./DateSelector.logic";
 
 const W = 7;
 const H = 5;
-
-const LONG_PRESS_DURATION = 300;
 
 export function createEmptyPreview(): boolean[][] {
   return Array.from({ length: H }, () => Array(W).fill(false));
@@ -64,136 +62,81 @@ export function useDateDragSelection(isHidden: (idx: number) => boolean) {
 
   const dragStartIdx = useRef<number | undefined>(undefined);
   const currentRect = useRef<Rect | undefined>(undefined);
-  const isDraggingRef = useRef(false);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
-  const pointerIdRef = useRef<number | undefined>(undefined);
-  const containerRef = useRef<HTMLElement | undefined>(undefined);
   const pendingModeRef = useRef<DragMode>("select");
-  const hasMovedRef = useRef(false);
 
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current !== undefined) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = undefined;
-    }
-  }, []);
+  const getCellFromPoint = useCallback(
+    (x: number, y: number) => {
+      const idx = getCellIdxFromPoint(x, y);
+      if (idx === undefined || isHidden(idx)) return undefined;
+      return idx;
+    },
+    [isHidden],
+  );
 
-  // 드래그 모드일 때 touchmove 기본 동작(스크롤) 차단
-  useEffect(() => {
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDraggingRef.current) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    return () => {
-      document.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, []);
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
-      if (idx === undefined || isHidden(idx)) return;
-
+  const handleLongPressStart = useCallback(
+    (idx: number) => {
       dragStartIdx.current = idx;
-      pointerIdRef.current = e.pointerId;
-      containerRef.current = e.currentTarget as HTMLElement;
-      hasMovedRef.current = false;
 
       const r = rowOf(idx);
       const c = colOf(idx);
       const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
       pendingModeRef.current = mode;
+      setDragMode(mode);
 
-      clearLongPressTimer();
-      longPressTimerRef.current = setTimeout(() => {
-        if (hasMovedRef.current) return;
-
-        if (containerRef.current && pointerIdRef.current !== undefined) {
-          containerRef.current.setPointerCapture(pointerIdRef.current);
-        }
-
-        generateHapticFeedback({ type: "softMedium" });
-
-        isDraggingRef.current = true;
-        setDragMode(mode);
-
-        const rect = getRect(idx, idx);
-        currentRect.current = rect;
-        setPreview(applyRect(createEmptyPreview(), rect, true));
-      }, LONG_PRESS_DURATION);
-    },
-    [isHidden, confirmed, clearLongPressTimer],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      // 시작 셀에서 벗어나면 롱프레스 취소
-      if (
-        !hasMovedRef.current &&
-        dragStartIdx.current !== undefined &&
-        !isDraggingRef.current
-      ) {
-        const currentIdx = getCellIdxFromPoint(e.clientX, e.clientY);
-        if (currentIdx !== dragStartIdx.current) {
-          hasMovedRef.current = true;
-          clearLongPressTimer();
-          return;
-        }
-      }
-
-      if (!isDraggingRef.current || dragStartIdx.current === undefined) return;
-
-      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
-      if (idx === undefined || isHidden(idx)) return;
-
-      const rect = getRect(dragStartIdx.current, idx);
+      const rect = getRect(idx, idx);
       currentRect.current = rect;
       setPreview(applyRect(createEmptyPreview(), rect, true));
     },
-    [isHidden, clearLongPressTimer],
+    [confirmed],
   );
 
-  const handlePointerUp = useCallback(() => {
-    clearLongPressTimer();
+  const handleDrag = useCallback((idx: number) => {
+    if (dragStartIdx.current === undefined) return;
 
-    const wasDragging = isDraggingRef.current;
-    const startIdx = dragStartIdx.current;
-    const hasMoved = hasMovedRef.current;
+    const rect = getRect(dragStartIdx.current, idx);
+    currentRect.current = rect;
+    setPreview(applyRect(createEmptyPreview(), rect, true));
+  }, []);
 
-    isDraggingRef.current = false;
-    dragStartIdx.current = undefined;
-    pointerIdRef.current = undefined;
-    containerRef.current = undefined;
-    hasMovedRef.current = false;
+  const handleTap = useCallback(
+    (idx: number) => {
+      const r = rowOf(idx);
+      const c = colOf(idx);
+      const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
+      const rect = getRect(idx, idx);
 
-    if (wasDragging) {
-      const rect = currentRect.current;
-      if (rect) {
-        if (dragMode === "select") select(rect);
-        else deselect(rect);
-      }
-    } else if (startIdx !== undefined && !hasMoved) {
-      // 움직임 없이 300ms 전에 뗀 경우만 탭 선택
-      const rect = getRect(startIdx, startIdx);
-      if (pendingModeRef.current === "select") select(rect);
+      if (mode === "select") select(rect);
+      else deselect(rect);
+    },
+    [confirmed, select, deselect],
+  );
+
+  const handleEnd = useCallback(() => {
+    const rect = currentRect.current;
+    if (rect) {
+      if (dragMode === "select") select(rect);
       else deselect(rect);
     }
 
+    dragStartIdx.current = undefined;
     currentRect.current = undefined;
     setPreview(createEmptyPreview());
-  }, [dragMode, select, deselect, clearLongPressTimer]);
+  }, [dragMode, select, deselect]);
+
+  const { onPointerDown, onPointerMove, onPointerUp } = useLongPressDrag({
+    getCellFromPoint,
+    onLongPressStart: handleLongPressStart,
+    onDrag: handleDrag,
+    onTap: handleTap,
+    onEnd: handleEnd,
+  });
 
   return {
     confirmed,
     preview,
     dragMode,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
+    handlePointerDown: onPointerDown,
+    handlePointerMove: onPointerMove,
+    handlePointerUp: onPointerUp,
   };
 }
