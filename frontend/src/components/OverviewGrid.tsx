@@ -2,15 +2,8 @@ import { useMemo } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
-import type { ParticipantDto } from "@/api/model/models";
-import type { WeekColumn } from "@/lib/weekGroup";
-
-interface Props {
-  columns: WeekColumn[];
-  startTime: string;
-  endTime: string;
-  participants: ParticipantDto[];
-}
+import { useRoomStore } from "@/stores/useRoomStore";
+import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 24;
 
@@ -23,15 +16,13 @@ function intensityColor(count: number, max: number): string {
   return adaptive.blue400;
 }
 
-export default function OverviewGrid({
-  columns,
-  startTime,
-  endTime,
-  participants,
-}: Props) {
+export default function OverviewGrid() {
+  const { room, participants, weeks, weekIdx } = useRoomStore();
+  const columns = weeks[weekIdx]?.columns ?? [];
+
   const timeSlots = useMemo(
-    () => generateTimeSlots(startTime, endTime),
-    [startTime, endTime],
+    () => generateTimeSlots(room?.startTime ?? "09:00", room?.endTime ?? "18:00"),
+    [room?.startTime, room?.endTime],
   );
 
   const countMap = useMemo(() => {
@@ -50,6 +41,8 @@ export default function OverviewGrid({
 
   return (
     <div className="w-full overflow-x-auto px-4 py-3">
+      <WeekNavigation />
+
       {/* Date headers */}
       <div className="flex" style={{ paddingLeft: 28 }}>
         {dateHeaders.map((h, i) => (

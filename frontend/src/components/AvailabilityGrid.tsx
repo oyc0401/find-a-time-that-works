@@ -4,14 +4,8 @@ import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
-import type { WeekColumn } from "@/lib/weekGroup";
-
-interface Props {
-  columns: WeekColumn[];
-  totalCols: number;
-  startTime: string;
-  endTime: string;
-}
+import { useRoomStore } from "@/stores/useRoomStore";
+import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
 
@@ -29,15 +23,15 @@ function getCellFromPoint(x: number, y: number) {
   return { row: r, col: c };
 }
 
-export default function AvailabilityGrid({
-  columns,
-  totalCols,
-  startTime,
-  endTime,
-}: Props) {
+export default function AvailabilityGrid() {
+  const { room, weeks, weekIdx } = useRoomStore();
+  const columns = weeks[weekIdx]?.columns ?? [];
+  const totalCols = room?.dates.length ?? 0;
+
   const timeSlots = useMemo(
-    () => generateTimeSlots(startTime, endTime),
-    [startTime, endTime],
+    () =>
+      generateTimeSlots(room?.startTime ?? "09:00", room?.endTime ?? "18:00"),
+    [room?.startTime, room?.endTime],
   );
   const rows = timeSlots.length;
   const displayCols = columns.length;
@@ -45,7 +39,9 @@ export default function AvailabilityGrid({
   const { grid, init, select, deselect } = useAvailabilityStore();
 
   useEffect(() => {
-    init(rows, totalCols);
+    if (totalCols > 0) {
+      init(rows, totalCols);
+    }
   }, [rows, totalCols, init]);
 
   const [preview, setPreview] = useState<boolean[][]>([]);
@@ -143,10 +139,16 @@ export default function AvailabilityGrid({
 
   const dateHeaders = columns.map((col) => formatDateHeader(col.date));
 
+  const TIME_WIDTH = 16;
   return (
-    <div className="w-full overflow-x-auto px-4 py-3">
+    <div className="w-full overflow-x-auto px-4">
+      <WeekNavigation />
+
       {/* Date headers */}
-      <div className="flex" style={{ paddingLeft: 28 }}>
+      <div
+        className="sticky top-0 z-10 flex bg-white"
+        style={{ paddingLeft: TIME_WIDTH }}
+      >
         {dateHeaders.map((h, i) => (
           <div
             key={columns[i].date}
@@ -166,7 +168,7 @@ export default function AvailabilityGrid({
       {/* Grid body */}
       <div className="mt-2 flex">
         {/* Time labels */}
-        <div className="shrink-0" style={{ width: 16 }}>
+        <div className="shrink-0" style={{ width: TIME_WIDTH }}>
           {timeSlots.map((slot) => {
             const isHour = slot.endsWith(":00");
             const hour = Number.parseInt(slot.split(":")[0]);
