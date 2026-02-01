@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
+import { buildCalendarCells } from "@/lib/calendar";
 import {
   type Rect,
   useDateSelectionStore,
@@ -12,83 +13,12 @@ import {
   buildRenderGrid,
 } from "./DateSelector.logic";
 
-const TOTAL_CELLS = 35; // 5x7
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
 const H = 5;
 
 function createEmptyPreview(): boolean[][] {
   return Array.from({ length: H }, () => Array(W).fill(false));
-}
-
-// =====================
-// Calendar Cells (meta)
-// =====================
-
-type Cell = {
-  day: number;
-  isCurrentMonth: boolean;
-  hidden: boolean;
-  isToday: boolean;
-};
-
-function useCalendarCells(): Cell[] {
-  return useMemo(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const todayDate = today.getDate();
-
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const allCells: Cell[] = [];
-
-    // prev month placeholders
-    const prevMonthDays = new Date(year, month, 0).getDate();
-    for (let i = firstDay - 1; i >= 0; i--) {
-      allCells.push({
-        day: prevMonthDays - i,
-        isCurrentMonth: false,
-        hidden: true,
-        isToday: false,
-      });
-    }
-
-    // current month
-    for (let d = 1; d <= daysInMonth; d++) {
-      allCells.push({
-        day: d,
-        isCurrentMonth: true,
-        hidden: d < todayDate,
-        isToday: d === todayDate,
-      });
-    }
-
-    // count fully hidden leading rows
-    let hiddenRows = 0;
-    for (let row = 0; row < H; row++) {
-      const rowCells = allCells.slice(row * W, row * W + W);
-      if (rowCells.length === W && rowCells.every((c) => c.hidden))
-        hiddenRows++;
-      else break;
-    }
-
-    const trimmed = allCells.slice(hiddenRows * W);
-
-    // fill next month
-    let nextDay = 1;
-    while (trimmed.length < TOTAL_CELLS) {
-      trimmed.push({
-        day: nextDay++,
-        isCurrentMonth: false,
-        hidden: false,
-        isToday: false,
-      });
-    }
-
-    return trimmed.slice(0, TOTAL_CELLS);
-  }, []);
 }
 
 // =====================
@@ -281,7 +211,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
 }
 
 export default function DateSelector() {
-  const cells = useCalendarCells();
+  const cells = useMemo(() => buildCalendarCells(), []);
 
   const {
     confirmed,

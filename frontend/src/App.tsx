@@ -1,13 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
-// import TestMain from "./pages/TestMain";
-// import TestRoom from "./pages/TestRoom";
+import Room from "./pages/Room";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="*" element={<Navigate to="/test" replace />} />
+      <Route path="/rooms/:id" element={<Room />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

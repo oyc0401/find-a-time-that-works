@@ -40,7 +40,7 @@ export class RoomDetailApiResponseDto {
 }
 
 export class SubmitAvailabilityApiResponseDto {
-  @ApiProperty({ example: null, nullable: true, type: "null" })
+  @ApiProperty({ type: String, example: null, nullable: true })
   data: null;
 
   @ApiProperty({ example: "가용 시간이 저장되었습니다" })
@@ -56,7 +56,7 @@ export class ExtendRoomApiResponseDto {
 }
 
 export class DeleteRoomApiResponseDto {
-  @ApiProperty({ example: null, nullable: true, type: "null" })
+  @ApiProperty({ type: String, example: null, nullable: true })
   data: null;
 
   @ApiProperty({ example: "방이 삭제되었습니다" })
@@ -64,7 +64,7 @@ export class DeleteRoomApiResponseDto {
 }
 
 export class UpdateRoomNameApiResponseDto {
-  @ApiProperty({ example: null, nullable: true, type: "null" })
+  @ApiProperty({ type: String, example: null, nullable: true })
   data: null;
 
   @ApiProperty({ example: "방 이름이 변경되었습니다" })
@@ -72,7 +72,7 @@ export class UpdateRoomNameApiResponseDto {
 }
 
 export class UpdateNicknameApiResponseDto {
-  @ApiProperty({ example: null, nullable: true, type: "null" })
+  @ApiProperty({ type: String, example: null, nullable: true })
   data: null;
 
   @ApiProperty({ example: "닉네임이 변경되었습니다" })
