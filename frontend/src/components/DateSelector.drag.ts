@@ -117,7 +117,7 @@ export function useDateDragSelection(isHidden: (idx: number) => boolean) {
           containerRef.current.setPointerCapture(pointerIdRef.current);
         }
 
-        generateHapticFeedback({ type: "tap" });
+        generateHapticFeedback({ type: "softMedium" });
 
         isDraggingRef.current = true;
         setDragMode(mode);
@@ -133,7 +133,11 @@ export function useDateDragSelection(isHidden: (idx: number) => boolean) {
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       // 시작 셀에서 벗어나면 롱프레스 취소
-      if (!hasMovedRef.current && dragStartIdx.current !== undefined && !isDraggingRef.current) {
+      if (
+        !hasMovedRef.current &&
+        dragStartIdx.current !== undefined &&
+        !isDraggingRef.current
+      ) {
         const currentIdx = getCellIdxFromPoint(e.clientX, e.clientY);
         if (currentIdx !== dragStartIdx.current) {
           hasMovedRef.current = true;

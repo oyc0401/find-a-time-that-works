@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, Spacing } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
+import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 
 const TOTAL_STEPS = 24;
@@ -41,6 +42,7 @@ export default function TimeSlider() {
     return Math.round(clamp(ratio, 0, 1) * TOTAL_STEPS);
   }, []);
   const draggingRef = useRef<ThumbType | undefined>(undefined);
+  const prevStepRef = useRef<number | undefined>(undefined);
 
   const handleMove = useCallback(
     (clientX: number) => {
@@ -48,10 +50,20 @@ export default function TimeSlider() {
       if (!type) return;
       const step = getStepFromX(clientX);
 
+      const newValue =
+        type === "start"
+          ? clamp(step, 0, end - 1)
+          : clamp(step, start + 1, TOTAL_STEPS);
+
+      if (prevStepRef.current !== newValue) {
+        generateHapticFeedback({ type: "tickWeak" });
+        prevStepRef.current = newValue;
+      }
+
       if (type === "start") {
-        setStart(clamp(step, 0, end - 1));
+        setStart(newValue);
       } else {
-        setEnd(clamp(step, start + 1, TOTAL_STEPS));
+        setEnd(newValue);
       }
     },
     [getStepFromX, start, end, setStart, setEnd],
@@ -61,6 +73,7 @@ export default function TimeSlider() {
     (type: ThumbType) => (e: React.PointerEvent) => {
       e.preventDefault();
       draggingRef.current = type;
+      prevStepRef.current = undefined;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
     [],
@@ -75,6 +88,7 @@ export default function TimeSlider() {
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = undefined;
+    prevStepRef.current = undefined;
   }, []);
 
   const [trackWidth, setTrackWidth] = useState(0);
