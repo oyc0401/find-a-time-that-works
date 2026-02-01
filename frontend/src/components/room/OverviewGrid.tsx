@@ -7,6 +7,7 @@ import {
   buildRenderGrid,
 } from "@/lib/renderGrid";
 import { useRoomStore } from "@/stores/useRoomStore";
+import { heatColor } from "@/lib/heatColor";
 import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
@@ -48,11 +49,7 @@ function roundClass(pos: CornerPos) {
 
 function intensityColor(count: number, max: number): string {
   if (count === 0 || max === 0) return "transparent";
-  const ratio = count / max;
-  if (ratio <= 0.25) return adaptive.blue100;
-  if (ratio <= 0.5) return adaptive.blue200;
-  if (ratio <= 0.75) return adaptive.blue300;
-  return adaptive.blue400;
+  return heatColor(count / max);
 }
 
 export default function OverviewGrid() {
@@ -313,19 +310,24 @@ export default function OverviewGrid() {
           style={{ fontSize: 11, color: adaptive.grey500 }}
         >
           <span>0/{maxCount}</span>
-          <div className="flex gap-0.5">
-            {[
-              adaptive.blue100,
-              adaptive.blue200,
-              adaptive.blue300,
-              adaptive.blue400,
-            ].map((color) => (
-              <div
-                key={color}
-                className="rounded-sm"
-                style={{ width: 12, height: 12, backgroundColor: color }}
-              />
-            ))}
+          <div className="flex">
+            {Array.from({ length: 7 }, (_, i) => {
+              const ratio = (i + 1) / 7;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    width: 10,
+                    height: 12,
+                    backgroundColor: heatColor(ratio),
+                  }}
+                  className={cn(
+                    i === 0 && "rounded-l-sm",
+                    i === 6 && "rounded-r-sm",
+                  )}
+                />
+              );
+            })}
           </div>
           <span>
             {maxCount}/{maxCount}
