@@ -295,7 +295,12 @@ export default function OverviewGrid() {
         const covered = p.slots.filter((s) =>
           slotKeys.has(`${s.date}|${s.time}`),
         ).length;
-        return { name: p.name, userId: p.userId, covered, total: selectedSlots.length };
+        return {
+          name: p.name,
+          userId: p.userId,
+          covered,
+          total: selectedSlots.length,
+        };
       })
       .filter((p) => p.covered > 0)
       .sort((a, b) => b.covered - a.covered);

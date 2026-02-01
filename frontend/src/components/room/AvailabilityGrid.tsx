@@ -281,7 +281,9 @@ export default function AvailabilityGrid() {
   const TIME_WIDTH = 16;
   return (
     <div className="w-full">
-      <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
+      <div className="pb-2">
+        <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
+      </div>
 
       <div className=" bg-white px-4">
         {/* Date headers */}

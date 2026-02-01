@@ -47,7 +47,8 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     currentSunday.setDate(refDate.getDate() - refDate.getDay());
 
     const diffWeeks = Math.round(
-      (currentSunday.getTime() - firstSunday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      (currentSunday.getTime() - firstSunday.getTime()) /
+        (7 * 24 * 60 * 60 * 1000),
     );
     const weekNum = diffWeeks + 1;
 
@@ -58,8 +59,13 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
   if (!weekLabel) return null;
 
   return (
-    <div className="flex items-center justify-between py-3 pl-4 pr-4">
-      <button type="button" className="cursor-pointer" style={{ fontSize: 18, fontWeight: 500 }} onClick={onDateClick}>
+    <div className="flex items-center justify-between pt-3 pb-1 pl-4 pr-4">
+      <button
+        type="button"
+        className="cursor-pointer"
+        style={{ fontSize: 20, fontWeight: 500 }}
+        onClick={onDateClick}
+      >
         {weekLabel}
       </button>
       <div className="flex items-center">
