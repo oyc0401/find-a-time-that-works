@@ -3,7 +3,7 @@ import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { useRoomStore } from "@/stores/useRoomStore";
-import WeekNavigation from "./WeekNavigation";
+import WeekNavigation from "./room/WeekNavigation";
 
 const CELL_H = 24;
 
@@ -21,7 +21,8 @@ export default function OverviewGrid() {
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
-    () => generateTimeSlots(room?.startTime ?? "09:00", room?.endTime ?? "18:00"),
+    () =>
+      generateTimeSlots(room?.startTime ?? "09:00", room?.endTime ?? "18:00"),
     [room?.startTime, room?.endTime],
   );
 
@@ -69,11 +70,7 @@ export default function OverviewGrid() {
             const isHour = slot.endsWith(":00");
             const hour = Number.parseInt(slot.split(":")[0]);
             return (
-              <div
-                key={slot}
-                className="relative"
-                style={{ height: CELL_H }}
-              >
+              <div key={slot} className="relative" style={{ height: CELL_H }}>
                 {isHour && (
                   <span
                     className="absolute right-1.5"
@@ -126,7 +123,8 @@ export default function OverviewGrid() {
                         className="absolute inset-0 flex items-center justify-center"
                         style={{
                           fontSize: 10,
-                          color: count / maxCount > 0.5 ? "#fff" : adaptive.grey600,
+                          color:
+                            count / maxCount > 0.5 ? "#fff" : adaptive.grey600,
                         }}
                       >
                         {count}
@@ -148,17 +146,22 @@ export default function OverviewGrid() {
         >
           <span>0/{maxCount}</span>
           <div className="flex gap-0.5">
-            {[adaptive.blue100, adaptive.blue200, adaptive.blue300, adaptive.blue400].map(
-              (color) => (
-                <div
-                  key={color}
-                  className="rounded-sm"
-                  style={{ width: 12, height: 12, backgroundColor: color }}
-                />
-              ),
-            )}
+            {[
+              adaptive.blue100,
+              adaptive.blue200,
+              adaptive.blue300,
+              adaptive.blue400,
+            ].map((color) => (
+              <div
+                key={color}
+                className="rounded-sm"
+                style={{ width: 12, height: 12, backgroundColor: color }}
+              />
+            ))}
           </div>
-          <span>{maxCount}/{maxCount}</span>
+          <span>
+            {maxCount}/{maxCount}
+          </span>
         </div>
       )}
     </div>

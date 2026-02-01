@@ -19,5 +19,6 @@ export function formatDateHeader(dateStr: string) {
   return {
     weekday: WEEKDAYS[d.getDay()],
     label: `${d.getMonth() + 1}/${d.getDate()}`,
+    day: `${d.getDate()}`,
   };
 }

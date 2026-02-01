@@ -141,106 +141,104 @@ export default function AvailabilityGrid() {
 
   const TIME_WIDTH = 16;
   return (
-    <div className="w-full overflow-x-auto px-4">
+    <div className="bg-gray-100">
       <WeekNavigation />
-
-      {/* Date headers */}
-      <div
-        className="sticky top-0 z-10 flex bg-white"
-        style={{ paddingLeft: TIME_WIDTH }}
-      >
-        {dateHeaders.map((h, i) => (
-          <div
-            key={columns[i].date}
-            className="flex-1 text-center"
-            style={{ minWidth: 44 }}
-          >
-            <div style={{ fontSize: 13, color: adaptive.grey500 }}>
-              {h.weekday}
-            </div>
-            <div style={{ fontSize: 13, color: adaptive.grey700 }}>
-              {h.label}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Grid body */}
-      <div className="mt-2 flex">
-        {/* Time labels */}
-        <div className="shrink-0" style={{ width: TIME_WIDTH }}>
-          {timeSlots.map((slot) => {
-            const isHour = slot.endsWith(":00");
-            const hour = Number.parseInt(slot.split(":")[0]);
-            return (
-              <div key={slot} className="relative" style={{ height: CELL_H }}>
-                {isHour && (
-                  <span
-                    className="absolute right-1.5"
-                    style={{
-                      top: -8,
-                      fontSize: 12,
-                      lineHeight: "16px",
-                      color: adaptive.grey500,
-                    }}
-                  >
-                    {hour}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Cells */}
+      <div className="w-full px-4 bg-gray-400">
+        {/* Date headers */}
         <div
-          className="flex flex-1"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          style={{ touchAction: "none" }}
+          className="sticky top-0 z-10 flex "
+          style={{ paddingLeft: TIME_WIDTH }}
         >
-          {columns.map((col, displayIdx) => (
+          {dateHeaders.map((h, i) => (
             <div
-              key={col.date}
-              className="flex flex-1 flex-col"
+              key={columns[i].date}
+              className="flex-1 text-center"
               style={{ minWidth: 44 }}
             >
-              {timeSlots.map((slot, rowIdx) => {
-                const isSelected = grid[rowIdx]?.[col.storeColIdx];
-                const isPreviewing = preview[rowIdx]?.[displayIdx];
-                const isHour = slot.endsWith(":00");
-
-                let bg = "transparent";
-                if (isSelected && isPreviewing && dragMode === "deselect") {
-                  bg = adaptive.blue100;
-                } else if (isSelected) {
-                  bg = adaptive.blue400;
-                } else if (isPreviewing) {
-                  bg = adaptive.blue200;
-                }
-
-                return (
-                  <div
-                    key={slot}
-                    data-cell={`${rowIdx},${displayIdx}`}
-                    className={cn(
-                      "border-r border-gray-300",
-                      isHour && "border-t border-gray-300",
-                      displayIdx === 0 && "border-l border-gray-300",
-                      rowIdx === timeSlots.length - 1 &&
-                        "border-b border-gray-300",
-                    )}
-                    style={{
-                      height: CELL_H,
-                      backgroundColor: bg,
-                    }}
-                  />
-                );
-              })}
+              <div style={{ fontSize: 13, color: adaptive.grey500 }}>
+                {`${h.day} (${h.weekday})`}
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Grid body */}
+        <div className="mt-2 flex">
+          {/* Time labels */}
+          <div className="shrink-0" style={{ width: TIME_WIDTH }}>
+            {timeSlots.map((slot) => {
+              const isHour = slot.endsWith(":00");
+              const hour = Number.parseInt(slot.split(":")[0]);
+              return (
+                <div key={slot} className="relative" style={{ height: CELL_H }}>
+                  {isHour && (
+                    <span
+                      className="absolute right-1.5"
+                      style={{
+                        top: -8,
+                        fontSize: 12,
+                        lineHeight: "16px",
+                        color: adaptive.grey500,
+                      }}
+                    >
+                      {hour}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Cells */}
+          <div
+            className="flex flex-1"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{ touchAction: "none" }}
+          >
+            {columns.map((col, displayIdx) => (
+              <div
+                key={col.date}
+                className="flex flex-1 flex-col"
+                style={{ minWidth: 44 }}
+              >
+                {timeSlots.map((slot, rowIdx) => {
+                  const isSelected = grid[rowIdx]?.[col.storeColIdx];
+                  const isPreviewing = preview[rowIdx]?.[displayIdx];
+                  const isHour = slot.endsWith(":00");
+
+                  let bg = "transparent";
+                  if (isSelected && isPreviewing && dragMode === "deselect") {
+                    bg = adaptive.blue100;
+                  } else if (isSelected) {
+                    bg = adaptive.blue400;
+                  } else if (isPreviewing) {
+                    bg = adaptive.blue200;
+                  }
+
+                  return (
+                    <div
+                      key={slot}
+                      data-cell={`${rowIdx},${displayIdx}`}
+                      className={cn(
+                        "border-r border-gray-300",
+                        isHour && "border-t border-gray-300",
+                        displayIdx === 0 && "border-l border-gray-300",
+                        rowIdx === timeSlots.length - 1 &&
+                          "border-b border-gray-300",
+                      )}
+                      style={{
+                        height: CELL_H,
+                        backgroundColor: bg,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

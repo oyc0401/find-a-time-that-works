@@ -4,8 +4,8 @@ import { adaptive } from "@toss/tds-colors";
 import { useRoomsControllerFindById } from "../api/model/rooms/rooms";
 import { useEffect, useState } from "react";
 import { useRoomStore } from "@/stores/useRoomStore";
-import AvailabilityGrid from "../components/AvailabilityGrid";
-import OverviewGrid from "../components/OverviewGrid";
+import AvailabilityGrid from "../components/room/AvailabilityGrid";
+import OverviewGrid from "../components/room/OverviewGrid";
 
 export default function Room() {
   const { id } = useParams<{ id: string }>();
