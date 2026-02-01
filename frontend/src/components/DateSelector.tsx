@@ -2,6 +2,12 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { useDateSelectionStore } from "@/stores/useDateSelectionStore";
+import {
+  type Owner,
+  type RenderCell,
+  type DragMode,
+  buildRenderGridFromSets,
+} from "./DateSelector.logic";
 
 const TOTAL_CELLS = 35; // 5x7
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
@@ -82,254 +88,11 @@ function useCalendarCells(): Cell[] {
 // Pure Render Model
 // =====================
 
-type Owner = "empty" | "preview" | "confirmed";
-
-// RenderCell은 딱 이것만: 4코너 + {corner, center}
-type RenderQuad = { corner: Owner; center: Owner };
-type RenderCell = {
-  lt: RenderQuad;
-  rt: RenderQuad;
-  lb: RenderQuad;
-  rb: RenderQuad;
-};
-type RenderGrid = RenderCell[][];
-
-const EMPTY_QUAD: RenderQuad = { corner: "empty", center: "empty" };
-const EMPTY_CELL: RenderCell = {
-  lt: EMPTY_QUAD,
-  rt: EMPTY_QUAD,
-  lb: EMPTY_QUAD,
-  rb: EMPTY_QUAD,
-};
-
-type DragMode = "select" | "deselect";
-
 function rowOf(i: number) {
   return (i / W) | 0;
 }
 function colOf(i: number) {
   return i % W;
-}
-function idxOf(r: number, c: number) {
-  return r * W + c;
-}
-
-type Corners = { tl: boolean; tr: boolean; bl: boolean; br: boolean };
-
-// “채워진 셀(ownerOn=true)”의 바깥 코너 판정
-function outerCornersFor(
-  on: boolean[],
-  valid: boolean[],
-  idx: number,
-): Corners {
-  if (!valid[idx] || !on[idx])
-    return { tl: false, tr: false, bl: false, br: false };
-
-  const r = rowOf(idx);
-  const c = colOf(idx);
-
-  const top = r > 0 && valid[idxOf(r - 1, c)] && on[idxOf(r - 1, c)];
-  const bottom = r < H - 1 && valid[idxOf(r + 1, c)] && on[idxOf(r + 1, c)];
-  const left = c > 0 && valid[idxOf(r, c - 1)] && on[idxOf(r, c - 1)];
-  const right = c < W - 1 && valid[idxOf(r, c + 1)] && on[idxOf(r, c + 1)];
-
-  return {
-    tl: !top && !left,
-    tr: !top && !right,
-    bl: !bottom && !left,
-    br: !bottom && !right,
-  };
-}
-
-// “빈 셀(adjOn=false)”이지만 3칸이 차 있으면 concave 필요
-function concaveCornersFor(
-  adjOn: boolean[],
-  valid: boolean[],
-  idx: number,
-): Corners {
-  if (!valid[idx] || adjOn[idx])
-    return { tl: false, tr: false, bl: false, br: false };
-
-  const r = rowOf(idx);
-  const c = colOf(idx);
-
-  const up = r > 0 && valid[idxOf(r - 1, c)] && adjOn[idxOf(r - 1, c)];
-  const down = r < H - 1 && valid[idxOf(r + 1, c)] && adjOn[idxOf(r + 1, c)];
-  const left = c > 0 && valid[idxOf(r, c - 1)] && adjOn[idxOf(r, c - 1)];
-  const right = c < W - 1 && valid[idxOf(r, c + 1)] && adjOn[idxOf(r, c + 1)];
-
-  const ul =
-    r > 0 && c > 0 && valid[idxOf(r - 1, c - 1)] && adjOn[idxOf(r - 1, c - 1)];
-  const ur =
-    r > 0 &&
-    c < W - 1 &&
-    valid[idxOf(r - 1, c + 1)] &&
-    adjOn[idxOf(r - 1, c + 1)];
-  const dl =
-    r < H - 1 &&
-    c > 0 &&
-    valid[idxOf(r + 1, c - 1)] &&
-    adjOn[idxOf(r + 1, c - 1)];
-  const dr =
-    r < H - 1 &&
-    c < W - 1 &&
-    valid[idxOf(r + 1, c + 1)] &&
-    adjOn[idxOf(r + 1, c + 1)];
-
-  return {
-    tl: up && left && ul,
-    tr: up && right && ur,
-    bl: down && left && dl,
-    br: down && right && dr,
-  };
-}
-
-/**
- * 선생님 의도대로 corner 의미를 “결과 색”으로 사용:
- *
- * 1) center != empty 인 채워진 셀
- *    - outer corner(바깥 라운드가 필요한 코너)은 corner=empty 로 둔다.
- *      => view에서 (Color=baseBg → Cut=centerColor)로 “라운드한 흰색 코너”가 됨
- *    - 나머지 코너는 corner=center(=owner) 로 둔다. => 코너 작업 안 함
- *
- * 2) center == empty 인 빈 셀
- *    - concave가 필요한 코너는 corner=ownerColor(confirmed/preview) 로 둔다.
- *      => view에서 (Color=ownerColor → Cut=baseBg)로 오목 패치
- *    - 나머지는 corner=empty
- *
- * 3) deselect 드래그 “지워지는 프리뷰”
- *    - confirmedOn: selected에서 (dragMode=deselect && previewRect)에 걸린 셀은 confirmed에서 제외
- *    - ownerAt: confirmed > preview > empty
- */
-function buildRenderGrid(args: {
-  cells: Cell[];
-  confirmed: Set<number>; // store selected
-  preview: Set<number>; // drag rect
-  dragMode: DragMode;
-}): RenderGrid {
-  const { cells, confirmed: selected, preview, dragMode } = args;
-  const n = cells.length;
-
-  const valid = new Array<boolean>(n);
-  for (let i = 0; i < n; i++) valid[i] = !(cells[i]?.hidden ?? true);
-
-  const isDragging = preview.size > 0;
-
-  const confirmedOn = new Array<boolean>(n).fill(false);
-  const previewAdjOn = new Array<boolean>(n).fill(false);
-  const previewFillOn = new Array<boolean>(n).fill(false);
-
-  for (let i = 0; i < n; i++) {
-    if (!valid[i]) continue;
-
-    const isSel = selected.has(i);
-    const isPrev = preview.has(i);
-
-    // confirmed truth (deselect 프리뷰에 걸린 확정은 잠시 confirmed에서 제외)
-    confirmedOn[i] =
-      isSel && !(isDragging && dragMode === "deselect" && isPrev);
-
-    // adjacency truth (shape basis)
-    previewAdjOn[i] = dragMode === "select" ? isSel || isPrev : isSel;
-
-    // preview fill truth (dragging only)
-    if (isDragging) {
-      previewFillOn[i] = dragMode === "select" ? isSel || isPrev : isSel;
-    }
-  }
-
-  const centerAt = new Array<Owner>(n).fill("empty");
-  for (let i = 0; i < n; i++) {
-    if (!valid[i]) continue;
-    centerAt[i] = confirmedOn[i]
-      ? "confirmed"
-      : previewFillOn[i]
-        ? "preview"
-        : "empty";
-  }
-
-  // 코너 판정
-  const confirmedOuter = new Array<Corners>(n);
-  const previewOuter = new Array<Corners>(n);
-  const confirmedConcave = new Array<Corners>(n);
-  const previewConcave = new Array<Corners>(n);
-
-  for (let i = 0; i < n; i++) {
-    confirmedOuter[i] = outerCornersFor(confirmedOn, valid, i);
-    previewOuter[i] = outerCornersFor(previewAdjOn, valid, i);
-    confirmedConcave[i] = concaveCornersFor(confirmedOn, valid, i);
-    previewConcave[i] = concaveCornersFor(previewAdjOn, valid, i);
-  }
-
-  const out1d: RenderCell[] = new Array(n);
-
-  for (let i = 0; i < n; i++) {
-    if (!valid[i]) {
-      out1d[i] = EMPTY_CELL;
-      continue;
-    }
-
-    const center = centerAt[i];
-
-    // =====================
-    // Filled cells: outer corners -> corner=empty (rounded white)
-    // =====================
-    if (center === "confirmed") {
-      const oc = confirmedOuter[i];
-      out1d[i] = {
-        lt: { center, corner: oc.tl ? "empty" : "confirmed" },
-        rt: { center, corner: oc.tr ? "empty" : "confirmed" },
-        lb: { center, corner: oc.bl ? "empty" : "confirmed" },
-        rb: { center, corner: oc.br ? "empty" : "confirmed" },
-      };
-      continue;
-    }
-
-    if (center === "preview") {
-      const oc = previewOuter[i];
-      out1d[i] = {
-        lt: { center, corner: oc.tl ? "empty" : "preview" },
-        rt: { center, corner: oc.tr ? "empty" : "preview" },
-        lb: { center, corner: oc.bl ? "empty" : "preview" },
-        rb: { center, corner: oc.br ? "empty" : "preview" },
-      };
-      continue;
-    }
-
-    // =====================
-    // Empty cells: concave corners -> corner=ownerColor
-    // priority: confirmed concave > preview concave
-    // =====================
-    const cc = confirmedConcave[i];
-    const pc = previewConcave[i];
-
-    out1d[i] = {
-      lt: {
-        center: "empty",
-        corner: cc.tl ? "confirmed" : pc.tl ? "preview" : "empty",
-      },
-      rt: {
-        center: "empty",
-        corner: cc.tr ? "confirmed" : pc.tr ? "preview" : "empty",
-      },
-      lb: {
-        center: "empty",
-        corner: cc.bl ? "confirmed" : pc.bl ? "preview" : "empty",
-      },
-      rb: {
-        center: "empty",
-        corner: cc.br ? "confirmed" : pc.br ? "preview" : "empty",
-      },
-    };
-  }
-
-  const grid: RenderGrid = [];
-  for (let r = 0; r < H; r++) {
-    const row: RenderCell[] = [];
-    for (let c = 0; c < W; c++) row.push(out1d[idxOf(r, c)]);
-    grid.push(row);
-  }
-  return grid;
 }
 
 // =====================
@@ -488,12 +251,12 @@ function ownerBg(owner: Owner, dragMode: DragMode) {
 }
 
 /**
- * 선생님 규칙 기반 코너 렌더 조건:
- * - center != empty && corner == empty  => OUTER rounding cut (white rounded corner)
+ * 코너 렌더 조건:
+ * - center != empty && corner != center => 코너 작업 필요 (empty면 라운딩, preview면 preview 색)
  * - center == empty && corner != empty  => CONCAVE patch (colored corner)
  */
 function needsCornerOp(center: Owner, corner: Owner) {
-  if (center !== "empty") return corner === "empty";
+  if (center !== "empty") return corner !== center;
   return corner !== "empty";
 }
 
@@ -511,8 +274,10 @@ export default function DateSelector() {
 
   const renderGrid = useMemo(
     () =>
-      buildRenderGrid({
-        cells,
+      buildRenderGridFromSets({
+        H,
+        W,
+        isHidden: (idx) => cells[idx]?.hidden ?? true,
         confirmed: selectedIndices,
         preview: previewIndices,
         dragMode,
@@ -605,10 +370,15 @@ export default function DateSelector() {
                 if (!needsCornerOp(center, corner)) return null;
 
                 // outerColor:
-                // - filled & corner empty => baseBg (white)
+                // - filled & corner empty => baseBg (white, 라운딩)
+                // - filled & corner preview => preview color
                 // - empty & corner colored => corner color (owner color)
                 const outerColor =
-                  center !== "empty" ? baseBg : ownerBg(corner, dragMode);
+                  center !== "empty"
+                    ? corner === "empty"
+                      ? baseBg
+                      : ownerBg(corner, dragMode)
+                    : ownerBg(corner, dragMode);
 
                 return (
                   <div
@@ -629,8 +399,9 @@ export default function DateSelector() {
                 if (!needsCornerOp(center, corner)) return null;
 
                 // innerColor:
-                // - filled & corner empty => centerColor (to make rounded “inside blue”)
-                // - empty & corner colored => baseBg (to carve concave)
+                // - filled & corner empty => centerColor (라운딩된 안쪽)
+                // - filled & corner preview => centerColor (preview 위에 center 라운딩)
+                // - empty & corner colored => baseBg (오목 패치)
                 const innerColor = center !== "empty" ? centerBg : baseBg;
 
                 return (
