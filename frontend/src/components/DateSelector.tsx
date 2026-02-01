@@ -3,9 +3,14 @@ import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { useDateSelectionStore } from "@/stores/useDateSelectionStore";
 
-const TOTAL_CELLS = 35; // 5줄 × 7칸
+const TOTAL_CELLS = 35; // 5x7
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 const W = 7;
+const H = 5;
+
+// =====================
+// Calendar Cells (meta)
+// =====================
 
 type Cell = {
   day: number;
@@ -21,12 +26,12 @@ function useCalendarCells(): Cell[] {
     const month = today.getMonth();
     const todayDate = today.getDate();
 
-    const firstDay = new Date(year, month, 1).getDay(); // 이번달 1일의 요일
+    const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const allCells: Cell[] = [];
 
-    // 이번달 1일 이전 빈칸 (이전달)
+    // prev month placeholders
     const prevMonthDays = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       allCells.push({
@@ -37,7 +42,7 @@ function useCalendarCells(): Cell[] {
       });
     }
 
-    // 이번달 날짜
+    // current month
     for (let d = 1; d <= daysInMonth; d++) {
       allCells.push({
         day: d,
@@ -47,21 +52,18 @@ function useCalendarCells(): Cell[] {
       });
     }
 
-    // 앞쪽에서 완전히 hidden인 줄(7칸) 수 계산
+    // count fully hidden leading rows
     let hiddenRows = 0;
-    for (let row = 0; row < 5; row++) {
-      const rowCells = allCells.slice(row * 7, row * 7 + 7);
-      if (rowCells.length === 7 && rowCells.every((c) => c.hidden)) {
+    for (let row = 0; row < H; row++) {
+      const rowCells = allCells.slice(row * W, row * W + W);
+      if (rowCells.length === W && rowCells.every((c) => c.hidden))
         hiddenRows++;
-      } else {
-        break;
-      }
+      else break;
     }
 
-    // hidden된 줄 제거
-    const trimmed = allCells.slice(hiddenRows * 7);
+    const trimmed = allCells.slice(hiddenRows * W);
 
-    // 다음달 날짜로 TOTAL_CELLS까지 채움
+    // fill next month
     let nextDay = 1;
     while (trimmed.length < TOTAL_CELLS) {
       trimmed.push({
@@ -76,26 +78,278 @@ function useCalendarCells(): Cell[] {
   }, []);
 }
 
-// --- 드래그 선택 훅 ---
+// =====================
+// Pure Render Model
+// =====================
+
+type Owner = "empty" | "preview" | "confirmed";
+
+// RenderCell은 딱 이것만: 4코너 + {corner, center}
+type RenderQuad = { corner: Owner; center: Owner };
+type RenderCell = {
+  lt: RenderQuad;
+  rt: RenderQuad;
+  lb: RenderQuad;
+  rb: RenderQuad;
+};
+type RenderGrid = RenderCell[][];
+
+const EMPTY_QUAD: RenderQuad = { corner: "empty", center: "empty" };
+const EMPTY_CELL: RenderCell = {
+  lt: EMPTY_QUAD,
+  rt: EMPTY_QUAD,
+  lb: EMPTY_QUAD,
+  rb: EMPTY_QUAD,
+};
 
 type DragMode = "select" | "deselect";
 
-function getRectIndices(startIdx: number, endIdx: number): Set<number> {
-  const startRow = Math.floor(startIdx / 7);
-  const startCol = startIdx % 7;
-  const endRow = Math.floor(endIdx / 7);
-  const endCol = endIdx % 7;
+function rowOf(i: number) {
+  return (i / W) | 0;
+}
+function colOf(i: number) {
+  return i % W;
+}
+function idxOf(r: number, c: number) {
+  return r * W + c;
+}
 
-  const minRow = Math.min(startRow, endRow);
-  const maxRow = Math.max(startRow, endRow);
-  const minCol = Math.min(startCol, endCol);
-  const maxCol = Math.max(startCol, endCol);
+type Corners = { tl: boolean; tr: boolean; bl: boolean; br: boolean };
+
+// “채워진 셀(ownerOn=true)”의 바깥 코너 판정
+function outerCornersFor(
+  on: boolean[],
+  valid: boolean[],
+  idx: number,
+): Corners {
+  if (!valid[idx] || !on[idx])
+    return { tl: false, tr: false, bl: false, br: false };
+
+  const r = rowOf(idx);
+  const c = colOf(idx);
+
+  const top = r > 0 && valid[idxOf(r - 1, c)] && on[idxOf(r - 1, c)];
+  const bottom = r < H - 1 && valid[idxOf(r + 1, c)] && on[idxOf(r + 1, c)];
+  const left = c > 0 && valid[idxOf(r, c - 1)] && on[idxOf(r, c - 1)];
+  const right = c < W - 1 && valid[idxOf(r, c + 1)] && on[idxOf(r, c + 1)];
+
+  return {
+    tl: !top && !left,
+    tr: !top && !right,
+    bl: !bottom && !left,
+    br: !bottom && !right,
+  };
+}
+
+// “빈 셀(adjOn=false)”이지만 3칸이 차 있으면 concave 필요
+function concaveCornersFor(
+  adjOn: boolean[],
+  valid: boolean[],
+  idx: number,
+): Corners {
+  if (!valid[idx] || adjOn[idx])
+    return { tl: false, tr: false, bl: false, br: false };
+
+  const r = rowOf(idx);
+  const c = colOf(idx);
+
+  const up = r > 0 && valid[idxOf(r - 1, c)] && adjOn[idxOf(r - 1, c)];
+  const down = r < H - 1 && valid[idxOf(r + 1, c)] && adjOn[idxOf(r + 1, c)];
+  const left = c > 0 && valid[idxOf(r, c - 1)] && adjOn[idxOf(r, c - 1)];
+  const right = c < W - 1 && valid[idxOf(r, c + 1)] && adjOn[idxOf(r, c + 1)];
+
+  const ul =
+    r > 0 && c > 0 && valid[idxOf(r - 1, c - 1)] && adjOn[idxOf(r - 1, c - 1)];
+  const ur =
+    r > 0 &&
+    c < W - 1 &&
+    valid[idxOf(r - 1, c + 1)] &&
+    adjOn[idxOf(r - 1, c + 1)];
+  const dl =
+    r < H - 1 &&
+    c > 0 &&
+    valid[idxOf(r + 1, c - 1)] &&
+    adjOn[idxOf(r + 1, c - 1)];
+  const dr =
+    r < H - 1 &&
+    c < W - 1 &&
+    valid[idxOf(r + 1, c + 1)] &&
+    adjOn[idxOf(r + 1, c + 1)];
+
+  return {
+    tl: up && left && ul,
+    tr: up && right && ur,
+    bl: down && left && dl,
+    br: down && right && dr,
+  };
+}
+
+/**
+ * 선생님 의도대로 corner 의미를 “결과 색”으로 사용:
+ *
+ * 1) center != empty 인 채워진 셀
+ *    - outer corner(바깥 라운드가 필요한 코너)은 corner=empty 로 둔다.
+ *      => view에서 (Color=baseBg → Cut=centerColor)로 “라운드한 흰색 코너”가 됨
+ *    - 나머지 코너는 corner=center(=owner) 로 둔다. => 코너 작업 안 함
+ *
+ * 2) center == empty 인 빈 셀
+ *    - concave가 필요한 코너는 corner=ownerColor(confirmed/preview) 로 둔다.
+ *      => view에서 (Color=ownerColor → Cut=baseBg)로 오목 패치
+ *    - 나머지는 corner=empty
+ *
+ * 3) deselect 드래그 “지워지는 프리뷰”
+ *    - confirmedOn: selected에서 (dragMode=deselect && previewRect)에 걸린 셀은 confirmed에서 제외
+ *    - ownerAt: confirmed > preview > empty
+ */
+function buildRenderGrid(args: {
+  cells: Cell[];
+  confirmed: Set<number>; // store selected
+  preview: Set<number>; // drag rect
+  dragMode: DragMode;
+}): RenderGrid {
+  const { cells, confirmed: selected, preview, dragMode } = args;
+  const n = cells.length;
+
+  const valid = new Array<boolean>(n);
+  for (let i = 0; i < n; i++) valid[i] = !(cells[i]?.hidden ?? true);
+
+  const isDragging = preview.size > 0;
+
+  const confirmedOn = new Array<boolean>(n).fill(false);
+  const previewAdjOn = new Array<boolean>(n).fill(false);
+  const previewFillOn = new Array<boolean>(n).fill(false);
+
+  for (let i = 0; i < n; i++) {
+    if (!valid[i]) continue;
+
+    const isSel = selected.has(i);
+    const isPrev = preview.has(i);
+
+    // confirmed truth (deselect 프리뷰에 걸린 확정은 잠시 confirmed에서 제외)
+    confirmedOn[i] =
+      isSel && !(isDragging && dragMode === "deselect" && isPrev);
+
+    // adjacency truth (shape basis)
+    previewAdjOn[i] = dragMode === "select" ? isSel || isPrev : isSel;
+
+    // preview fill truth (dragging only)
+    if (isDragging) {
+      previewFillOn[i] = dragMode === "select" ? isSel || isPrev : isSel;
+    }
+  }
+
+  const centerAt = new Array<Owner>(n).fill("empty");
+  for (let i = 0; i < n; i++) {
+    if (!valid[i]) continue;
+    centerAt[i] = confirmedOn[i]
+      ? "confirmed"
+      : previewFillOn[i]
+        ? "preview"
+        : "empty";
+  }
+
+  // 코너 판정
+  const confirmedOuter = new Array<Corners>(n);
+  const previewOuter = new Array<Corners>(n);
+  const confirmedConcave = new Array<Corners>(n);
+  const previewConcave = new Array<Corners>(n);
+
+  for (let i = 0; i < n; i++) {
+    confirmedOuter[i] = outerCornersFor(confirmedOn, valid, i);
+    previewOuter[i] = outerCornersFor(previewAdjOn, valid, i);
+    confirmedConcave[i] = concaveCornersFor(confirmedOn, valid, i);
+    previewConcave[i] = concaveCornersFor(previewAdjOn, valid, i);
+  }
+
+  const out1d: RenderCell[] = new Array(n);
+
+  for (let i = 0; i < n; i++) {
+    if (!valid[i]) {
+      out1d[i] = EMPTY_CELL;
+      continue;
+    }
+
+    const center = centerAt[i];
+
+    // =====================
+    // Filled cells: outer corners -> corner=empty (rounded white)
+    // =====================
+    if (center === "confirmed") {
+      const oc = confirmedOuter[i];
+      out1d[i] = {
+        lt: { center, corner: oc.tl ? "empty" : "confirmed" },
+        rt: { center, corner: oc.tr ? "empty" : "confirmed" },
+        lb: { center, corner: oc.bl ? "empty" : "confirmed" },
+        rb: { center, corner: oc.br ? "empty" : "confirmed" },
+      };
+      continue;
+    }
+
+    if (center === "preview") {
+      const oc = previewOuter[i];
+      out1d[i] = {
+        lt: { center, corner: oc.tl ? "empty" : "preview" },
+        rt: { center, corner: oc.tr ? "empty" : "preview" },
+        lb: { center, corner: oc.bl ? "empty" : "preview" },
+        rb: { center, corner: oc.br ? "empty" : "preview" },
+      };
+      continue;
+    }
+
+    // =====================
+    // Empty cells: concave corners -> corner=ownerColor
+    // priority: confirmed concave > preview concave
+    // =====================
+    const cc = confirmedConcave[i];
+    const pc = previewConcave[i];
+
+    out1d[i] = {
+      lt: {
+        center: "empty",
+        corner: cc.tl ? "confirmed" : pc.tl ? "preview" : "empty",
+      },
+      rt: {
+        center: "empty",
+        corner: cc.tr ? "confirmed" : pc.tr ? "preview" : "empty",
+      },
+      lb: {
+        center: "empty",
+        corner: cc.bl ? "confirmed" : pc.bl ? "preview" : "empty",
+      },
+      rb: {
+        center: "empty",
+        corner: cc.br ? "confirmed" : pc.br ? "preview" : "empty",
+      },
+    };
+  }
+
+  const grid: RenderGrid = [];
+  for (let r = 0; r < H; r++) {
+    const row: RenderCell[] = [];
+    for (let c = 0; c < W; c++) row.push(out1d[idxOf(r, c)]);
+    grid.push(row);
+  }
+  return grid;
+}
+
+// =====================
+// Drag Hook
+// =====================
+
+function getRectIndices(startIdx: number, endIdx: number): Set<number> {
+  const sr = rowOf(startIdx);
+  const sc = colOf(startIdx);
+  const er = rowOf(endIdx);
+  const ec = colOf(endIdx);
+
+  const r0 = Math.min(sr, er);
+  const r1 = Math.max(sr, er);
+  const c0 = Math.min(sc, ec);
+  const c1 = Math.max(sc, ec);
 
   const indices = new Set<number>();
-  for (let r = minRow; r <= maxRow; r++) {
-    for (let c = minCol; c <= maxCol; c++) {
-      indices.add(r * 7 + c);
-    }
+  for (let r = r0; r <= r1; r++) {
+    for (let c = c0; c <= c1; c++) indices.add(idxOf(r, c));
   }
   return indices;
 }
@@ -116,28 +370,28 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
   const [dragMode, setDragMode] = useState<DragMode>("select");
 
   const dragStartIdx = useRef<number | undefined>(undefined);
-  const isDragging = useRef(false);
+  const isDraggingRef = useRef(false);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       const idx = getCellIdxFromPoint(e.clientX, e.clientY);
       if (idx === undefined || isHidden(idx)) return;
 
-      isDragging.current = true;
+      isDraggingRef.current = true;
       dragStartIdx.current = idx;
 
-      const mode = selectedIndices.has(idx) ? "deselect" : "select";
+      const mode: DragMode = selectedIndices.has(idx) ? "deselect" : "select";
       setDragMode(mode);
-      setPreviewIndices(new Set([idx]));
 
+      setPreviewIndices(new Set([idx]));
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [selectedIndices, isHidden],
+    [isHidden, selectedIndices],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!isDragging.current || dragStartIdx.current === undefined) return;
+      if (!isDraggingRef.current || dragStartIdx.current === undefined) return;
 
       const idx = getCellIdxFromPoint(e.clientX, e.clientY);
       if (idx === undefined || isHidden(idx)) return;
@@ -148,10 +402,9 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
   );
 
   const handlePointerUp = useCallback(() => {
-    // previewIndices는 최신 상태가 아닐 수 있으니 setState 콜백 없이 “현재 렌더 기준”으로만 커밋
-    // (기존 코드 유지하고 싶으면 그대로 사용해도 됨)
-    isDragging.current = false;
+    isDraggingRef.current = false;
     dragStartIdx.current = undefined;
+
     setPreviewIndices((prev) => {
       if (prev.size > 0) {
         if (dragMode === "select") select(prev);
@@ -171,242 +424,78 @@ function useDateDragSelection(isHidden: (idx: number) => boolean) {
   };
 }
 
-// --- 마스크(배열) 기반 레이어 상태 생성 ---
+// =====================
+// View: 5-band zIndex
+// Today ring (bottom) -> Center Fill -> Corner Color -> Corner Cut -> Text (top)
+// =====================
 
-type LayerMasks = {
-  valid: boolean[]; // !hidden
-  confirmedOn: boolean[]; // 확정 fill 대상
-  previewAdjOn: boolean[]; // 프리뷰 연결 판단 대상
-  previewFillOn: boolean[]; // 프리뷰 실제 fill 대상(드래그 중)
-};
+const Z = {
+  TODAY: 10,
+  CENTER: 20,
+  CORNER_COLOR: 30,
+  CORNER_CUT: 40,
+  TEXT: 50,
+} as const;
 
-function buildLayerMasks(args: {
-  cells: Cell[];
-  selected: Set<number>;
-  preview: Set<number>;
-  dragMode: DragMode;
-}): LayerMasks {
-  const { cells, selected, preview, dragMode } = args;
-  const n = cells.length;
+type CornerPos = "lt" | "rt" | "lb" | "rb";
+const CORNERS: CornerPos[] = ["lt", "rt", "lb", "rb"];
 
-  const valid = new Array<boolean>(n);
-  for (let i = 0; i < n; i++) valid[i] = !cells[i]?.hidden;
-
-  const isDragging = preview.size > 0;
-
-  const confirmedOn = new Array<boolean>(n).fill(false);
-  const previewAdjOn = new Array<boolean>(n).fill(false);
-  const previewFillOn = new Array<boolean>(n).fill(false);
-
-  for (let i = 0; i < n; i++) {
-    if (!valid[i]) continue;
-
-    const isSel = selected.has(i);
-    const isPrev = preview.has(i);
-
-    // 확정 레이어: deselect 프리뷰에 걸린 확정은 확정칠에서 제외
-    confirmedOn[i] = isSel && !(dragMode === "deselect" && isPrev);
-
-    // 프리뷰 연결 판단 레이어 (기존 로직과 동치)
-    if (dragMode === "select") {
-      previewAdjOn[i] = isSel || isPrev;
-    } else {
-      const isDeselecting = isPrev && isSel;
-      const isRemaining = isSel && !isPrev;
-      previewAdjOn[i] = isDeselecting || isRemaining;
-    }
-
-    // 프리뷰 실제 fill: 드래그 중이면 확정 셀도 프리뷰 색으로 칠함(기존 유지)
-    if (isDragging) {
-      previewFillOn[i] = isSel || isPrev;
-    }
-  }
-
-  return { valid, confirmedOn, previewAdjOn, previewFillOn };
-}
-
-// --- 코너/오목 패치 계산 (6/8 그대로 사용) ---
-
-type Corners = { tl: boolean; tr: boolean; bl: boolean; br: boolean };
-
-function rowOf(i: number) {
-  return (i / W) | 0;
-}
-function colOf(i: number) {
-  return i % W;
-}
-function inBounds(i: number, n: number) {
-  return i >= 0 && i < n;
-}
-
-function computeOuterCorners(
-  on: boolean[],
-  valid: boolean[],
-  idx: number,
-): Corners & {
-  diagTL: boolean;
-  diagTR: boolean;
-  diagBL: boolean;
-  diagBR: boolean;
-  top: boolean;
-  bottom: boolean;
-  left: boolean;
-  right: boolean;
-} {
-  const n = on.length;
-  if (!valid[idx] || !on[idx]) {
-    return {
-      tl: false,
-      tr: false,
-      bl: false,
-      br: false,
-      diagTL: false,
-      diagTR: false,
-      diagBL: false,
-      diagBR: false,
-      top: false,
-      bottom: false,
-      left: false,
-      right: false,
-    };
-  }
-
-  const r = rowOf(idx);
-  const c = colOf(idx);
-
-  const up = idx - 7;
-  const down = idx + 7;
-  const leftI = idx - 1;
-  const rightI = idx + 1;
-
-  const top = r > 0 && valid[up] && on[up];
-  const bottom = r < 4 && valid[down] && on[down];
-  const left = c > 0 && valid[leftI] && on[leftI];
-  const right = c < 6 && valid[rightI] && on[rightI];
-
-  const tl = !top && !left;
-  const tr = !top && !right;
-  const bl = !bottom && !left;
-  const br = !bottom && !right;
-
-  // 대각(6/8) 그대로
-  const diagTLi = idx - 8;
-  const diagTRi = idx - 6;
-  const diagBLi = idx + 6;
-  const diagBRi = idx + 8;
-
-  const diagTL =
-    r > 0 &&
-    c > 0 &&
-    inBounds(diagTLi, n) &&
-    valid[diagTLi] &&
-    on[diagTLi] &&
-    !top &&
-    !left;
-  const diagTR =
-    r > 0 &&
-    c < 6 &&
-    inBounds(diagTRi, n) &&
-    valid[diagTRi] &&
-    on[diagTRi] &&
-    !top &&
-    !right;
-  const diagBL =
-    r < 4 &&
-    c > 0 &&
-    inBounds(diagBLi, n) &&
-    valid[diagBLi] &&
-    on[diagBLi] &&
-    !bottom &&
-    !left;
-  const diagBR =
-    r < 4 &&
-    c < 6 &&
-    inBounds(diagBRi, n) &&
-    valid[diagBRi] &&
-    on[diagBRi] &&
-    !bottom &&
-    !right;
-
-  return {
-    tl,
-    tr,
-    bl,
-    br,
-    diagTL,
-    diagTR,
-    diagBL,
-    diagBR,
-    top,
-    bottom,
-    left,
-    right,
-  };
-}
-
-function computeInnerConcavePatches(
-  adjOn: boolean[],
-  valid: boolean[],
-  idx: number,
-  selfOn: boolean,
-): Corners {
-  if (selfOn) return { tl: false, tr: false, bl: false, br: false };
-
-  const r = rowOf(idx);
-  const c = colOf(idx);
-
-  const up = idx - 7;
-  const down = idx + 7;
-  const leftI = idx - 1;
-  const rightI = idx + 1;
-
-  const upOn = r > 0 && valid[up] && adjOn[up];
-  const downOn = r < 4 && valid[down] && adjOn[down];
-  const leftOn = c > 0 && valid[leftI] && adjOn[leftI];
-  const rightOn = c < 6 && valid[rightI] && adjOn[rightI];
-
-  // 대각선 셀도 켜져 있어야 오목 패치 적용 (순수 대각 연결 방지)
-  const diagTL = idx - 8;
-  const diagTR = idx - 6;
-  const diagBL = idx + 6;
-  const diagBR = idx + 8;
-
-  return {
-    tl: r > 0 && c > 0 && upOn && leftOn && inBounds(diagTL, adjOn.length) && valid[diagTL] && adjOn[diagTL],
-    tr: r > 0 && c < 6 && upOn && rightOn && inBounds(diagTR, adjOn.length) && valid[diagTR] && adjOn[diagTR],
-    bl: r < 4 && c > 0 && downOn && leftOn && inBounds(diagBL, adjOn.length) && valid[diagBL] && adjOn[diagBL],
-    br: r < 4 && c < 6 && downOn && rightOn && inBounds(diagBR, adjOn.length) && valid[diagBR] && adjOn[diagBR],
-  };
-}
-
-// --- 코너 패치 렌더링 헬퍼 (기존 그대로) ---
-
-const corners: ("tl" | "tr" | "bl" | "br")[] = ["tl", "tr", "bl", "br"];
-
-function cornerStyle(pos: "tl" | "tr" | "bl" | "br"): React.CSSProperties {
-  const base: React.CSSProperties = {
+function cornerStyle(pos: CornerPos): React.CSSProperties {
+  const s: React.CSSProperties = {
     position: "absolute",
     width: 8,
     height: 8,
-    overflow: "hidden",
+    pointerEvents: "none",
   };
-  if (pos.includes("t")) base.top = 0;
-  else base.bottom = 0;
-
-  if (pos.includes("l")) base.left = 0;
-  else base.right = 0;
-
-  return base;
+  if (pos === "lt") {
+    s.top = 0;
+    s.left = 0;
+  } else if (pos === "rt") {
+    s.top = 0;
+    s.right = 0;
+  } else if (pos === "lb") {
+    s.bottom = 0;
+    s.left = 0;
+  } else {
+    s.bottom = 0;
+    s.right = 0;
+  }
+  return s;
 }
 
-function concaveInnerRound(pos: "tl" | "tr" | "bl" | "br") {
-  if (pos === "tl") return "rounded-tl-lg";
-  if (pos === "tr") return "rounded-tr-lg";
-  if (pos === "bl") return "rounded-bl-lg";
+function roundClass(pos: CornerPos) {
+  if (pos === "lt") return "rounded-tl-lg";
+  if (pos === "rt") return "rounded-tr-lg";
+  if (pos === "lb") return "rounded-bl-lg";
   return "rounded-br-lg";
 }
 
-// --- 컴포넌트 ---
+function centerOwner(rc: RenderCell): Owner {
+  return rc.lt.center;
+}
+function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
+  if (pos === "lt") return rc.lt.corner;
+  if (pos === "rt") return rc.rt.corner;
+  if (pos === "lb") return rc.lb.corner;
+  return rc.rb.corner;
+}
+
+function ownerBg(owner: Owner, dragMode: DragMode) {
+  if (owner === "confirmed") return adaptive.blue300;
+  if (owner === "preview")
+    return dragMode === "select" ? adaptive.blue200 : adaptive.blue50;
+  return "transparent";
+}
+
+/**
+ * 선생님 규칙 기반 코너 렌더 조건:
+ * - center != empty && corner == empty  => OUTER rounding cut (white rounded corner)
+ * - center == empty && corner != empty  => CONCAVE patch (colored corner)
+ */
+function needsCornerOp(center: Owner, corner: Owner) {
+  if (center !== "empty") return corner === "empty";
+  return corner !== "empty";
+}
 
 export default function DateSelector() {
   const cells = useCalendarCells();
@@ -420,24 +509,23 @@ export default function DateSelector() {
     handlePointerUp,
   } = useDateDragSelection((idx) => cells[idx]?.hidden ?? true);
 
-  const masks = useMemo(
+  const renderGrid = useMemo(
     () =>
-      buildLayerMasks({
+      buildRenderGrid({
         cells,
-        selected: selectedIndices,
+        confirmed: selectedIndices,
         preview: previewIndices,
         dragMode,
       }),
     [cells, selectedIndices, previewIndices, dragMode],
   );
 
-  const isDragging = previewIndices.size > 0;
-  const previewBg = dragMode === "select" ? adaptive.blue200 : adaptive.blue50;
-  const confirmedBg = adaptive.blue300;
+  const baseBg = "white";
+  const ringColor = adaptive.blue300;
 
   return (
     <div className="w-full px-5 py-4">
-      {/* 요일 헤더 */}
+      {/* weekday header */}
       <div className="grid grid-cols-7 text-center">
         {weekdays.map((d) => (
           <span
@@ -453,7 +541,7 @@ export default function DateSelector() {
         ))}
       </div>
 
-      {/* 날짜 그리드 */}
+      {/* grid */}
       <div
         className="mt-3 grid grid-cols-7"
         onPointerDown={handlePointerDown}
@@ -463,40 +551,20 @@ export default function DateSelector() {
         style={{ touchAction: "none" }}
       >
         {cells.map((cell, idx) => {
-          const valid = masks.valid[idx];
+          const rc = renderGrid[rowOf(idx)][colOf(idx)];
+          const valid = !(cell.hidden ?? true);
 
-          const showConfirmed = masks.confirmedOn[idx];
-          const showPreview = isDragging && masks.previewFillOn[idx];
+          const center = centerOwner(rc);
+          const centerBg = ownerBg(center, dragMode);
 
-          // 확정/프리뷰 코너 계산 (프리뷰 코너는 "연결 판단 레이어" 기준)
-          const c = computeOuterCorners(masks.confirmedOn, masks.valid, idx);
-          const p = computeOuterCorners(masks.previewAdjOn, masks.valid, idx);
-
-          // 내부 오목 패치
-          const confirmedInner = computeInnerConcavePatches(
-            masks.confirmedOn,
-            masks.valid,
-            idx,
-            showConfirmed,
-          );
-          const previewInner = computeInnerConcavePatches(
-            masks.previewAdjOn,
-            masks.valid,
-            idx,
-            showPreview,
-          );
-
-          // 텍스트 색
           let textColor: string;
-          if (showConfirmed) {
+          if (center === "confirmed") textColor = "#ffffff";
+          else if (center === "preview" && dragMode === "select")
             textColor = "#ffffff";
-          } else if (showPreview && dragMode === "select") {
-            textColor = "#ffffff";
-          } else {
+          else
             textColor = cell.isCurrentMonth
               ? adaptive.grey800
               : adaptive.grey400;
-          }
 
           return (
             <div
@@ -507,89 +575,85 @@ export default function DateSelector() {
                 !valid && "opacity-0 pointer-events-none",
               )}
             >
-              {/* 프리뷰 레이어 */}
-              {showPreview && (
+              {/* 0) Today ring (bottom) */}
+              {cell.isToday && center === "empty" && (
                 <div
-                  className={cn(
-                    "absolute inset-0 z-10",
-                    p.tl && "rounded-tl-lg",
-                    p.tr && "rounded-tr-lg",
-                    p.bl && "rounded-bl-lg",
-                    p.br && "rounded-br-lg",
-                  )}
-                  style={{ backgroundColor: previewBg }}
-                />
-              )}
-
-              {/* 프리뷰 내부 오목 코너 패치 */}
-              {isDragging &&
-                corners.map((pos) => {
-                  if (!previewInner[pos]) return null;
-                  return (
-                    <div
-                      key={`p-${pos}`}
-                      className="z-10"
-                      style={{
-                        ...cornerStyle(pos),
-                        backgroundColor: previewBg,
-                      }}
-                    >
-                      <div
-                        className={cn("h-full w-full", concaveInnerRound(pos))}
-                        style={{ backgroundColor: "white" }}
-                      />
-                    </div>
-                  );
-                })}
-
-              {/* 확정 선택 레이어 */}
-              {showConfirmed && (
-                <div
-                  className={cn(
-                    "absolute inset-0 z-20",
-                    c.tl && "rounded-tl-lg",
-                    c.tr && "rounded-tr-lg",
-                    c.bl && "rounded-bl-lg",
-                    c.br && "rounded-br-lg",
-                  )}
-                  style={{ backgroundColor: confirmedBg }}
-                />
-              )}
-
-              {/* 확정 내부 오목 코너 패치 */}
-              {corners.map((pos) => {
-                if (!confirmedInner[pos]) return null;
-                return (
-                  <div
-                    key={`c-${pos}`}
-                    className="z-20"
-                    style={{
-                      ...cornerStyle(pos),
-                      backgroundColor: confirmedBg,
-                    }}
-                  >
-                    <div
-                      className={cn("h-full w-full", concaveInnerRound(pos))}
-                      style={{ backgroundColor: "white" }}
-                    />
-                  </div>
-                );
-              })}
-
-              {cell.isToday && !showConfirmed && !showPreview && (
-                <div
-                  className="absolute rounded-full"
+                  className="absolute rounded-full pointer-events-none"
                   style={{
+                    zIndex: Z.TODAY,
                     width: 42,
                     height: 42,
-                    border: `2px solid ${confirmedBg}`,
+                    border: `2px solid ${ringColor}`,
                   }}
                 />
               )}
 
+              {/* 1) Center fill (no rounded) */}
+              {center !== "empty" && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    zIndex: Z.CENTER,
+                    backgroundColor: centerBg,
+                  }}
+                />
+              )}
+
+              {/* 2) Corner Color band */}
+              {CORNERS.map((pos) => {
+                const corner = cornerOwner(rc, pos);
+                if (!needsCornerOp(center, corner)) return null;
+
+                // outerColor:
+                // - filled & corner empty => baseBg (white)
+                // - empty & corner colored => corner color (owner color)
+                const outerColor =
+                  center !== "empty" ? baseBg : ownerBg(corner, dragMode);
+
+                return (
+                  <div
+                    key={`corner-color-${pos}`}
+                    className="pointer-events-none"
+                    style={{
+                      ...cornerStyle(pos),
+                      zIndex: Z.CORNER_COLOR,
+                      backgroundColor: outerColor,
+                    }}
+                  />
+                );
+              })}
+
+              {/* 3) Corner Cut band */}
+              {CORNERS.map((pos) => {
+                const corner = cornerOwner(rc, pos);
+                if (!needsCornerOp(center, corner)) return null;
+
+                // innerColor:
+                // - filled & corner empty => centerColor (to make rounded “inside blue”)
+                // - empty & corner colored => baseBg (to carve concave)
+                const innerColor = center !== "empty" ? centerBg : baseBg;
+
+                return (
+                  <div
+                    key={`corner-cut-${pos}`}
+                    className={cn(
+                      "absolute pointer-events-none w-2 h-2",
+                      roundClass(pos),
+                    )}
+                    style={{
+                      ...cornerStyle(pos),
+                      zIndex: Z.CORNER_CUT,
+                      backgroundColor: innerColor,
+                    }}
+                  />
+                );
+              })}
+
+              {/* 4) Text (top) */}
               <span
-                className="relative z-30"
+                className="relative"
                 style={{
+                  zIndex: Z.TEXT,
                   fontSize: 20,
                   lineHeight: "29px",
                   color: textColor,
