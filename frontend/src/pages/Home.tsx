@@ -1,4 +1,4 @@
-import { Top } from "@toss/tds-mobile";
+import { FixedBottomCTA, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import DateSelector from "../components/DateSelector";
 import TimeSlider from "../components/TimeSlider";
@@ -28,14 +28,14 @@ export default function Page() {
       <Header />
       <DateSelector />
       <TimeSlider />
-      {/* <FixedBottomCTA.Double
-        leftButton={
-          <CTAButton color="dark" variant="weak" display="block">
-            닫기
-          </CTAButton>
-        }
-        rightButton={<CTAButton display="block">생성하기</CTAButton>}
-      /> */}
+      <FixedBottomCTA
+        onTap={() => console.log("방 생성하기 클릭됨")}
+        loading={false}
+        disabled={false}
+        color="primary"
+      >
+        방 생성하기
+      </FixedBottomCTA>
     </div>
   );
 }

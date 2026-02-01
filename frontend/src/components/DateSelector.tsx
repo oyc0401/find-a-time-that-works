@@ -298,7 +298,7 @@ export default function DateSelector() {
   );
 
   const baseBg = "white";
-  const ringColor = adaptive.blue300;
+  const ringColor = adaptive.blue400;
 
   return (
     <div className="w-full px-5 py-4">
