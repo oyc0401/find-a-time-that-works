@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
+import { heatColor } from "@/lib/heatColor";
 import CalendarGrid2, { type CalendarCellModel } from "../CalendarGrid2";
 
 const W = 7;
@@ -14,34 +15,39 @@ function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function countColor(count: number) {
-  if (count === 2) return { bg: adaptive.blue300, whiteText: true };
-  if (count === 1) return { bg: adaptive.blue200, whiteText: true };
-  return { bg: "white", whiteText: false };
+function countToHeatBg(count: number, maxCount: number): string {
+  if (count <= 0) return "white";
+  const ratio = maxCount > 0 ? (count - 1) / maxCount : 0;
+  return heatColor(ratio);
 }
 
-interface CalendarViewProps {
+interface HeatmapCalendarViewProps {
   highlightedDates: Set<string>;
+  dateCountMap: Map<string, number>;
+  maxCount: number;
   onDateClick?: (dateKey: string) => void;
 }
 
-export default function CalendarView({
+export default function HeatmapCalendarView({
   highlightedDates,
+  dateCountMap,
+  maxCount,
   onDateClick,
-}: CalendarViewProps) {
+}: HeatmapCalendarViewProps) {
   const cells = useMemo(() => buildCalendarCells(), []);
-  const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
+  // 가중치 기반 countGrid: 참여인원 + 1 (0은 빈칸 전용)
   const countGrid = useMemo(() => {
     const grid: number[][] = Array.from({ length: H }, () => Array(W).fill(0));
     for (let i = 0; i < cells.length; i++) {
-      if (!highlightedDates.has(toDateKey(cells[i].date))) continue;
+      const dateKey = toDateKey(cells[i].date);
+      if (!highlightedDates.has(dateKey)) continue;
       const r = Math.floor(i / W);
       const c = i % W;
-      grid[r][c] = i === pressedIdx ? 1 : 2;
+      grid[r][c] = (dateCountMap.get(dateKey) ?? 0) + 1;
     }
     return grid;
-  }, [cells, highlightedDates, pressedIdx]);
+  }, [cells, highlightedDates, dateCountMap]);
 
   const renderGrid = useMemo(
     () => buildRenderGrid2(countGrid),
@@ -58,12 +64,13 @@ export default function CalendarView({
       const rc = renderGrid[r][c];
       const center = rc.center;
       const isCurrentMonth = cell.date.getMonth() === currentMonth;
+      const dateKey = toDateKey(cell.date);
+      const count = dateCountMap.get(dateKey) ?? 0;
 
-      const { bg, whiteText } = countColor(center);
-      const centerBg = center > 0 ? bg : undefined;
+      const centerBg = center > 0 ? countToHeatBg(center, maxCount) : undefined;
       const textColor =
-        center > 0 && whiteText
-          ? "#ffffff"
+        center > 0 && count / maxCount > 0.5
+          ? "#fff"
           : isCurrentMonth
             ? adaptive.grey800
             : adaptive.grey400;
@@ -71,31 +78,17 @@ export default function CalendarView({
       return {
         hidden: cell.hidden,
         day: cell.day,
+        text: center > 0 ? String(count) : undefined,
         isToday: cell.isToday,
         textColor,
         center: centerBg,
-        lt: countColor(rc.lt).bg,
-        rt: countColor(rc.rt).bg,
-        lb: countColor(rc.lb).bg,
-        rb: countColor(rc.rb).bg,
+        lt: countToHeatBg(rc.lt, maxCount),
+        rt: countToHeatBg(rc.rt, maxCount),
+        lb: countToHeatBg(rc.lb, maxCount),
+        rb: countToHeatBg(rc.rb, maxCount),
       };
     });
-  }, [cells, renderGrid]);
-
-  const handlePressStart = useCallback(
-    (idx: number) => {
-      const cell = cells[idx];
-      if (!cell) return;
-      if (highlightedDates.has(toDateKey(cell.date))) {
-        setPressedIdx(idx);
-      }
-    },
-    [cells, highlightedDates],
-  );
-
-  const handlePressEnd = useCallback(() => {
-    setPressedIdx(undefined);
-  }, []);
+  }, [cells, renderGrid, dateCountMap, maxCount]);
 
   const handleCellClick = useCallback(
     (idx: number) => {
@@ -112,8 +105,6 @@ export default function CalendarView({
     <CalendarGrid2
       cells={calendarCells}
       onCellClick={handleCellClick}
-      onCellPressStart={handlePressStart}
-      onCellPressEnd={handlePressEnd}
     />
   );
 }

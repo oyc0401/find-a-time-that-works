@@ -10,7 +10,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
-import CalendarView from "./CalendarView";
+import HeatmapCalendarView from "./HeatmapCalendarView";
 
 const CELL_H = 20;
 const CORNER_SIZE = 4;
@@ -144,22 +144,6 @@ export default function OverviewGrid() {
     }
     return result;
   }, [participants]);
-
-  // 히트맵 캘린더용 셀 스타일
-  const cellStyles = useMemo(() => {
-    const styles: { date: string; bg: string; textColor: string; text: string }[] = [];
-    for (const date of highlightedDates) {
-      const count = dateCountMap.get(date) ?? 0;
-      const ratio = maxCount > 0 ? count / maxCount : 0;
-      styles.push({
-        date,
-        bg: heatColor(ratio),
-        textColor: ratio > 0.5 ? "#fff" : "#191f28",
-        text: String(count),
-      });
-    }
-    return styles.length > 0 ? styles : undefined;
-  }, [highlightedDates, dateCountMap, maxCount]);
 
   const handleCalendarDateClick = useCallback(
     (dateKey: string) => {
@@ -550,9 +534,10 @@ export default function OverviewGrid() {
         onClose={() => setIsCalendarOpen(false)}
         header={<BottomSheet.Header>참여 현황</BottomSheet.Header>}
       >
-        <CalendarView
+        <HeatmapCalendarView
           highlightedDates={highlightedDates}
-          cellStyles={cellStyles}
+          dateCountMap={dateCountMap}
+          maxCount={maxCount}
           onDateClick={handleCalendarDateClick}
         />
       </BottomSheet>
