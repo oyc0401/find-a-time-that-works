@@ -238,15 +238,20 @@ export default function AvailabilityGrid() {
     setPreview(makeEmptyPreview());
   }, [applySelection, makeEmptyPreview]);
 
-  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture } =
-    useLongPressDrag({
-      getCellFromPoint,
-      isSameCell,
-      onLongPressStart: handleLongPressStart,
-      onDrag: handleDrag,
-      onTap: handleTap,
-      onEnd: handleEnd,
-    });
+  const {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    onLostPointerCapture,
+  } = useLongPressDrag({
+    getCellFromPoint,
+    isSameCell,
+    onLongPressStart: handleLongPressStart,
+    onDrag: handleDrag,
+    onTap: handleTap,
+    onEnd: handleEnd,
+  });
 
   // ── Calendar bottom sheet ──
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -276,8 +281,9 @@ export default function AvailabilityGrid() {
   const TIME_WIDTH = 16;
   return (
     <div className="w-full">
+      <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
+
       <div className=" bg-white px-4">
-        <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
         {/* Date headers */}
         <div className="flex " style={{ paddingLeft: TIME_WIDTH }}>
           {dateHeaders.map((h, i) => (

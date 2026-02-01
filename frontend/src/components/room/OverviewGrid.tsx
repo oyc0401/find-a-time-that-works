@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomSheet } from "@toss/tds-mobile";
+import Badge from "@/components/Badge";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
@@ -9,6 +10,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
+import { getUserId } from "@/lib/userId";
 import HeatmapCalendarView from "./HeatmapCalendarView";
 import WeekNavigation from "./WeekNavigation";
 
@@ -86,6 +88,12 @@ export default function OverviewGrid() {
 
   const rows = timeSlots.length;
   const displayCols = columns.length;
+
+  // ── Current user ID ──
+  const [myUserId, setMyUserId] = useState<string>();
+  useEffect(() => {
+    getUserId().then(setMyUserId);
+  }, []);
 
   // ── Filter by participant ──
   const [selectedName, setSelectedName] = useState<string>();
@@ -169,6 +177,16 @@ export default function OverviewGrid() {
     [weeks, setWeekIdx],
   );
 
+  // ── Clear selection on week change ──
+  const prevWeekIdx = useRef(weekIdx);
+  useEffect(() => {
+    if (prevWeekIdx.current !== weekIdx) {
+      setSelectionRect(undefined);
+      setPreviewRect(undefined);
+      prevWeekIdx.current = weekIdx;
+    }
+  }, [weekIdx]);
+
   // ── Selection state ──
   const [selectionRect, setSelectionRect] = useState<Rect>();
   const [previewRect, setPreviewRect] = useState<Rect>();
@@ -178,6 +196,7 @@ export default function OverviewGrid() {
 
   // ── Drag handlers ──
   const handleLongPressStart = useCallback((cell: Cell) => {
+    setSelectedName(undefined);
     startCell.current = cell;
 
     const rect: Rect = {
@@ -205,11 +224,23 @@ export default function OverviewGrid() {
   }, []);
 
   const handleTap = useCallback((cell: Cell) => {
-    setSelectionRect({
-      r0: cell.row,
-      r1: cell.row,
-      dc0: cell.col,
-      dc1: cell.col,
+    setSelectedName(undefined);
+    setSelectionRect((prev) => {
+      if (
+        prev &&
+        prev.r0 === cell.row &&
+        prev.r1 === cell.row &&
+        prev.dc0 === cell.col &&
+        prev.dc1 === cell.col
+      ) {
+        return undefined;
+      }
+      return {
+        r0: cell.row,
+        r1: cell.row,
+        dc0: cell.col,
+        dc1: cell.col,
+      };
     });
   }, []);
 
@@ -223,15 +254,20 @@ export default function OverviewGrid() {
     setPreviewRect(undefined);
   }, []);
 
-  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture } =
-    useLongPressDrag({
-      getCellFromPoint,
-      isSameCell,
-      onLongPressStart: handleLongPressStart,
-      onDrag: handleDrag,
-      onTap: handleTap,
-      onEnd: handleEnd,
-    });
+  const {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    onLostPointerCapture,
+  } = useLongPressDrag({
+    getCellFromPoint,
+    isSameCell,
+    onLongPressStart: handleLongPressStart,
+    onDrag: handleDrag,
+    onTap: handleTap,
+    onEnd: handleEnd,
+  });
 
   // ── Participant panel data ──
   const activeRect = previewRect ?? selectionRect;
@@ -259,7 +295,7 @@ export default function OverviewGrid() {
         const covered = p.slots.filter((s) =>
           slotKeys.has(`${s.date}|${s.time}`),
         ).length;
-        return { name: p.name, covered, total: selectedSlots.length };
+        return { name: p.name, userId: p.userId, covered, total: selectedSlots.length };
       })
       .filter((p) => p.covered > 0)
       .sort((a, b) => b.covered - a.covered);
@@ -272,43 +308,52 @@ export default function OverviewGrid() {
 
   return (
     <div className="w-full">
+      <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       <div className="bg-white px-4">
-        <div className="flex items-center gap-2">
-          <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
-          {/* Participant badges */}
-          <div className="flex flex-1 flex-wrap items-center gap-1.5">
-            {(activeRect ? participantCoverage : participants).map((p) => {
+        {/* Participant badges */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
+          <Badge
+            title="전체"
+            color={!selectedName ? adaptive.blue400 : adaptive.grey100}
+            textColor={!selectedName ? "white" : adaptive.grey600}
+            className="shrink-0"
+            onClick={() => {
+              setSelectedName(undefined);
+              setSelectionRect(undefined);
+              setPreviewRect(undefined);
+            }}
+          />
+          {(() => {
+            const list = activeRect ? participantCoverage : participants;
+            const sorted = [...list].sort((a, b) => {
+              const aIsMe = "userId" in a && a.userId === myUserId;
+              const bIsMe = "userId" in b && b.userId === myUserId;
+              if (aIsMe && !bIsMe) return -1;
+              if (!aIsMe && bIsMe) return 1;
+              return 0;
+            });
+            return sorted.map((p) => {
               const name = p.name;
+              const isMe = "userId" in p && p.userId === myUserId;
               const isSelected = selectedName === name;
               return (
-                <button
+                <Badge
                   key={name}
-                  type="button"
-                  className="shrink-0 cursor-pointer px-6"
-                  style={{
-                    height: 44,
-                    borderRadius: 999,
-                    fontSize: 14,
-                    fontWeight: isSelected ? 600 : 400,
-                    backgroundColor: isSelected
-                      ? adaptive.blue400
-                      : adaptive.grey100,
-                    color: isSelected ? "#fff" : adaptive.grey700,
+                  title={isMe ? "나" : name}
+                  color={isSelected ? adaptive.blue400 : adaptive.grey100}
+                  textColor={isSelected ? "white" : adaptive.grey600}
+                  className="shrink-0"
+                  onClick={() => {
+                    setSelectedName(isSelected ? undefined : name);
+                    setSelectionRect(undefined);
+                    setPreviewRect(undefined);
                   }}
-                  onClick={() =>
-                    setSelectedName(isSelected ? undefined : name)
-                  }
-                >
-                  {name}
-                </button>
+                />
               );
-            })}
-          </div>
+            });
+          })()}
         </div>
-        <div
-          className="flex w-full"
-          style={{ paddingLeft: TIME_WIDTH }}
-        >
+        <div className="flex w-full" style={{ paddingLeft: TIME_WIDTH }}>
           {dateHeaders.map((h, i) => (
             <div
               key={columns[i].date}
@@ -404,8 +449,7 @@ export default function OverviewGrid() {
                         cornerCount < count
                           ? baseBg
                           : intensityColor(cornerCount, maxCount);
-                      const innerColor =
-                        cornerCount < count ? cellBg : baseBg;
+                      const innerColor = cornerCount < count ? cellBg : baseBg;
 
                       return (
                         <div key={`corner-${pos}`}>
@@ -431,7 +475,6 @@ export default function OverviewGrid() {
                         </div>
                       );
                     })}
-
                   </div>
                 );
               })}
