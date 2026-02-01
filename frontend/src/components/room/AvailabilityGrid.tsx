@@ -101,7 +101,6 @@ export default function AvailabilityGrid() {
   const { room, weeks } = useRoomData(id);
   const { weekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
-  const totalCols = room?.dates.length ?? 0;
 
   const timeSlots = useMemo(
     () =>
@@ -156,14 +155,11 @@ export default function AvailabilityGrid() {
 
   const applySelection = useCallback(
     (rect: { r0: number; r1: number; dc0: number; dc1: number }) => {
-      for (let r = rect.r0; r <= rect.r1; r++) {
-        for (let dc = rect.dc0; dc <= rect.dc1; dc++) {
-          const sc = columns[dc]?.storeColIdx;
-          if (sc === undefined) continue;
-          if (dragMode === "select") select(r, r, sc, sc);
-          else deselect(r, r, sc, sc);
-        }
-      }
+      const sc0 = columns[rect.dc0]?.storeColIdx;
+      const sc1 = columns[rect.dc1]?.storeColIdx;
+      if (sc0 === undefined || sc1 === undefined) return;
+      if (dragMode === "select") select(rect.r0, rect.r1, sc0, sc1);
+      else deselect(rect.r0, rect.r1, sc0, sc1);
     },
     [dragMode, select, deselect, columns],
   );
@@ -240,14 +236,15 @@ export default function AvailabilityGrid() {
     setPreview(makeEmptyPreview());
   }, [applySelection, makeEmptyPreview]);
 
-  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useLongPressDrag({
-    getCellFromPoint,
-    isSameCell,
-    onLongPressStart: handleLongPressStart,
-    onDrag: handleDrag,
-    onTap: handleTap,
-    onEnd: handleEnd,
-  });
+  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
+    useLongPressDrag({
+      getCellFromPoint,
+      isSameCell,
+      onLongPressStart: handleLongPressStart,
+      onDrag: handleDrag,
+      onTap: handleTap,
+      onEnd: handleEnd,
+    });
 
   if (grid.length === 0) return null;
 
@@ -378,7 +375,10 @@ export default function AvailabilityGrid() {
                       return (
                         <div
                           key={`corner-cut-${pos}`}
-                          className={cn("absolute pointer-events-none", roundClass(pos))}
+                          className={cn(
+                            "absolute pointer-events-none",
+                            roundClass(pos),
+                          )}
                           style={{
                             ...cornerStyle(pos),
                             backgroundColor: innerColor,
