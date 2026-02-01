@@ -1,141 +1,16 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
 import { buildCalendarCells } from "@/lib/calendar";
-import {
-  type Rect,
-  useDateSelectionStore,
-} from "@/stores/useDateSelectionStore";
 import {
   type Owner,
   type RenderCell,
   type DragMode,
   buildRenderGrid,
 } from "./DateSelector.logic";
+import { rowOf, colOf, useDateDragSelection } from "./DateSelector.drag";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-const W = 7;
-const H = 5;
-
-function createEmptyPreview(): boolean[][] {
-  return Array.from({ length: H }, () => Array(W).fill(false));
-}
-
-// =====================
-// Pure Render Model
-// =====================
-
-function rowOf(i: number) {
-  return (i / W) | 0;
-}
-function colOf(i: number) {
-  return i % W;
-}
-
-// =====================
-// Drag Hook
-// =====================
-
-function getRect(startIdx: number, endIdx: number): Rect {
-  const sr = rowOf(startIdx);
-  const sc = colOf(startIdx);
-  const er = rowOf(endIdx);
-  const ec = colOf(endIdx);
-
-  return {
-    r0: Math.min(sr, er),
-    r1: Math.max(sr, er),
-    c0: Math.min(sc, ec),
-    c1: Math.max(sc, ec),
-  };
-}
-
-function applyRect(grid: boolean[][], rect: Rect, value: boolean): boolean[][] {
-  const next = grid.map((row) => [...row]);
-  for (let r = rect.r0; r <= rect.r1; r++) {
-    for (let c = rect.c0; c <= rect.c1; c++) {
-      next[r][c] = value;
-    }
-  }
-  return next;
-}
-
-function getCellIdxFromPoint(x: number, y: number): number | undefined {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return undefined;
-  const cellEl = el.closest("[data-cell-idx]");
-  if (!cellEl) return undefined;
-  const idx = Number(cellEl.getAttribute("data-cell-idx"));
-  return Number.isNaN(idx) ? undefined : idx;
-}
-
-function useDateDragSelection(isHidden: (idx: number) => boolean) {
-  const { confirmed, select, deselect } = useDateSelectionStore();
-
-  const [preview, setPreview] = useState<boolean[][]>(createEmptyPreview);
-  const [dragMode, setDragMode] = useState<DragMode>("select");
-
-  const dragStartIdx = useRef<number | undefined>(undefined);
-  const currentRect = useRef<Rect | undefined>(undefined);
-  const isDraggingRef = useRef(false);
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
-      if (idx === undefined || isHidden(idx)) return;
-
-      isDraggingRef.current = true;
-      dragStartIdx.current = idx;
-
-      const r = rowOf(idx);
-      const c = colOf(idx);
-      const mode: DragMode = confirmed[r][c] ? "deselect" : "select";
-      setDragMode(mode);
-
-      const rect = getRect(idx, idx);
-      currentRect.current = rect;
-      setPreview(applyRect(createEmptyPreview(), rect, true));
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    },
-    [isHidden, confirmed],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isDraggingRef.current || dragStartIdx.current === undefined) return;
-
-      const idx = getCellIdxFromPoint(e.clientX, e.clientY);
-      if (idx === undefined || isHidden(idx)) return;
-
-      const rect = getRect(dragStartIdx.current, idx);
-      currentRect.current = rect;
-      setPreview(applyRect(createEmptyPreview(), rect, true));
-    },
-    [isHidden],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    isDraggingRef.current = false;
-    dragStartIdx.current = undefined;
-
-    const rect = currentRect.current;
-    if (rect) {
-      if (dragMode === "select") select(rect);
-      else deselect(rect);
-    }
-    currentRect.current = undefined;
-    setPreview(createEmptyPreview());
-  }, [dragMode, select, deselect]);
-
-  return {
-    confirmed,
-    preview,
-    dragMode,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-  };
-}
 
 // =====================
 // View: 5-band zIndex
@@ -255,7 +130,6 @@ export default function DateSelector() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        style={{ touchAction: "none" }}
       >
         {cells.map((cell, idx) => {
           const rc = renderGrid[rowOf(idx)][colOf(idx)];
