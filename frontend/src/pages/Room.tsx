@@ -6,6 +6,7 @@ import {
   Asset,
   BottomSheet,
   Button,
+  Loader,
   Post,
   Tab,
   TextField,
@@ -43,6 +44,14 @@ export default function Room() {
   const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
   const queryClient = useQueryClient();
+
+  // ── Loading delay ──
+  const [showLoader, setShowLoader] = useState(false);
+  useEffect(() => {
+    if (!isLoading) return;
+    const timer = setTimeout(() => setShowLoader(true), 1000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   // ── Tutorial bottom sheet ──
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
@@ -142,7 +151,11 @@ export default function Room() {
   }, [room, participants, enable]);
 
   if (isLoading) {
-    return <div className="h-screen" />;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        {showLoader && <Loader size="large" />}
+      </div>
+    );
   }
 
   if (!room) {
