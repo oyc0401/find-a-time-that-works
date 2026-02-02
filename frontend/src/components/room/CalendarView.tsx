@@ -15,18 +15,21 @@ function toDateKey(date: Date): string {
 }
 
 function countColor(count: number) {
-  if (count === 2) return { bg: adaptive.blue300, whiteText: true };
-  if (count === 1) return { bg: adaptive.blue200, whiteText: true };
+  if (count === 3) return { bg: adaptive.blue300, whiteText: true };
+  if (count === 2) return { bg: adaptive.blue200, whiteText: true };
+  if (count === 1) return { bg: adaptive.blue100, whiteText: false };
   return { bg: "white", whiteText: false };
 }
 
 interface CalendarViewProps {
   highlightedDates: Set<string>;
+  selectedDates?: Set<string>;
   onDateClick?: (dateKey: string) => void;
 }
 
 export default function CalendarView({
   highlightedDates,
+  selectedDates,
   onDateClick,
 }: CalendarViewProps) {
   const cells = useMemo(() => buildCalendarCells(), []);
@@ -35,13 +38,20 @@ export default function CalendarView({
   const countGrid = useMemo(() => {
     const grid: number[][] = Array.from({ length: H }, () => Array(W).fill(0));
     for (let i = 0; i < cells.length; i++) {
-      if (!highlightedDates.has(toDateKey(cells[i].date))) continue;
+      const key = toDateKey(cells[i].date);
+      if (!highlightedDates.has(key)) continue;
       const r = Math.floor(i / W);
       const c = i % W;
-      grid[r][c] = i === pressedIdx ? 1 : 2;
+      if (i === pressedIdx) {
+        grid[r][c] = 1;
+      } else if (selectedDates?.has(key)) {
+        grid[r][c] = 3;
+      } else {
+        grid[r][c] = 2;
+      }
     }
     return grid;
-  }, [cells, highlightedDates, pressedIdx]);
+  }, [cells, highlightedDates, selectedDates, pressedIdx]);
 
   const renderGrid = useMemo(
     () => buildRenderGrid2(countGrid),

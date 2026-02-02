@@ -106,6 +106,7 @@ export default function ParticipantList({
               onClick={handleNicknameOpen}
             >
               <ListRow
+                horizontalPadding="small"
                 contents={
                   <ListRow.Texts
                     type="2RowTypeA"

@@ -273,19 +273,28 @@ export default function AvailabilityGrid() {
     [weeks, setWeekIdx],
   );
 
-  const selectedDatesLabel = useMemo(() => {
+  const selectedDatesSet = useMemo(() => {
     const dates = room?.dates ?? [];
-    const selected = dates.filter((_, colIdx) =>
-      grid.some((row) => row[colIdx]),
-    );
-    if (selected.length === 0) return undefined;
-    return selected
+    const set = new Set<string>();
+    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
+      if (grid.some((row) => row[colIdx])) {
+        set.add(dates[colIdx]);
+      }
+    }
+    return set;
+  }, [room?.dates, grid]);
+
+  const selectedDatesLabel = useMemo(() => {
+    if (selectedDatesSet.size === 0) return undefined;
+    const currentMonth = new Date().getMonth();
+    return [...selectedDatesSet]
       .map((d) => {
         const date = new Date(d);
+        if (date.getMonth() === currentMonth) return `${date.getDate()}`;
         return `${date.getMonth() + 1}/${date.getDate()}`;
       })
       .join(", ");
-  }, [room?.dates, grid]);
+  }, [selectedDatesSet]);
 
   if (grid.length === 0) return null;
 
@@ -299,7 +308,12 @@ export default function AvailabilityGrid() {
         <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       </div>
       {/* Guide / Selected dates */}
-      <div className="flex items-center pl-4 pr-2 pb-2">
+      <div
+        className="flex items-center pl-4 pr-2 pb-2"
+        style={{
+          paddingTop: 1,
+        }}
+      >
         <div
           className="flex items-center pl-1 pb-2.5 pt-1.5 pr-2 min-w-0"
           style={{
@@ -487,6 +501,7 @@ export default function AvailabilityGrid() {
       >
         <CalendarView
           highlightedDates={highlightedDates}
+          selectedDates={selectedDatesSet}
           onDateClick={handleCalendarDateClick}
         />
       </BottomSheet>
