@@ -1,13 +1,10 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { adaptive } from "@toss/tds-colors";
-import { formatDateHeader } from "@/lib/timeSlots";
-import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg?react";
-import ArrowLeftIcon from "@/assets/icon-arrow-left-sidebar-mono,화살표,arrow,left,왼쪽.svg?react";
-import ArrowRightIcon from "@/assets/icon-arrow-right-sidebar-mono,화살표,arrow,오른쪽,right.svg?react";
-
+import { Asset, IconButton } from "@toss/tds-mobile";
+import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
+import { adaptive } from "@toss/tds-colors";
 
 interface WeekNavigationProps {
   onDateClick?: () => void;
@@ -65,43 +62,41 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     <div className="flex items-center justify-between pt-3 pl-4 pr-4 pb-1">
       <button
         type="button"
-        className="flex items-center gap-0.5 cursor-pointer whitespace-nowrap shrink-0"
+        className="flex items-center gap-0.5 cursor-pointer"
         style={{ fontSize: 20, fontWeight: 500 }}
         onClick={onDateClick}
       >
         {weekLabel}
-        <ArrowDownIcon width={24} height={24} />
+        <Asset.Icon
+          frameShape={Asset.frameShape.CleanW24}
+          backgroundColor="transparent"
+          name="icon-arrow-right-small-mono"
+          color="#4d94f0"
+          aria-hidden={true}
+          ratio="1/1"
+        />
       </button>
       <div className="flex items-center">
-        <button
-          type="button"
-          className="flex items-center justify-center cursor-pointer"
-          style={{
-            width: 44,
-            height: 44,
-            color: weekIdx === 0 ? adaptive.grey300 : adaptive.blue400,
+        <IconButton
+          name="icon-arrow-left-sidebar-mono"
+          variant="clear"
+          aria-label="이전 주"
+          color={adaptive.blue400}
+          onClick={() => {
+            if (weekIdx > 0) setWeekIdx(weekIdx - 1);
           }}
-          disabled={weekIdx === 0}
-          onClick={() => setWeekIdx(weekIdx - 1)}
-        >
-          <ArrowLeftIcon width={24} height={24} />
-        </button>
-        <button
-          type="button"
-          className="flex items-center justify-center cursor-pointer"
-          style={{
-            width: 44,
-            height: 44,
-            color:
-              weekIdx === weeks.length - 1
-                ? adaptive.grey300
-                : adaptive.blue400,
+        />
+        <IconButton
+          name="icon-arrow-right-sidebar-mono"
+          variant="clear"
+          aria-label="다음 주"
+          color={
+            weekIdx === weeks.length - 1 ? adaptive.grey100 : adaptive.blue400
+          }
+          onClick={() => {
+            if (weekIdx < weeks.length - 1) setWeekIdx(weekIdx + 1);
           }}
-          disabled={weekIdx === weeks.length - 1}
-          onClick={() => setWeekIdx(weekIdx + 1)}
-        >
-          <ArrowRightIcon width={24} height={24} />
-        </button>
+        />
       </div>
     </div>
   );
