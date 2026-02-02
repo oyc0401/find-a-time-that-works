@@ -8,7 +8,7 @@ import {
   Checkbox,
   TextField,
 } from "@toss/tds-mobile";
-import { setRoomName, setDefaultName } from "@/lib/nickname";
+import { setDefaultName } from "@/lib/nickname";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import {
@@ -276,7 +276,6 @@ export default function AvailabilityGrid() {
     if (!trimmed || !id) return;
 
     useRoomStore.getState().setNickname(trimmed);
-    setRoomName(id, trimmed);
     if (rememberDefault) {
       setDefaultName(trimmed);
     }

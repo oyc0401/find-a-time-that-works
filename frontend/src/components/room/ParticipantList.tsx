@@ -11,7 +11,7 @@ import { adaptive } from "@toss/tds-colors";
 import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/lib/userId";
-import { setRoomName, setDefaultName } from "@/lib/nickname";
+import { setDefaultName } from "@/lib/nickname";
 
 interface ParticipantListProps {
   participants: ParticipantDto[];
@@ -47,7 +47,6 @@ export default function ParticipantList({
     if (!trimmed || !id) return;
 
     useRoomStore.getState().setNickname(trimmed);
-    setRoomName(id, trimmed);
     if (rememberDefault) {
       setDefaultName(trimmed);
     }

@@ -8,7 +8,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/lib/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
-import { getRoomName } from "@/lib/nickname";
+import { getDefaultName } from "@/lib/nickname";
 import { handleShare } from "@/lib/share";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
@@ -32,19 +32,18 @@ export default function Room() {
       loadedRef.current = true;
       store.init(timeSlots.length, room.dates.length);
 
-      Promise.all([getUserId(), getRoomName(id!)]).then(
-        ([userId, roomNickname]) => {
-          useRoomStore.getState().setNickname(roomNickname);
-
+      getUserId().then(async (userId) => {
           const myParticipant = participants.find((p) => p.userId === userId);
+          const nickname =
+            myParticipant?.name ?? (await getDefaultName());
+          useRoomStore.getState().setNickname(nickname);
           if (myParticipant && myParticipant.slots.length > 0) {
             useAvailabilityStore
               .getState()
               .loadFromSlots(myParticipant.slots, room.dates, timeSlots);
           }
           enable();
-        },
-      );
+      });
     }
   }, [room, participants, enable]);
 
