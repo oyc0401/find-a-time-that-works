@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { Tab, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -17,7 +17,7 @@ import ParticipantList from "../components/room/ParticipantList";
 export default function Room() {
   const { id } = useParams<{ id: string }>();
   const { room, participants, isLoading } = useRoomData(id);
-  const [selected, setSelected] = useState(0);
+  const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
 
   const loadedRef = useRef(false);
@@ -78,16 +78,16 @@ export default function Room() {
           </Top.RightButton>
         }
       />
-      <Tab size="large" onChange={(index) => setSelected(index)}>
-        <Tab.Item selected={selected === 0}>일정선택</Tab.Item>
-        <Tab.Item selected={selected === 1}>전체보기</Tab.Item>
-        <Tab.Item selected={selected === 2}>참여자</Tab.Item>
+      <Tab size="large" onChange={setTabIdx}>
+        <Tab.Item selected={tabIdx === 0}>일정선택</Tab.Item>
+        <Tab.Item selected={tabIdx === 1}>전체보기</Tab.Item>
+        <Tab.Item selected={tabIdx === 2}>참여자</Tab.Item>
       </Tab>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {selected === 0 && <AvailabilityGrid />}
-        {selected === 1 && <OverviewGrid />}
-        {selected === 2 && <ParticipantList participants={participants} />}
+        {tabIdx === 0 && <AvailabilityGrid />}
+        {tabIdx === 1 && <OverviewGrid />}
+        {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
     </div>
   );

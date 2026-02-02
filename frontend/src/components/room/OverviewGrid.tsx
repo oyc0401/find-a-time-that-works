@@ -77,7 +77,8 @@ function intensityColor(count: number, max: number): string {
 export default function OverviewGrid() {
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const { weekIdx, setWeekIdx } = useRoomStore();
+  const { weekIdx, setWeekIdx, selectedUserId, setSelectedUserId } =
+    useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -96,14 +97,12 @@ export default function OverviewGrid() {
   }, []);
 
   // ── Filter by participant ──
-  const [selectedName, setSelectedName] = useState<string>();
-
   const filteredParticipants = useMemo(
     () =>
-      selectedName
-        ? participants.filter((p) => p.name === selectedName)
+      selectedUserId
+        ? participants.filter((p) => p.userId === selectedUserId)
         : participants,
-    [participants, selectedName],
+    [participants, selectedUserId],
   );
 
   // ── Heatmap data ──
@@ -118,7 +117,7 @@ export default function OverviewGrid() {
     return map;
   }, [filteredParticipants]);
 
-  const maxCount = selectedName ? 1 : participants.length;
+  const maxCount = selectedUserId ? 1 : participants.length;
 
   const countGrid = useMemo(() => {
     const result: number[][] = [];
@@ -196,7 +195,7 @@ export default function OverviewGrid() {
 
   // ── Drag handlers ──
   const handleLongPressStart = useCallback((cell: Cell) => {
-    setSelectedName(undefined);
+    setSelectedUserId(undefined);
     startCell.current = cell;
 
     const rect: Rect = {
@@ -224,7 +223,7 @@ export default function OverviewGrid() {
   }, []);
 
   const handleTap = useCallback((cell: Cell) => {
-    setSelectedName(undefined);
+    setSelectedUserId(undefined);
     setSelectionRect((prev) => {
       if (
         prev &&
@@ -319,11 +318,11 @@ export default function OverviewGrid() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
           <Badge
             title="전체"
-            color={!selectedName ? adaptive.blue400 : adaptive.grey100}
-            textColor={!selectedName ? "white" : adaptive.grey600}
+            color={!selectedUserId ? adaptive.blue400 : adaptive.grey100}
+            textColor={!selectedUserId ? "white" : adaptive.grey600}
             className="shrink-0"
             onClick={() => {
-              setSelectedName(undefined);
+              setSelectedUserId(undefined);
               setSelectionRect(undefined);
               setPreviewRect(undefined);
             }}
@@ -340,16 +339,17 @@ export default function OverviewGrid() {
             return sorted.map((p) => {
               const name = p.name;
               const isMe = "userId" in p && p.userId === myUserId;
-              const isSelected = selectedName === name;
+              const pUserId = "userId" in p ? p.userId : undefined;
+              const isSelected = pUserId === selectedUserId;
               return (
                 <Badge
-                  key={name}
+                  key={pUserId ?? name}
                   title={isMe ? "나" : name}
                   color={isSelected ? adaptive.blue400 : adaptive.grey100}
                   textColor={isSelected ? "white" : adaptive.grey600}
                   className="shrink-0"
                   onClick={() => {
-                    setSelectedName(isSelected ? undefined : name);
+                    setSelectedUserId(isSelected ? undefined : pUserId);
                     setSelectionRect(undefined);
                     setPreviewRect(undefined);
                   }}
