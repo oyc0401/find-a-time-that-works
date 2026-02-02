@@ -6,6 +6,7 @@ import {
   Button,
   Checkbox,
   ListRow,
+  Result,
   TextField,
 } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
@@ -120,28 +121,43 @@ export default function ParticipantList({
         </div>
       </div>
 
-      {others.map((p) => (
-        <button
-          key={p.id}
-          type="button"
-          className="w-full cursor-pointer transition-transform duration-200 active:scale-99"
-          onClick={() => {
-            setSelectedUserId(p.userId);
-            setTabIdx(1);
-          }}
-        >
-          <ListRow
-            left={
-              <ListRow.AssetIcon
-                shape="circle-background"
-                url={thumbnailUrl(p.thumbnail)}
-                backgroundColor={adaptive.grey100}
+      {others.length === 0 ? (
+        <div className="py-8">
+          <Result
+            figure={
+              <Asset.Image
+                src="https://static.toss.im/2d-emojis/png/4x/u1F465.png"
+                frameShape={Asset.frameShape.CleanH60}
               />
             }
-            contents={<ListRow.Texts type="1RowTypeA" top={p.name} />}
+            title="아직 참여자가 없어요"
+            description="링크를 공유해서 사람들을 초대해보세요"
           />
-        </button>
-      ))}
+        </div>
+      ) : (
+        others.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="w-full cursor-pointer transition-transform duration-200 active:scale-99"
+            onClick={() => {
+              setSelectedUserId(p.userId);
+              setTabIdx(1);
+            }}
+          >
+            <ListRow
+              left={
+                <ListRow.AssetIcon
+                  shape="circle-background"
+                  url={thumbnailUrl(p.thumbnail)}
+                  backgroundColor={adaptive.grey100}
+                />
+              }
+              contents={<ListRow.Texts type="1RowTypeA" top={p.name} />}
+            />
+          </button>
+        ))
+      )}
 
       {/* ── Nickname Bottom Sheet ── */}
       <BottomSheet
