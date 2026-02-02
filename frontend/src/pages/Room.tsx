@@ -15,6 +15,7 @@ import {
   useRoomsControllerUpdateRoomName,
 } from "@/api/model/rooms/rooms";
 import { useRoomData } from "@/hooks/useRoomData";
+import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
@@ -33,6 +34,12 @@ export default function Room() {
   const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
   const queryClient = useQueryClient();
+
+  // WebSocket 연결
+  useRoomSocket({
+    roomId: id ?? "",
+    enabled: Boolean(id),
+  });
 
   const loadedRef = useRef(false);
   const [isCreator, setIsCreator] = useState(false);
