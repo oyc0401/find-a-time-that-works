@@ -11,7 +11,7 @@ import { adaptive } from "@toss/tds-colors";
 import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/lib/userId";
-import { setDefaultName } from "@/lib/nickname";
+import { setDefaultName, getRememberName, setRememberName } from "@/lib/nickname";
 import { THUMBNAILS, thumbnailUrl, setDefaultThumbnail } from "@/lib/thumbnail";
 
 interface ParticipantListProps {
@@ -40,7 +40,7 @@ export default function ParticipantList({
 
   const handleNicknameOpen = useCallback(() => {
     setNicknameInput(nickname);
-    setRememberDefault(false);
+    getRememberName().then(setRememberDefault);
     setIsNicknameOpen(true);
   }, [nickname]);
 
@@ -49,6 +49,7 @@ export default function ParticipantList({
     if (!trimmed || !id) return;
 
     useRoomStore.getState().setNickname(trimmed);
+    setRememberName(rememberDefault);
     if (rememberDefault) {
       setDefaultName(trimmed);
     }
