@@ -142,11 +142,7 @@ export default function Room() {
   }, [room, participants, enable]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <span style={{ color: adaptive.grey500 }}>{t("room.loading")}</span>
-      </div>
-    );
+    return <div className="h-screen" />;
   }
 
   if (!room) {
@@ -198,7 +194,9 @@ export default function Room() {
       <Tab size="large" onChange={setTabIdx}>
         <Tab.Item selected={tabIdx === 0}>{t("room.tab.schedule")}</Tab.Item>
         <Tab.Item selected={tabIdx === 1}>{t("room.tab.overview")}</Tab.Item>
-        <Tab.Item selected={tabIdx === 2}>{t("room.tab.participants")}</Tab.Item>
+        <Tab.Item selected={tabIdx === 2}>
+          {t("room.tab.participants")}
+        </Tab.Item>
       </Tab>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -236,13 +234,22 @@ export default function Room() {
       >
         <Post.Ol>
           <Post.Li>
-            <Trans i18nKey="room.tutorial.step1" components={{ strong: <strong /> }} />
+            <Trans
+              i18nKey="room.tutorial.step1"
+              components={{ strong: <strong /> }}
+            />
           </Post.Li>
           <Post.Li>
-            <Trans i18nKey="room.tutorial.step2" components={{ strong: <strong /> }} />
+            <Trans
+              i18nKey="room.tutorial.step2"
+              components={{ strong: <strong /> }}
+            />
           </Post.Li>
           <Post.Li>
-            <Trans i18nKey="room.tutorial.step3" components={{ strong: <strong /> }} />
+            <Trans
+              i18nKey="room.tutorial.step3"
+              components={{ strong: <strong /> }}
+            />
           </Post.Li>
         </Post.Ol>
       </BottomSheet>
@@ -250,7 +257,9 @@ export default function Room() {
       <BottomSheet
         open={isRoomNameOpen}
         onClose={() => setIsRoomNameOpen(false)}
-        header={<BottomSheet.Header>{t("room.renameTitle")}</BottomSheet.Header>}
+        header={
+          <BottomSheet.Header>{t("room.renameTitle")}</BottomSheet.Header>
+        }
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
