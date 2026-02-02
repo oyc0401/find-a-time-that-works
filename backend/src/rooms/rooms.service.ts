@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, GoneException, ForbiddenException } from "@nestjs/common";
 import { customAlphabet } from "nanoid";
 import { PrismaService } from "../prisma/prisma.service";
+import { RoomsEventService } from "./rooms-event.service";
 import { CreateRoomDto } from "./dto/create-room.dto";
 import { SubmitAvailabilityDto } from "./dto/submit-availability.dto";
 import { DeleteRoomDto, UpdateRoomNameDto, UpdateNicknameDto } from "./dto/room-request.dto";
@@ -14,7 +15,10 @@ const EXTEND_DAYS = 30;
 
 @Injectable()
 export class RoomsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly roomsEventService: RoomsEventService,
+  ) {}
 
   private async generateUniqueId(): Promise<string> {
     for (let i = 0; i < 10; i++) {
@@ -129,6 +133,12 @@ export class RoomsService {
         })),
       });
     }
+
+    // 가용성 변경 이벤트 발행 (신호만)
+    this.roomsEventService.emitRoomUpdated({
+      roomId,
+      triggeredBy: dto.participantId,
+    });
   }
 
   async extendRoom(roomId: string): Promise<ExtendRoomResponseDto> {
@@ -159,6 +169,12 @@ export class RoomsService {
       throw new ForbiddenException("방 생성자만 삭제할 수 있습니다");
     }
 
+    // 삭제 전 이벤트 발행 (삭제 후에는 방이 없음)
+    this.roomsEventService.emitRoomDeleted({
+      roomId,
+      triggeredBy: dto.creatorId,
+    });
+
     await this.prisma.room.delete({ where: { id: roomId } });
   }
 
@@ -174,6 +190,13 @@ export class RoomsService {
     await this.prisma.room.update({
       where: { id: roomId },
       data: { name: dto.name },
+    });
+
+    // 방 이름 변경 이벤트 발행 (데이터 포함)
+    this.roomsEventService.emitRoomNameUpdated({
+      roomId,
+      triggeredBy: dto.creatorId,
+      name: dto.name,
     });
   }
 
@@ -193,6 +216,15 @@ export class RoomsService {
     await this.prisma.participant.update({
       where: { id: participant.id },
       data,
+    });
+
+    // 프로필 변경 이벤트 발행 (데이터 포함)
+    this.roomsEventService.emitProfileUpdated({
+      roomId,
+      triggeredBy: dto.userId,
+      userId: dto.userId,
+      name: dto.name,
+      thumbnail: dto.thumbnail,
     });
   }
 }
