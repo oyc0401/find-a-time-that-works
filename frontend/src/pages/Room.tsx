@@ -17,6 +17,7 @@ import {
   useRoomsControllerUpdateRoomName,
 } from "@/api/model/rooms/rooms";
 import { useRoomData } from "@/hooks/useRoomData";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -26,6 +27,7 @@ import { generateTimeSlots } from "@/lib/timeSlots";
 import { getDefaultName } from "@/lib/nickname";
 import { getDefaultThumbnail } from "@/lib/thumbnail";
 import { handleShare } from "@/lib/share";
+import { WifiOff } from "lucide-react";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
 import ParticipantList from "../components/room/ParticipantList";
@@ -43,10 +45,12 @@ export default function Room() {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // WebSocket 연결
-  useRoomSocket({
+  const { connected } = useRoomSocket({
     roomId: id ?? "",
     enabled: Boolean(id),
   });
+  const networkOnline = useNetworkStatus();
+  const isDisconnected = !connected || !networkOnline;
 
   const loadedRef = useRef(false);
   const [isCreator, setIsCreator] = useState(false);
@@ -180,9 +184,12 @@ export default function Room() {
           )
         }
         right={
-          <Top.RightButton onClick={() => handleShare(id ?? "")}>
-            초대하기
-          </Top.RightButton>
+          <div className="flex items-center gap-2">
+            {isDisconnected && <WifiOff size={20} color={adaptive.red200} />}
+            <Top.RightButton onClick={() => handleShare(id ?? "")}>
+              초대하기
+            </Top.RightButton>
+          </div>
         }
       />
       <Tab size="large" onChange={setTabIdx}>

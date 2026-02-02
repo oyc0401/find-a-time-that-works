@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Socket } from "socket.io-client";
@@ -21,12 +21,13 @@ interface UseRoomSocketOptions {
 export function useRoomSocket({
   roomId,
   enabled = true,
-}: UseRoomSocketOptions): void {
+}: UseRoomSocketOptions): { connected: boolean } {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const userIdRef = useRef<string>("");
   const roomIdRef = useRef<string>(roomId);
   const socketRef = useRef<Socket | undefined>(undefined);
+  const [connected, setConnected] = useState(true);
 
   // roomId 변경 추적
   useEffect(() => {
@@ -70,9 +71,15 @@ export function useRoomSocket({
     // 재연결 시 room rejoin
     const handleConnect = (): void => {
       if (!mounted || !socketRef.current) return;
+      setConnected(true);
       socketRef.current.emit(WsEventType.JOIN_ROOM, {
         roomId: roomIdRef.current,
       });
+    };
+
+    const handleDisconnect = (): void => {
+      if (!mounted) return;
+      setConnected(false);
     };
 
     // visibilitychange 핸들러 (포그라운드 복귀 시 refetch)
@@ -93,6 +100,7 @@ export function useRoomSocket({
 
       // 이벤트 리스너 등록
       socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
       socket.on(WsEventType.ROOM_UPDATED, handleRoomUpdated);
       socket.on(WsEventType.ROOM_NAME_UPDATED, handleRoomNameUpdated);
       socket.on(WsEventType.PROFILE_UPDATED, handleProfileUpdated);
@@ -116,6 +124,7 @@ export function useRoomSocket({
       if (socket) {
         socket.emit(WsEventType.LEAVE_ROOM, { roomId });
         socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
         socket.off(WsEventType.ROOM_UPDATED, handleRoomUpdated);
         socket.off(WsEventType.ROOM_NAME_UPDATED, handleRoomNameUpdated);
         socket.off(WsEventType.PROFILE_UPDATED, handleProfileUpdated);
@@ -124,4 +133,6 @@ export function useRoomSocket({
       }
     };
   }, [roomId, enabled, queryClient, navigate, refetchRoom]);
+
+  return { connected };
 }
