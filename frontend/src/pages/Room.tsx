@@ -201,7 +201,7 @@ export default function Room() {
                   handleShare(id ?? "");
                 }}
               >
-                공유하기
+                초대하기
               </Button>
             }
           />
@@ -209,7 +209,7 @@ export default function Room() {
       >
         <Post.Ol>
           <Post.Li>
-            아래의 <strong>공유하기</strong> 버튼으로 친구들에게 링크를
+            아래의 <strong>초대하기</strong> 버튼으로 친구들에게 링크를
             공유하세요
           </Post.Li>
           <Post.Li>

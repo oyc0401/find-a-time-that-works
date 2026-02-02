@@ -273,6 +273,20 @@ export default function AvailabilityGrid() {
     [weeks, setWeekIdx],
   );
 
+  const selectedDatesLabel = useMemo(() => {
+    const dates = room?.dates ?? [];
+    const selected = dates.filter((_, colIdx) =>
+      grid.some((row) => row[colIdx]),
+    );
+    if (selected.length === 0) return undefined;
+    return selected
+      .map((d) => {
+        const date = new Date(d);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      })
+      .join(", ");
+  }, [room?.dates, grid]);
+
   if (grid.length === 0) return null;
 
   const dateHeaders = columns.map((col) => formatDateHeader(col.date));
@@ -284,17 +298,21 @@ export default function AvailabilityGrid() {
       <div className="">
         <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       </div>
-      {/* Nickname */}
+      {/* Guide / Selected dates */}
       <div className="flex items-center pl-4 pr-2 pb-2">
         <div
-          className="flex items-center pl-1 p-2"
+          className="flex items-center pl-1 pb-2.5 pt-1.5 pr-2 min-w-0"
           style={{
             fontSize: 16,
             fontWeight: 500,
-            color: adaptive.grey700,
+            color: adaptive.grey500,
           }}
         >
-          {nickname}
+          {selectedDatesLabel ? (
+            <span className="truncate block">선택: {selectedDatesLabel}</span>
+          ) : (
+            "시간표를 꾹 눌러 드래그 하세요"
+          )}
         </div>
       </div>
 
@@ -307,10 +325,17 @@ export default function AvailabilityGrid() {
               className="flex-1 text-center"
               style={{ minWidth: 44 }}
             >
-              <div style={{
-                fontSize: 13,
-                color: h.dayOfWeek === 0 ? adaptive.red400 : h.dayOfWeek === 6 ? adaptive.blue300 : adaptive.grey500,
-              }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  color:
+                    h.dayOfWeek === 0
+                      ? adaptive.red400
+                      : h.dayOfWeek === 6
+                        ? adaptive.blue300
+                        : adaptive.grey500,
+                }}
+              >
                 {`${h.day} (${h.weekday})`}
               </div>
             </div>
