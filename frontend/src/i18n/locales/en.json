@@ -1,0 +1,60 @@
+{
+  "home": {
+    "title": "Find the best time for everyone",
+    "subtitle": "Create a room and invite people",
+    "roomNameSuffix": "'s Room",
+    "createRoom": "Create Room"
+  },
+  "room": {
+    "loading": "Loading...",
+    "notFound": "Room not found",
+    "tab": {
+      "schedule": "Schedule",
+      "overview": "Overview",
+      "participants": "Members"
+    },
+    "created": "Room created!",
+    "renameTitle": "Rename Room",
+    "renameLabel": "Room name",
+    "renamePlaceholder": "Enter room name",
+    "tutorial": {
+      "step1": "Share the link with friends using the <strong>Invite</strong> button below",
+      "step2": "Select available times in the <strong>Schedule</strong> tab",
+      "step3": "Once everyone has responded, check overlapping times in the <strong>Overview</strong> tab"
+    }
+  },
+  "common": {
+    "invite": "Invite",
+    "close": "Close",
+    "save": "Save"
+  },
+  "time": {
+    "startTime": "Start",
+    "endTime": "End"
+  },
+  "participant": {
+    "myInfo": "My Info",
+    "changeName": "Change Name",
+    "nameLabel": "Name",
+    "namePlaceholder": "Enter your name",
+    "rememberMe": "Remember me",
+    "changeProfile": "Change Profile",
+    "noParticipants": "No participants yet",
+    "inviteDescription": "Share the link to invite people"
+  },
+  "availability": {
+    "dragGuide": "Long press and drag to select times",
+    "dateTitle": "Date"
+  },
+  "overview": {
+    "all": "All",
+    "participationStatus": "Participation"
+  },
+  "week": {
+    "label": "{{monthName}} W{{weekNum}}",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week"
+  },
+  "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+}

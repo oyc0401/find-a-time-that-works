@@ -11,6 +11,7 @@ import {
   buildRenderDragGrid,
 } from "@/lib/renderDragGrid";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
+import { useTranslation } from "react-i18next";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
@@ -99,6 +100,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
 }
 
 export default function AvailabilityGrid() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
   const { weekIdx, setWeekIdx, nickname } = useRoomStore();
@@ -298,7 +300,8 @@ export default function AvailabilityGrid() {
 
   if (grid.length === 0) return null;
 
-  const dateHeaders = columns.map((col) => formatDateHeader(col.date));
+  const weekdays = t("weekdays", { returnObjects: true }) as string[];
+  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
   const baseBg = "white";
 
   const TIME_WIDTH = 16;
@@ -325,7 +328,7 @@ export default function AvailabilityGrid() {
           {selectedDatesLabel ? (
             <span className="truncate block">✅: {selectedDatesLabel}</span>
           ) : (
-            "시간표를 꾹 눌러 드래그 하세요"
+            t("availability.dragGuide")
           )}
         </div>
       </div>
@@ -497,7 +500,7 @@ export default function AvailabilityGrid() {
       <BottomSheet
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
-        header={<BottomSheet.Header>날짜</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("availability.dateTitle")}</BottomSheet.Header>}
       >
         <CalendarView
           highlightedDates={highlightedDates}

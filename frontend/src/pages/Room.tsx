@@ -27,6 +27,7 @@ import { generateTimeSlots } from "@/lib/timeSlots";
 import { getDefaultName } from "@/lib/nickname";
 import { getDefaultThumbnail } from "@/lib/thumbnail";
 import { handleShare } from "@/lib/share";
+import { useTranslation, Trans } from "react-i18next";
 import { WifiOff } from "lucide-react";
 import { truncateTitle } from "@/lib/truncateTitle";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
@@ -34,6 +35,7 @@ import OverviewGrid from "../components/room/OverviewGrid";
 import ParticipantList from "../components/room/ParticipantList";
 
 export default function Room() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -142,7 +144,7 @@ export default function Room() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <span style={{ color: adaptive.grey500 }}>로딩 중...</span>
+        <span style={{ color: adaptive.grey500 }}>{t("room.loading")}</span>
       </div>
     );
   }
@@ -150,7 +152,7 @@ export default function Room() {
   if (!room) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <span style={{ color: adaptive.grey500 }}>방을 찾을 수 없습니다</span>
+        <span style={{ color: adaptive.grey500 }}>{t("room.notFound")}</span>
       </div>
     );
   }
@@ -188,15 +190,15 @@ export default function Room() {
           <div className="flex items-center gap-2">
             {isDisconnected && <WifiOff size={20} color={adaptive.red200} />}
             <Top.RightButton onClick={() => handleShare(id ?? "")}>
-              초대하기
+              {t("common.invite")}
             </Top.RightButton>
           </div>
         }
       />
       <Tab size="large" onChange={setTabIdx}>
-        <Tab.Item selected={tabIdx === 0}>일정선택</Tab.Item>
-        <Tab.Item selected={tabIdx === 1}>전체보기</Tab.Item>
-        <Tab.Item selected={tabIdx === 2}>참여자</Tab.Item>
+        <Tab.Item selected={tabIdx === 0}>{t("room.tab.schedule")}</Tab.Item>
+        <Tab.Item selected={tabIdx === 1}>{t("room.tab.overview")}</Tab.Item>
+        <Tab.Item selected={tabIdx === 2}>{t("room.tab.participants")}</Tab.Item>
       </Tab>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -208,7 +210,7 @@ export default function Room() {
       <BottomSheet
         open={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
-        header={<BottomSheet.Header>방이 만들어졌어요!</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("room.created")}</BottomSheet.Header>}
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -217,17 +219,16 @@ export default function Room() {
                 color="dark"
                 onClick={() => setIsTutorialOpen(false)}
               >
-                닫기
+                {t("common.close")}
               </Button>
             }
             rightButton={
               <Button
                 onClick={() => {
-                  // setIsTutorialOpen(false);
                   handleShare(id ?? "");
                 }}
               >
-                초대하기
+                {t("common.invite")}
               </Button>
             }
           />
@@ -235,15 +236,13 @@ export default function Room() {
       >
         <Post.Ol>
           <Post.Li>
-            아래의 <strong>초대하기</strong> 버튼으로 친구들에게 링크를
-            공유하세요
+            <Trans i18nKey="room.tutorial.step1" components={{ strong: <strong /> }} />
           </Post.Li>
           <Post.Li>
-            <strong>일정선택</strong> 탭에서 가능한 시간대를 터치해 선택하세요
+            <Trans i18nKey="room.tutorial.step2" components={{ strong: <strong /> }} />
           </Post.Li>
           <Post.Li>
-            참여자들이 입력을 마치면 <strong>전체보기</strong> 탭에서 겹치는
-            시간을 확인할 수 있어요
+            <Trans i18nKey="room.tutorial.step3" components={{ strong: <strong /> }} />
           </Post.Li>
         </Post.Ol>
       </BottomSheet>
@@ -251,7 +250,7 @@ export default function Room() {
       <BottomSheet
         open={isRoomNameOpen}
         onClose={() => setIsRoomNameOpen(false)}
-        header={<BottomSheet.Header>방 이름 변경</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("room.renameTitle")}</BottomSheet.Header>}
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -260,7 +259,7 @@ export default function Room() {
                 color="dark"
                 onClick={() => setIsRoomNameOpen(false)}
               >
-                닫기
+                {t("common.close")}
               </Button>
             }
             rightButton={
@@ -268,7 +267,7 @@ export default function Room() {
                 onClick={handleRoomNameSave}
                 disabled={!roomNameInput.trim()}
               >
-                저장
+                {t("common.save")}
               </Button>
             }
           />
@@ -276,9 +275,9 @@ export default function Room() {
       >
         <TextField
           variant="box"
-          label="방 이름"
+          label={t("room.renameLabel")}
           labelOption="sustain"
-          placeholder="방 이름을 입력해주세요"
+          placeholder={t("room.renamePlaceholder")}
           value={roomNameInput}
           onChange={(e) => setRoomNameInput(e.target.value)}
         />

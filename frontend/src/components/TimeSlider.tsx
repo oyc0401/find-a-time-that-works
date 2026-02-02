@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, Spacing } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { useTranslation } from "react-i18next";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 
 const TOTAL_STEPS = 24;
@@ -25,6 +26,7 @@ function clamp(value: number, min: number, max: number) {
 type ThumbType = "start" | "end";
 
 export default function TimeSlider() {
+  const { t } = useTranslation();
   const {
     startHour: start,
     endHour: end,
@@ -140,10 +142,10 @@ export default function TimeSlider() {
     <>
       <div className="flex justify-between px-5">
         <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {`시작시간`}
+          {t("time.startTime")}
         </Text>
         <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {`종료시간`}
+          {t("time.endTime")}
         </Text>
       </div>
       <Spacing size={20} />

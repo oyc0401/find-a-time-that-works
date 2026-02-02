@@ -18,6 +18,7 @@ import {
   getRememberName,
   setRememberName,
 } from "@/lib/nickname";
+import { useTranslation } from "react-i18next";
 import { THUMBNAILS, thumbnailUrl, setDefaultThumbnail } from "@/lib/thumbnail";
 
 interface ParticipantListProps {
@@ -27,6 +28,7 @@ interface ParticipantListProps {
 export default function ParticipantList({
   participants,
 }: ParticipantListProps) {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
@@ -112,7 +114,7 @@ export default function ParticipantList({
                   <ListRow.Texts
                     type="2RowTypeA"
                     top={nickname}
-                    bottom="내 정보"
+                    bottom={t("participant.myInfo")}
                   />
                 }
               />
@@ -130,8 +132,8 @@ export default function ParticipantList({
                 frameShape={Asset.frameShape.CleanH60}
               />
             }
-            title="아직 참여자가 없어요"
-            description="링크를 공유해서 사람들을 초대해보세요"
+            title={t("participant.noParticipants")}
+            description={t("participant.inviteDescription")}
           />
         </div>
       ) : (
@@ -163,7 +165,7 @@ export default function ParticipantList({
       <BottomSheet
         open={isNicknameOpen}
         onClose={() => setIsNicknameOpen(false)}
-        header={<BottomSheet.Header>이름 변경</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>}
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -172,7 +174,7 @@ export default function ParticipantList({
                 color="dark"
                 onClick={() => setIsNicknameOpen(false)}
               >
-                닫기
+                {t("common.close")}
               </Button>
             }
             rightButton={
@@ -180,7 +182,7 @@ export default function ParticipantList({
                 onClick={handleNicknameSave}
                 disabled={!nicknameInput.trim()}
               >
-                저장
+                {t("common.save")}
               </Button>
             }
           />
@@ -188,9 +190,9 @@ export default function ParticipantList({
       >
         <TextField
           variant="box"
-          label="이름"
+          label={t("participant.nameLabel")}
           labelOption="sustain"
-          placeholder="이름을 입력해주세요"
+          placeholder={t("participant.namePlaceholder")}
           value={nicknameInput}
           onChange={(e) => setNicknameInput(e.target.value)}
         />
@@ -204,7 +206,7 @@ export default function ParticipantList({
             onCheckedChange={setRememberDefault}
           />
           <span style={{ fontSize: 14, color: adaptive.grey600 }}>
-            다음에도 기억하기
+            {t("participant.rememberMe")}
           </span>
         </button>
       </BottomSheet>
@@ -213,7 +215,7 @@ export default function ParticipantList({
       <BottomSheet
         open={isThumbnailOpen}
         onClose={() => setIsThumbnailOpen(false)}
-        header={<BottomSheet.Header>프로필 변경</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("participant.changeProfile")}</BottomSheet.Header>}
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -222,10 +224,10 @@ export default function ParticipantList({
                 color="dark"
                 onClick={() => setIsThumbnailOpen(false)}
               >
-                닫기
+                {t("common.close")}
               </Button>
             }
-            rightButton={<Button onClick={handleThumbnailSave}>저장</Button>}
+            rightButton={<Button onClick={handleThumbnailSave}>{t("common.save")}</Button>}
           />
         }
       >

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Asset } from "@toss/tds-mobile";
 import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
 import { useRoomData } from "@/hooks/useRoomData";
+import { useTranslation } from "react-i18next";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { adaptive } from "@toss/tds-colors";
 
@@ -11,6 +12,7 @@ interface WeekNavigationProps {
 }
 
 export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { weeks } = useRoomData(id);
   const { weekIdx, setWeekIdx } = useRoomStore();
@@ -52,8 +54,9 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     );
     const weekNum = diffWeeks + 1;
 
-    return `${repMonth}월 ${weekNum}주`;
-  }, [weeks, weekIdx]);
+    const months = t("months", { returnObjects: true }) as string[];
+    return t("week.label", { monthName: months[repMonth - 1], weekNum });
+  }, [weeks, weekIdx, t]);
 
   if (weeks.length <= 1) return null;
   if (!weekLabel) return null;
@@ -82,7 +85,7 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
           type="button"
           className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
           style={{ width: 44, height: 44, borderRadius: 8 }}
-          aria-label="이전 주"
+          aria-label={t("week.prevWeek")}
           disabled={weekIdx === 0}
           onClick={() => {
             if (weekIdx > 0) setWeekIdx(weekIdx - 1);
@@ -101,7 +104,7 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
           type="button"
           className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
           style={{ width: 44, height: 44, borderRadius: 8 }}
-          aria-label="다음 주"
+          aria-label={t("week.nextWeek")}
           disabled={weekIdx === weeks.length - 1}
           onClick={() => {
             if (weekIdx < weeks.length - 1) setWeekIdx(weekIdx + 1);

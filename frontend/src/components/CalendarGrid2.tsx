@@ -1,9 +1,8 @@
 // frontend/src/components/CalenderGrid2.tsx
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { adaptive } from "@toss/tds-colors";
 import { cn } from "@/lib/cn";
-
-const weekdays = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
 // ── 5-band zIndex ──
 const Z = {
@@ -255,6 +254,8 @@ export default function CalendarGrid2({
   onCellPressEnd,
   baseBg = "white",
 }: CalendarGrid2Props) {
+  const { t } = useTranslation();
+  const weekdays = t("weekdays", { returnObjects: true }) as string[];
   return (
     <div className="w-full px-5 py-4">
       <div className="grid grid-cols-7 text-center">

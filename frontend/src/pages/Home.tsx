@@ -8,21 +8,23 @@ import { useRoomsControllerCreate } from "../api/model/rooms/rooms";
 import { useDateSelectionStore } from "../stores/useDateSelectionStore";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
+import { useTranslation } from "react-i18next";
 import { getUserId } from "../lib/userId";
 import { getDefaultName } from "../lib/nickname";
 
 function Header() {
+  const { t } = useTranslation();
   return (
     <>
       <Top
         title={
           <Top.TitleParagraph size={28} color={adaptive.grey900}>
-            모두가 가능한 시간으로 일정을 정해요
+            {t("home.title")}
           </Top.TitleParagraph>
         }
         subtitleBottom={
           <Top.SubtitleParagraph>
-            방을 만들고 사람들을 초대해요
+            {t("home.subtitle")}
           </Top.SubtitleParagraph>
         }
       />
@@ -35,6 +37,7 @@ function formatHour(hour: number): string {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const confirmed = useDateSelectionStore((s) => s.confirmed);
   const startHour = useTimeSliderStore((s) => s.startHour);
@@ -64,7 +67,7 @@ export default function Home() {
     ]);
     createRoom({
       data: {
-        name: `${defaultName}의 방`,
+        name: `${defaultName}${t("home.roomNameSuffix")}`,
         creatorId,
         dates: selectedDates,
         startTime: formatHour(startHour),
@@ -84,7 +87,7 @@ export default function Home() {
         disabled={selectedDates.length === 0}
         color="primary"
       >
-        방 생성하기
+        {t("home.createRoom")}
       </FixedBottomCTA>
     </div>
   );

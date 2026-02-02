@@ -1,5 +1,3 @@
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
 export function generateTimeSlots(
   startTime: string,
   endTime: string,
@@ -14,11 +12,11 @@ export function generateTimeSlots(
   return slots;
 }
 
-export function formatDateHeader(dateStr: string) {
+export function formatDateHeader(dateStr: string, weekdays: string[]) {
   const d = new Date(`${dateStr}T00:00:00`);
   const dayOfWeek = d.getDay();
   return {
-    weekday: WEEKDAYS[dayOfWeek],
+    weekday: weekdays[dayOfWeek],
     label: `${d.getMonth() + 1}/${d.getDate()}`,
     day: `${d.getDate()}`,
     dayOfWeek,

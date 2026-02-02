@@ -10,6 +10,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
+import { useTranslation } from "react-i18next";
 import { getUserId } from "@/lib/userId";
 import HeatmapCalendarView from "./HeatmapCalendarView";
 import WeekNavigation from "./WeekNavigation";
@@ -75,6 +76,7 @@ function intensityColor(count: number, max: number): string {
 }
 
 export default function OverviewGrid() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
   const { weekIdx, setWeekIdx, selectedUserId, setSelectedUserId } =
@@ -305,7 +307,8 @@ export default function OverviewGrid() {
       .sort((a, b) => b.covered - a.covered);
   }, [selectedSlots, participants]);
 
-  const dateHeaders = columns.map((col) => formatDateHeader(col.date));
+  const weekdays = t("weekdays", { returnObjects: true }) as string[];
+  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
   const baseBg = "white";
 
   const overlayRect = previewRect ?? selectionRect;
@@ -317,7 +320,7 @@ export default function OverviewGrid() {
         {/* Participant badges */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
           <Badge
-            title="전체"
+            title={t("overview.all")}
             color={!selectedUserId ? adaptive.blue400 : adaptive.grey100}
             textColor={!selectedUserId ? "white" : adaptive.grey600}
             className="shrink-0"
@@ -532,7 +535,7 @@ export default function OverviewGrid() {
       <BottomSheet
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
-        header={<BottomSheet.Header>참여 현황</BottomSheet.Header>}
+        header={<BottomSheet.Header>{t("overview.participationStatus")}</BottomSheet.Header>}
       >
         <HeatmapCalendarView
           highlightedDates={highlightedDates}
