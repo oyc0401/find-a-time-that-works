@@ -12,6 +12,7 @@ import { getRoomName } from "@/lib/nickname";
 import { handleShare } from "@/lib/share";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
+import ParticipantList from "../components/room/ParticipantList";
 
 export default function Room() {
   const { id } = useParams<{ id: string }>();
@@ -86,6 +87,7 @@ export default function Room() {
       <div className="min-h-0 flex-1 overflow-y-auto">
         {selected === 0 && <AvailabilityGrid />}
         {selected === 1 && <OverviewGrid />}
+        {selected === 2 && <ParticipantList participants={participants} />}
       </div>
     </div>
   );
