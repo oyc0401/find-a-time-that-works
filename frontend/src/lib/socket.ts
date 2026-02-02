@@ -8,6 +8,10 @@ export function getSocket(): Socket {
     socket = io(`${API_BASE_URL}/rooms`, {
       autoConnect: false,
       transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
   }
   return socket;
