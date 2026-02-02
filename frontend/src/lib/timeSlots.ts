@@ -16,9 +16,11 @@ export function generateTimeSlots(
 
 export function formatDateHeader(dateStr: string) {
   const d = new Date(`${dateStr}T00:00:00`);
+  const dayOfWeek = d.getDay();
   return {
-    weekday: WEEKDAYS[d.getDay()],
+    weekday: WEEKDAYS[dayOfWeek],
     label: `${d.getMonth() + 1}/${d.getDate()}`,
     day: `${d.getDate()}`,
+    dayOfWeek,
   };
 }

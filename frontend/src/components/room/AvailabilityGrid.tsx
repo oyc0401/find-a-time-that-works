@@ -307,7 +307,10 @@ export default function AvailabilityGrid() {
               className="flex-1 text-center"
               style={{ minWidth: 44 }}
             >
-              <div style={{ fontSize: 13, color: adaptive.grey500 }}>
+              <div style={{
+                fontSize: 13,
+                color: h.dayOfWeek === 0 ? adaptive.red400 : h.dayOfWeek === 6 ? adaptive.blue300 : adaptive.grey500,
+              }}>
                 {`${h.day} (${h.weekday})`}
               </div>
             </div>
