@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
   BottomSheet,
   Button,
+  Post,
   Tab,
   TextField,
   Top,
@@ -30,10 +31,15 @@ import ParticipantList from "../components/room/ParticipantList";
 
 export default function Room() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { room, participants, isLoading } = useRoomData(id);
   const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
   const queryClient = useQueryClient();
+
+  // ── Tutorial bottom sheet ──
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
   // WebSocket 연결
   useRoomSocket({
@@ -73,6 +79,13 @@ export default function Room() {
       );
     });
   }, [roomNameInput, id, updateRoomName, queryClient]);
+
+  useEffect(() => {
+    if (searchParams.get("created") === "true" && id) {
+      setIsTutorialOpen(true);
+      navigate(`/rooms/${id}`, { replace: true });
+    }
+  }, [searchParams, id, navigate]);
 
   useEffect(() => {
     if (!room) return;
@@ -165,6 +178,49 @@ export default function Room() {
         {tabIdx === 1 && <OverviewGrid />}
         {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
+
+      <BottomSheet
+        open={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        header={<BottomSheet.Header>방이 만들어졌어요!</BottomSheet.Header>}
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsTutorialOpen(false)}
+              >
+                닫기
+              </Button>
+            }
+            rightButton={
+              <Button
+                onClick={() => {
+                  // setIsTutorialOpen(false);
+                  handleShare(id ?? "");
+                }}
+              >
+                공유하기
+              </Button>
+            }
+          />
+        }
+      >
+        <Post.Ol>
+          <Post.Li>
+            아래의 <strong>공유하기</strong> 버튼으로 친구들에게 링크를
+            공유하세요
+          </Post.Li>
+          <Post.Li>
+            <strong>일정선택</strong> 탭에서 가능한 시간대를 터치해 선택하세요
+          </Post.Li>
+          <Post.Li>
+            참여자들이 입력을 마치면 <strong>전체보기</strong> 탭에서 겹치는
+            시간을 확인할 수 있어요
+          </Post.Li>
+        </Post.Ol>
+      </BottomSheet>
 
       <BottomSheet
         open={isRoomNameOpen}

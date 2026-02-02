@@ -49,7 +49,7 @@ export default function Home() {
   const { mutate: createRoom, isPending } = useRoomsControllerCreate({
     mutation: {
       onSuccess: (response) => {
-        navigate(`/rooms/${response.data.data.id}`);
+        navigate(`/rooms/${response.data.data.id}?created=true`);
       },
     },
   });
