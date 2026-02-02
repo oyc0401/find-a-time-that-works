@@ -9,6 +9,7 @@ import type { AvailabilitySlotDto } from "@/api/model/models";
 import { getUserId } from "@/lib/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
+import { useRoomStore } from "@/stores/useRoomStore";
 
 function gridToSlots(
   grid: boolean[][],
@@ -51,10 +52,11 @@ export function useSubmitAvailability(roomId?: string) {
       const slots = gridToSlots(state.grid, room.dates, timeSlots);
 
       getUserId().then((userId) => {
+        const nickname = useRoomStore.getState().nickname;
         mutate(
           {
             id: room.id,
-            data: { participantId: userId, participantName: "익명", slots },
+            data: { participantId: userId, participantName: nickname, slots },
           },
           {
             onSuccess: () => {

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomSheet, TextButton } from "@toss/tds-mobile";
+import {
+  Asset,
+  BottomSheet,
+  Button,
+  Checkbox,
+  TextField,
+} from "@toss/tds-mobile";
+import { setRoomName, setDefaultName } from "@/lib/nickname";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import {
@@ -101,7 +108,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
 export default function AvailabilityGrid() {
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { weekIdx, setWeekIdx } = useRoomStore();
+  const { weekIdx, setWeekIdx, nickname } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -253,6 +260,29 @@ export default function AvailabilityGrid() {
     onEnd: handleEnd,
   });
 
+  // ── Nickname bottom sheet ──
+  const [isNicknameOpen, setIsNicknameOpen] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState("");
+  const [rememberDefault, setRememberDefault] = useState(false);
+
+  const handleNicknameOpen = useCallback(() => {
+    setNicknameInput(nickname);
+    setRememberDefault(false);
+    setIsNicknameOpen(true);
+  }, [nickname]);
+
+  const handleNicknameSave = useCallback(() => {
+    const trimmed = nicknameInput.trim();
+    if (!trimmed || !id) return;
+
+    useRoomStore.getState().setNickname(trimmed);
+    setRoomName(id, trimmed);
+    if (rememberDefault) {
+      setDefaultName(trimmed);
+    }
+    setIsNicknameOpen(false);
+  }, [nicknameInput, rememberDefault, id]);
+
   // ── Calendar bottom sheet ──
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const highlightedDates = useMemo(
@@ -285,15 +315,29 @@ export default function AvailabilityGrid() {
         <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       </div>
       {/* Nickname */}
-      <div className="flex items-center pl-4 pr-2 pt-2 pb-4">
-        <TextButton
-          size="medium"
-          variant="arrow"
-          color={adaptive.grey700}
-          arrowPlacement="inline"
+      <div className="flex items-center pl-4 pr-2  pb-2">
+        <button
+          type="button"
+          onClick={handleNicknameOpen}
+          className="flex items-center gap-0.5 pl-1 p-2 cursor-pointer transition-[colors,transform] duration-50  active:scale-95"
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: adaptive.grey700,
+            borderRadius: 9,
+          }}
         >
-          오유찬
-        </TextButton>
+          {nickname}
+          <Asset.Icon
+            frameShape={Asset.frameShape.CleanW24}
+            backgroundColor="transparent"
+            name="icon-pencil-line-mono"
+            color={adaptive.grey400}
+            scale={0.75}
+            aria-hidden={true}
+            ratio="1/1"
+          />
+        </button>
       </div>
 
       <div className="bg-white px-4">
@@ -451,9 +495,58 @@ export default function AvailabilityGrid() {
       </div>
 
       <BottomSheet
+        open={isNicknameOpen}
+        onClose={() => setIsNicknameOpen(false)}
+        header={<BottomSheet.Header>이름 변경</BottomSheet.Header>}
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsNicknameOpen(false)}
+              >
+                닫기
+              </Button>
+            }
+            rightButton={
+              <Button
+                onClick={handleNicknameSave}
+                disabled={!nicknameInput.trim()}
+              >
+                저장
+              </Button>
+            }
+          />
+        }
+      >
+        <TextField
+          variant="box"
+          label="이름"
+          labelOption="sustain"
+          placeholder="이름을 입력해주세요"
+          value={nicknameInput}
+          onChange={(e) => setNicknameInput(e.target.value)}
+        />
+        <button
+          type="button"
+          className="flex w-full items-center justify-end gap-2 pr-5 cursor-pointer"
+          onClick={() => setRememberDefault((prev) => !prev)}
+        >
+          <Checkbox.Circle
+            checked={rememberDefault}
+            onCheckedChange={setRememberDefault}
+          />
+          <span style={{ fontSize: 14, color: adaptive.grey600 }}>
+            다음에도 사용하기
+          </span>
+        </button>
+      </BottomSheet>
+
+      <BottomSheet
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
-        header={<BottomSheet.Header>날짜 보기</BottomSheet.Header>}
+        header={<BottomSheet.Header>날짜</BottomSheet.Header>}
       >
         <CalendarView
           highlightedDates={highlightedDates}
