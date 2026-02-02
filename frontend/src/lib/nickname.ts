@@ -1,5 +1,6 @@
 import { Repository } from "./repository";
-import { generateRandomName } from "./randomName";
+import { generateRandomNameKo, generateRandomNameEn } from "./randomName";
+import i18n from "@/i18n";
 
 const DEFAULT_NAME_KEY = "defaultName";
 let cachedDefaultName: string | undefined;
@@ -14,7 +15,8 @@ export async function getDefaultName(): Promise<string> {
     return existing;
   }
 
-  const name = generateRandomName();
+  const name =
+    i18n.language === "ko" ? generateRandomNameKo() : generateRandomNameEn();
   await Repository.setItem(DEFAULT_NAME_KEY, name);
   cachedDefaultName = name;
   return name;
