@@ -1,8 +1,15 @@
-import { share, getTossShareLink } from "@apps-in-toss/web-framework";
+import {
+  share,
+  getTossShareLink,
+  getOperationalEnvironment,
+} from "@apps-in-toss/web-framework";
+
+const scheme =
+  getOperationalEnvironment() === "sandbox" ? "intoss-private" : "intoss";
 
 export async function handleShare(roomId: string) {
   const tossLink = await getTossShareLink(
-    `intoss://findtime/room?id=${roomId}`,
+    `${scheme}://findtime/room?id=${roomId}`,
     "https://static.toss.im/icons/png/4x/icon-share-dots-mono.png",
   );
 
