@@ -9,6 +9,7 @@ import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/lib/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
 import { getDefaultName } from "@/lib/nickname";
+import { getDefaultThumbnail } from "@/lib/thumbnail";
 import { handleShare } from "@/lib/share";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
@@ -36,7 +37,11 @@ export default function Room() {
           const myParticipant = participants.find((p) => p.userId === userId);
           const nickname =
             myParticipant?.name ?? (await getDefaultName());
-          useRoomStore.getState().setNickname(nickname);
+          const thumbnail =
+            myParticipant?.thumbnail ?? (await getDefaultThumbnail());
+          const store = useRoomStore.getState();
+          store.setNickname(nickname);
+          store.setThumbnail(thumbnail);
           if (myParticipant && myParticipant.slots.length > 0) {
             useAvailabilityStore
               .getState()

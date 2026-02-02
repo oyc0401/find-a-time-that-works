@@ -12,6 +12,7 @@ import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/lib/userId";
 import { setDefaultName } from "@/lib/nickname";
+import { THUMBNAILS, thumbnailUrl, setDefaultThumbnail } from "@/lib/thumbnail";
 
 interface ParticipantListProps {
   participants: ParticipantDto[];
@@ -22,6 +23,7 @@ export default function ParticipantList({
 }: ParticipantListProps) {
   const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
+  const thumbnail = useRoomStore((s) => s.thumbnail);
   const { setTabIdx, setSelectedUserId } = useRoomStore();
   const [myUserId, setMyUserId] = useState<string>();
 
@@ -53,35 +55,62 @@ export default function ParticipantList({
     setIsNicknameOpen(false);
   }, [nicknameInput, rememberDefault, id]);
 
+  // ── Thumbnail bottom sheet ──
+  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
+  const [selectedThumbnail, setSelectedThumbnail] = useState("");
+
+  const handleThumbnailOpen = useCallback(() => {
+    setSelectedThumbnail(thumbnail);
+    setIsThumbnailOpen(true);
+  }, [thumbnail]);
+
+  const handleThumbnailSave = useCallback(() => {
+    if (!selectedThumbnail) return;
+
+    useRoomStore.getState().setThumbnail(selectedThumbnail);
+    setDefaultThumbnail(selectedThumbnail);
+    setIsThumbnailOpen(false);
+  }, [selectedThumbnail]);
+
   return (
     <div>
       <div style={{ padding: 16 }}>
-        <button
-          type="button"
-          className="w-full cursor-pointer transition-transform duration-200 active:scale-99"
+        <div
+          className="w-full overflow-hidden"
           style={{ background: adaptive.grey200, borderRadius: 8 }}
-          onClick={handleNicknameOpen}
         >
-          <div className="py-1">
-            <ListRow
-              verticalPadding="large"
-              left={
+          <div className="flex py-1">
+            <button
+              type="button"
+              className="cursor-pointer transition-transform duration-200 active:scale-95"
+              style={{ flexShrink: 0 }}
+              onClick={handleThumbnailOpen}
+            >
+              <div className="pl-4 py-3">
                 <ListRow.AssetIcon
                   shape="circle-background"
-                  name="icon-crown-simple"
+                  url={thumbnailUrl(thumbnail)}
                   backgroundColor={adaptive.grey50}
                 />
-              }
-              contents={
-                <ListRow.Texts
-                  type="2RowTypeA"
-                  top={nickname}
-                  bottom="내 정보"
-                />
-              }
-            />
+              </div>
+            </button>
+            <button
+              type="button"
+              className="min-w-0 flex-1 cursor-pointer transition-transform duration-200 active:scale-99"
+              onClick={handleNicknameOpen}
+            >
+              <ListRow
+                contents={
+                  <ListRow.Texts
+                    type="2RowTypeA"
+                    top={nickname}
+                    bottom="내 정보"
+                  />
+                }
+              />
+            </button>
           </div>
-        </button>
+        </div>
       </div>
 
       {others.map((p) => (
@@ -95,12 +124,19 @@ export default function ParticipantList({
           }}
         >
           <ListRow
-            left={<ListRow.AssetIcon name="bank-toss" />}
+            left={
+              <ListRow.AssetIcon
+                shape="circle-background"
+                url={thumbnailUrl(p.thumbnail)}
+                backgroundColor={adaptive.grey100}
+              />
+            }
             contents={<ListRow.Texts type="1RowTypeA" top={p.name} />}
           />
         </button>
       ))}
 
+      {/* ── Nickname Bottom Sheet ── */}
       <BottomSheet
         open={isNicknameOpen}
         onClose={() => setIsNicknameOpen(false)}
@@ -145,9 +181,51 @@ export default function ParticipantList({
             onCheckedChange={setRememberDefault}
           />
           <span style={{ fontSize: 14, color: adaptive.grey600 }}>
-            다음에도 사용하기
+            다음에도 기억하기
           </span>
         </button>
+      </BottomSheet>
+
+      {/* ── Thumbnail Bottom Sheet ── */}
+      <BottomSheet
+        open={isThumbnailOpen}
+        onClose={() => setIsThumbnailOpen(false)}
+        header={<BottomSheet.Header>썸네일 변경</BottomSheet.Header>}
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsThumbnailOpen(false)}
+              >
+                닫기
+              </Button>
+            }
+            rightButton={<Button onClick={handleThumbnailSave}>저장</Button>}
+          />
+        }
+      >
+        <div className="grid grid-cols-4 gap-3 px-5 py-4">
+          {THUMBNAILS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className="flex cursor-pointer items-center justify-center rounded-2xl p-2 transition-colors"
+              style={{
+                background:
+                  selectedThumbnail === t ? adaptive.grey300 : adaptive.grey100,
+                border:
+                  selectedThumbnail === t
+                    ? `2px solid ${adaptive.grey600}`
+                    : "2px solid transparent",
+              }}
+              onClick={() => setSelectedThumbnail(t)}
+            >
+              <img src={thumbnailUrl(t)} alt={t} width={48} height={48} />
+            </button>
+          ))}
+        </div>
       </BottomSheet>
     </div>
   );

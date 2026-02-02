@@ -49,11 +49,16 @@ export function useSubmitAvailability(roomId?: string) {
       const slots = gridToSlots(grid, room.dates, timeSlots);
 
       getUserId().then((userId) => {
-        const nickname = useRoomStore.getState().nickname;
+        const { nickname, thumbnail } = useRoomStore.getState();
         mutate(
           {
             id: room.id,
-            data: { participantId: userId, participantName: nickname, slots },
+            data: {
+              participantId: userId,
+              participantName: nickname,
+              participantThumbnail: thumbnail || undefined,
+              slots,
+            },
           },
           {
             onSuccess: () => {
@@ -84,7 +89,7 @@ export function useSubmitAvailability(roomId?: string) {
     if (!roomId) return;
 
     const unsub = useRoomStore.subscribe((state, prev) => {
-      if (state.nickname === prev.nickname) return;
+      if (state.nickname === prev.nickname && state.thumbnail === prev.thumbnail) return;
       if (!enabledRef.current) return;
       submitCurrent(roomId);
     });

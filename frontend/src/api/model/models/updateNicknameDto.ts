@@ -11,4 +11,6 @@ export interface UpdateNicknameDto {
   userId: string;
   /** 변경할 닉네임 */
   name: string;
+  /** 변경할 썸네일 URL */
+  thumbnail?: string;
 }

@@ -11,5 +11,6 @@ export interface ParticipantDto {
   id: string;
   userId: string;
   name: string;
+  thumbnail?: string;
   slots: SlotDto[];
 }
