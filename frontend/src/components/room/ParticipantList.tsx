@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  Asset,
   BottomSheet,
   Button,
   Checkbox,
@@ -11,7 +12,11 @@ import { adaptive } from "@toss/tds-colors";
 import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/lib/userId";
-import { setDefaultName, getRememberName, setRememberName } from "@/lib/nickname";
+import {
+  setDefaultName,
+  getRememberName,
+  setRememberName,
+} from "@/lib/nickname";
 import { THUMBNAILS, thumbnailUrl, setDefaultThumbnail } from "@/lib/thumbnail";
 
 interface ParticipantListProps {
@@ -80,14 +85,14 @@ export default function ParticipantList({
           className="w-full overflow-hidden"
           style={{ background: adaptive.grey200, borderRadius: 8 }}
         >
-          <div className="flex py-1">
+          <div className="flex py-2">
             <button
               type="button"
               className="cursor-pointer transition-transform duration-200 active:scale-95"
               style={{ flexShrink: 0 }}
               onClick={handleThumbnailOpen}
             >
-              <div className="pl-4 py-3">
+              <div className="pl-5 py-3">
                 <ListRow.AssetIcon
                   shape="circle-background"
                   url={thumbnailUrl(thumbnail)}
@@ -191,7 +196,7 @@ export default function ParticipantList({
       <BottomSheet
         open={isThumbnailOpen}
         onClose={() => setIsThumbnailOpen(false)}
-        header={<BottomSheet.Header>썸네일 변경</BottomSheet.Header>}
+        header={<BottomSheet.Header>프로필 변경</BottomSheet.Header>}
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -207,23 +212,38 @@ export default function ParticipantList({
           />
         }
       >
-        <div className="grid grid-cols-4 gap-3 px-5 py-4">
+        <div
+          className="grid px-4 py-2"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, 84px)", // 아이템 폭 고정
+            justifyContent: "space-evenly",
+            justifyItems: "center",
+          }}
+        >
           {THUMBNAILS.map((t) => (
             <button
               key={t}
               type="button"
-              className="flex cursor-pointer items-center justify-center rounded-2xl p-2 transition-colors"
-              style={{
-                background:
-                  selectedThumbnail === t ? adaptive.grey300 : adaptive.grey100,
-                border:
-                  selectedThumbnail === t
-                    ? `2px solid ${adaptive.grey600}`
-                    : "2px solid transparent",
-              }}
+              className="flex cursor-pointer items-center justify-center w-[84px] h-[84px] "
               onClick={() => setSelectedThumbnail(t)}
             >
-              <img src={thumbnailUrl(t)} alt={t} width={48} height={48} />
+              <div
+                style={{
+                  padding: 8,
+                  background:
+                    selectedThumbnail === t
+                      ? adaptive.grey300
+                      : adaptive.grey100,
+
+                  borderRadius: 9999,
+                }}
+              >
+                <Asset.Image
+                  src={thumbnailUrl(t)}
+                  frameShape={Asset.frameShape.Circle2XLarge}
+                  scale={0.9}
+                />
+              </div>
             </button>
           ))}
         </div>
