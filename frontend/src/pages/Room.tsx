@@ -28,6 +28,7 @@ import { getDefaultName } from "@/lib/nickname";
 import { getDefaultThumbnail } from "@/lib/thumbnail";
 import { handleShare } from "@/lib/share";
 import { WifiOff } from "lucide-react";
+import { truncateTitle } from "@/lib/truncateTitle";
 import AvailabilityGrid from "../components/room/AvailabilityGrid";
 import OverviewGrid from "../components/room/OverviewGrid";
 import ParticipantList from "../components/room/ParticipantList";
@@ -161,11 +162,11 @@ export default function Room() {
           isCreator ? (
             <button
               type="button"
-              className="flex items-center gap-0.5 cursor-pointer transition-transform duration-200 active:scale-99 gap-2"
+              className="flex items-center gap-2 text-left cursor-pointer transition-transform duration-200 active:scale-99"
               onClick={handleRoomNameOpen}
             >
               <Top.TitleParagraph size={28} color={adaptive.grey900}>
-                {room.name}
+                {truncateTitle(room.name)}
               </Top.TitleParagraph>
               <Asset.Icon
                 frameShape={Asset.frameShape.CleanW24}
@@ -179,7 +180,7 @@ export default function Room() {
             </button>
           ) : (
             <Top.TitleParagraph size={28} color={adaptive.grey900}>
-              {room.name}
+              {truncateTitle(room.name)}
             </Top.TitleParagraph>
           )
         }
