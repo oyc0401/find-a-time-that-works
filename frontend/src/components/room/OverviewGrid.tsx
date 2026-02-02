@@ -338,13 +338,12 @@ export default function OverviewGrid() {
             });
             return sorted.map((p) => {
               const name = p.name;
-              const isMe = "userId" in p && p.userId === myUserId;
               const pUserId = "userId" in p ? p.userId : undefined;
               const isSelected = pUserId === selectedUserId;
               return (
                 <Badge
                   key={pUserId ?? name}
-                  title={isMe ? "나" : name}
+                  title={name}
                   color={isSelected ? adaptive.blue400 : adaptive.grey100}
                   textColor={isSelected ? "white" : adaptive.grey600}
                   className="shrink-0"
@@ -365,10 +364,17 @@ export default function OverviewGrid() {
               className="flex-1 text-center"
               style={{ minWidth: 44 }}
             >
-              <div style={{
-                fontSize: 13,
-                color: h.dayOfWeek === 0 ? adaptive.red400 : h.dayOfWeek === 6 ? adaptive.blue300 : adaptive.grey500,
-              }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  color:
+                    h.dayOfWeek === 0
+                      ? adaptive.red400
+                      : h.dayOfWeek === 6
+                        ? adaptive.blue300
+                        : adaptive.grey500,
+                }}
+              >
                 {`${h.day} (${h.weekday})`}
               </div>
             </div>
@@ -512,8 +518,10 @@ export default function OverviewGrid() {
                 height: (overlayRect.r1 - overlayRect.r0 + 1) * CELL_H,
                 left: `${(overlayRect.dc0 / displayCols) * 100}%`,
                 width: `${((overlayRect.dc1 - overlayRect.dc0 + 1) / displayCols) * 100}%`,
-                backgroundColor: "#feafb445",
-                border: "2px solid #f66570",
+                backgroundColor: "#c9e2ff60",
+                border: "2px solid #3182f6",
+                // outline: "2px solid #3182f6",
+                // outlineOffset: "-1px",
               }}
             />
           )}
