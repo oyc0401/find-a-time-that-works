@@ -11,6 +11,9 @@ export class ParticipantDto {
   @ApiProperty({ example: "유찬" })
   name: string;
 
+  @ApiProperty({ example: "https://example.com/thumb.png", required: false })
+  thumbnail?: string;
+
   @ApiProperty({ type: [SlotDto] })
   slots: SlotDto[];
 }

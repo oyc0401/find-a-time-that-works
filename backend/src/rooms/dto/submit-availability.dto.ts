@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsArray, ValidateNested, Matches } from "class-validator";
+import { IsString, IsArray, IsOptional, ValidateNested, Matches } from "class-validator";
 import { Type } from "class-transformer";
 
 export class AvailabilitySlotDto {
@@ -22,6 +22,11 @@ export class SubmitAvailabilityDto {
   @ApiProperty({ example: "유찬" })
   @IsString()
   participantName: string;
+
+  @ApiProperty({ example: "https://example.com/thumb.png", required: false })
+  @IsOptional()
+  @IsString()
+  participantThumbnail?: string;
 
   @ApiProperty({
     type: [AvailabilitySlotDto],

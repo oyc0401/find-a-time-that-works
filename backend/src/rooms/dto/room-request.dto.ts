@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, MinLength } from "class-validator";
+import { IsString, IsOptional, MinLength } from "class-validator";
 
 export class DeleteRoomDto {
   @ApiProperty({ example: "user-uuid-1234", description: "방 생성자 ID" })
@@ -27,4 +27,9 @@ export class UpdateNicknameDto {
   @IsString()
   @MinLength(1)
   name: string;
+
+  @ApiProperty({ example: "https://example.com/thumb.png", required: false, description: "변경할 썸네일 URL" })
+  @IsOptional()
+  @IsString()
+  thumbnail?: string;
 }

@@ -82,6 +82,7 @@ export class RoomsService {
         id: p.id,
         userId: p.userId,
         name: p.name,
+        thumbnail: p.thumbnail ?? undefined,
         slots: p.availabilities.map((a) => ({
           date: a.date.toISOString().split("T")[0],
           time: a.startTime,
@@ -97,10 +98,21 @@ export class RoomsService {
     }
     this.assertNotExpired(room.expiresAt);
 
+    const updateData: { name: string; thumbnail?: string } = { name: dto.participantName };
+    const createData: { roomId: string; userId: string; name: string; thumbnail?: string } = {
+      roomId,
+      userId: dto.participantId,
+      name: dto.participantName,
+    };
+    if (dto.participantThumbnail !== undefined) {
+      updateData.thumbnail = dto.participantThumbnail;
+      createData.thumbnail = dto.participantThumbnail;
+    }
+
     const participant = await this.prisma.participant.upsert({
       where: { roomId_userId: { roomId, userId: dto.participantId } },
-      create: { roomId, userId: dto.participantId, name: dto.participantName },
-      update: { name: dto.participantName },
+      create: createData,
+      update: updateData,
     });
 
     // 기존 가용 시간 삭제 후 새로 입력
@@ -173,9 +185,14 @@ export class RoomsService {
       throw new NotFoundException("해당 방에서 참여자를 찾을 수 없습니다");
     }
 
+    const data: { name: string; thumbnail?: string } = { name: dto.name };
+    if (dto.thumbnail !== undefined) {
+      data.thumbnail = dto.thumbnail;
+    }
+
     await this.prisma.participant.update({
       where: { id: participant.id },
-      data: { name: dto.name },
+      data,
     });
   }
 }
