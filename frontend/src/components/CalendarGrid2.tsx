@@ -258,13 +258,13 @@ export default function CalendarGrid2({
   return (
     <div className="w-full px-5 py-4">
       <div className="grid grid-cols-7 text-center">
-        {weekdays.map((d) => (
+        {weekdays.map((d, i) => (
           <span
             key={d}
             style={{
               fontSize: 15,
               lineHeight: "22.5px",
-              color: adaptive.grey500,
+              color: i === 0 ? adaptive.red400 : i === 6 ? adaptive.blue300 : adaptive.grey500,
             }}
           >
             {d}
