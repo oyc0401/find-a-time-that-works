@@ -286,8 +286,13 @@ export default function AvailabilityGrid() {
       </div>
       {/* Nickname */}
       <div className="flex items-center pl-4 pr-2 pt-2 pb-4">
-        <TextButton size="medium" variant="arrow">
-          행복한 하마
+        <TextButton
+          size="medium"
+          variant="arrow"
+          color={adaptive.grey700}
+          arrowPlacement="inline"
+        >
+          오유찬
         </TextButton>
       </div>
 

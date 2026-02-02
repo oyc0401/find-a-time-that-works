@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { Asset, IconButton } from "@toss/tds-mobile";
+import { Asset } from "@toss/tds-mobile";
 import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -62,41 +62,62 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     <div className="flex items-center justify-between pt-3 pl-4 pr-4 pb-1">
       <button
         type="button"
-        className="flex items-center gap-0.5 cursor-pointer"
-        style={{ fontSize: 20, fontWeight: 500 }}
+        className="flex items-center gap-0.5 cursor-pointer transition-[colors,transform] duration-50  active:scale-95"
+        style={{ fontSize: 20, fontWeight: 500, borderRadius: 8, padding: 4 }}
         onClick={onDateClick}
       >
         {weekLabel}
         <Asset.Icon
           frameShape={Asset.frameShape.CleanW24}
           backgroundColor="transparent"
-          name="icon-arrow-right-small-mono"
-          color="#4d94f0"
+          name="icon-arrow-down-small-mono"
+          color={adaptive.grey400}
+          scale={0.75}
           aria-hidden={true}
           ratio="1/1"
         />
       </button>
       <div className="flex items-center">
-        <IconButton
-          name="icon-arrow-left-sidebar-mono"
-          variant="clear"
+        <button
+          type="button"
+          className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
+          style={{ width: 44, height: 44, borderRadius: 8 }}
           aria-label="이전 주"
-          color={adaptive.blue400}
+          disabled={weekIdx === 0}
           onClick={() => {
             if (weekIdx > 0) setWeekIdx(weekIdx - 1);
           }}
-        />
-        <IconButton
-          name="icon-arrow-right-sidebar-mono"
-          variant="clear"
+        >
+          <Asset.Icon
+            frameShape={Asset.frameShape.CleanW32}
+            backgroundColor="transparent"
+            name="icon-arrow-left-sidebar-mono"
+            color={weekIdx === 0 ? adaptive.grey200 : adaptive.blue400}
+            aria-hidden={true}
+            ratio="1/1"
+          />
+        </button>
+        <button
+          type="button"
+          className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
+          style={{ width: 44, height: 44, borderRadius: 8 }}
           aria-label="다음 주"
-          color={
-            weekIdx === weeks.length - 1 ? adaptive.grey100 : adaptive.blue400
-          }
+          disabled={weekIdx === weeks.length - 1}
           onClick={() => {
             if (weekIdx < weeks.length - 1) setWeekIdx(weekIdx + 1);
           }}
-        />
+        >
+          <Asset.Icon
+            frameShape={Asset.frameShape.CleanW32}
+            backgroundColor="transparent"
+            name="icon-arrow-right-sidebar-mono"
+            color={
+              weekIdx === weeks.length - 1 ? adaptive.grey200 : adaptive.blue400
+            }
+            aria-hidden={true}
+            ratio="1/1"
+          />
+        </button>
       </div>
     </div>
   );
