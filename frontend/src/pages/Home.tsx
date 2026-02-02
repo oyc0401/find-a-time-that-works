@@ -49,7 +49,10 @@ export default function Home() {
   const { mutate: createRoom, isPending } = useRoomsControllerCreate({
     mutation: {
       onSuccess: (response) => {
-        navigate(`/rooms/${response.data.data.id}?created=true`);
+        useDateSelectionStore.getState().clear();
+        useTimeSliderStore.getState().setStartHour(8);
+        useTimeSliderStore.getState().setEndHour(19);
+        navigate(`/rooms/${response.data.data.id}?created=true`, { replace: true });
       },
     },
   });

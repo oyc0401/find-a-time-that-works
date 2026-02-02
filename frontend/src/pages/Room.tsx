@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { graniteEvent } from "@apps-in-toss/web-framework";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
@@ -86,6 +87,23 @@ export default function Room() {
       navigate(`/rooms/${id}`, { replace: true });
     }
   }, [searchParams, id, navigate]);
+
+  useEffect(() => {
+    const unsubscription = graniteEvent.addEventListener("backEvent", {
+      onEvent: () => {
+        navigate("/", { replace: true });
+      },
+      onError: (error) => {
+        console.error(`backEvent 에러: ${error}`);
+      },
+    });
+
+    window.addEventListener("pagehide", unsubscription);
+    return () => {
+      unsubscription();
+      window.removeEventListener("pagehide", unsubscription);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (!room) return;

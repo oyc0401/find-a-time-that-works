@@ -323,7 +323,7 @@ export default function AvailabilityGrid() {
           }}
         >
           {selectedDatesLabel ? (
-            <span className="truncate block">선택: {selectedDatesLabel}</span>
+            <span className="truncate block">✅: {selectedDatesLabel}</span>
           ) : (
             "시간표를 꾹 눌러 드래그 하세요"
           )}

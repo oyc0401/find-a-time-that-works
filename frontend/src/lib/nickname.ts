@@ -29,12 +29,12 @@ export async function setDefaultName(name: string): Promise<void> {
 const REMEMBER_NAME_KEY = "rememberName";
 let cachedRememberName: boolean | undefined;
 
-/** "다음에도 기억하기" 설정 조회. 없으면 false */
+/** "다음에도 기억하기" 설정 조회. 없으면 true */
 export async function getRememberName(): Promise<boolean> {
   if (cachedRememberName !== undefined) return cachedRememberName;
 
   const existing = await Repository.getItem(REMEMBER_NAME_KEY);
-  cachedRememberName = existing === "true";
+  cachedRememberName = existing === null ? true : existing === "true";
   return cachedRememberName;
 }
 
