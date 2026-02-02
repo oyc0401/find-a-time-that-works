@@ -46,9 +46,12 @@ export default function ParticipantList({
   const [nicknameInput, setNicknameInput] = useState("");
   const [rememberDefault, setRememberDefault] = useState(false);
 
+  useEffect(() => {
+    getRememberName().then(setRememberDefault);
+  }, []);
+
   const handleNicknameOpen = useCallback(() => {
     setNicknameInput(nickname);
-    getRememberName().then(setRememberDefault);
     setIsNicknameOpen(true);
   }, [nickname]);
 
