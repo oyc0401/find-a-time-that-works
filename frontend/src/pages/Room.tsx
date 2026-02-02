@@ -1,7 +1,19 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Tab, Top } from "@toss/tds-mobile";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Asset,
+  BottomSheet,
+  Button,
+  Tab,
+  TextField,
+  Top,
+} from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import { useEffect, useRef } from "react";
+import {
+  getRoomsControllerFindByIdQueryKey,
+  useRoomsControllerUpdateRoomName,
+} from "@/api/model/rooms/rooms";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -20,8 +32,40 @@ export default function Room() {
   const { room, participants, isLoading } = useRoomData(id);
   const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
+  const queryClient = useQueryClient();
 
   const loadedRef = useRef(false);
+  const [isCreator, setIsCreator] = useState(false);
+
+  // ── Room name bottom sheet ──
+  const [isRoomNameOpen, setIsRoomNameOpen] = useState(false);
+  const [roomNameInput, setRoomNameInput] = useState("");
+  const { mutate: updateRoomName } = useRoomsControllerUpdateRoomName();
+
+  const handleRoomNameOpen = useCallback(() => {
+    if (!room) return;
+    setRoomNameInput(room.name);
+    setIsRoomNameOpen(true);
+  }, [room]);
+
+  const handleRoomNameSave = useCallback(() => {
+    const trimmed = roomNameInput.trim();
+    if (!trimmed || !id) return;
+
+    getUserId().then((userId) => {
+      updateRoomName(
+        { id, data: { creatorId: userId, name: trimmed } },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({
+              queryKey: getRoomsControllerFindByIdQueryKey(id),
+            });
+            setIsRoomNameOpen(false);
+          },
+        },
+      );
+    });
+  }, [roomNameInput, id, updateRoomName, queryClient]);
 
   useEffect(() => {
     if (!room) return;
@@ -34,20 +78,20 @@ export default function Room() {
       store.init(timeSlots.length, room.dates.length);
 
       getUserId().then(async (userId) => {
-          const myParticipant = participants.find((p) => p.userId === userId);
-          const nickname =
-            myParticipant?.name ?? (await getDefaultName());
-          const thumbnail =
-            myParticipant?.thumbnail ?? (await getDefaultThumbnail());
-          const store = useRoomStore.getState();
-          store.setNickname(nickname);
-          store.setThumbnail(thumbnail);
-          if (myParticipant && myParticipant.slots.length > 0) {
-            useAvailabilityStore
-              .getState()
-              .loadFromSlots(myParticipant.slots, room.dates, timeSlots);
-          }
-          enable();
+        setIsCreator(room.creatorId === userId);
+        const myParticipant = participants.find((p) => p.userId === userId);
+        const nickname = myParticipant?.name ?? (await getDefaultName());
+        const thumbnail =
+          myParticipant?.thumbnail ?? (await getDefaultThumbnail());
+        const store = useRoomStore.getState();
+        store.setNickname(nickname);
+        store.setThumbnail(thumbnail);
+        if (myParticipant && myParticipant.slots.length > 0) {
+          useAvailabilityStore
+            .getState()
+            .loadFromSlots(myParticipant.slots, room.dates, timeSlots);
+        }
+        enable();
       });
     }
   }, [room, participants, enable]);
@@ -72,9 +116,30 @@ export default function Room() {
     <div className="flex h-screen flex-col">
       <Top
         title={
-          <Top.TitleParagraph size={28} color={adaptive.grey900}>
-            {room.name}
-          </Top.TitleParagraph>
+          isCreator ? (
+            <button
+              type="button"
+              className="flex items-center gap-0.5 cursor-pointer transition-transform duration-200 active:scale-99 gap-2"
+              onClick={handleRoomNameOpen}
+            >
+              <Top.TitleParagraph size={28} color={adaptive.grey900}>
+                {room.name}
+              </Top.TitleParagraph>
+              <Asset.Icon
+                frameShape={Asset.frameShape.CleanW24}
+                backgroundColor="transparent"
+                name="icon-pencil-line-mono"
+                color={adaptive.grey400}
+                scale={1}
+                aria-hidden={true}
+                ratio="1/1"
+              />
+            </button>
+          ) : (
+            <Top.TitleParagraph size={28} color={adaptive.grey900}>
+              {room.name}
+            </Top.TitleParagraph>
+          )
         }
         right={
           <Top.RightButton onClick={() => handleShare(id ?? "")}>
@@ -93,6 +158,42 @@ export default function Room() {
         {tabIdx === 1 && <OverviewGrid />}
         {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
+
+      <BottomSheet
+        open={isRoomNameOpen}
+        onClose={() => setIsRoomNameOpen(false)}
+        header={<BottomSheet.Header>방 이름 변경</BottomSheet.Header>}
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsRoomNameOpen(false)}
+              >
+                닫기
+              </Button>
+            }
+            rightButton={
+              <Button
+                onClick={handleRoomNameSave}
+                disabled={!roomNameInput.trim()}
+              >
+                저장
+              </Button>
+            }
+          />
+        }
+      >
+        <TextField
+          variant="box"
+          label="방 이름"
+          labelOption="sustain"
+          placeholder="방 이름을 입력해주세요"
+          value={roomNameInput}
+          onChange={(e) => setRoomNameInput(e.target.value)}
+        />
+      </BottomSheet>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { useDateSelectionStore } from "../stores/useDateSelectionStore";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
 import { getUserId } from "../lib/userId";
+import { getDefaultName } from "../lib/nickname";
 
 function Header() {
   return (
@@ -54,10 +55,13 @@ export default function Home() {
   });
 
   const handleCreateRoom = async () => {
-    const creatorId = await getUserId();
+    const [creatorId, defaultName] = await Promise.all([
+      getUserId(),
+      getDefaultName(),
+    ]);
     createRoom({
       data: {
-        name: "새 모임",
+        name: `${defaultName}의 방`,
         creatorId,
         dates: selectedDates,
         startTime: formatHour(startHour),
