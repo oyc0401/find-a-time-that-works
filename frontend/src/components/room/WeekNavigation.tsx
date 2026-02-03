@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { Asset } from "@toss/tds-mobile";
-import ArrowDownIcon from "@/assets/icon-arrow-down-small-blue-4E5968,arrow,down,downarrow,arrowdown.svg";
+import ArrowLeftSidebarIcon from "@/components/icons/ArrowLeftSidebarIcon";
+import ArrowRightSidebarIcon from "@/components/icons/ArrowRightSidebarIcon";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useTranslation } from "react-i18next";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { adaptive } from "@toss/tds-colors";
+import { Asset } from "@toss/tds-mobile";
 
 interface WeekNavigationProps {
   onDateClick?: () => void;
@@ -91,13 +92,9 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
             if (weekIdx > 0) setWeekIdx(weekIdx - 1);
           }}
         >
-          <Asset.Icon
-            frameShape={Asset.frameShape.CleanW32}
-            backgroundColor="transparent"
-            name="icon-arrow-left-sidebar-mono"
+          <ArrowLeftSidebarIcon
+            size={28}
             color={weekIdx === 0 ? adaptive.grey200 : adaptive.blue400}
-            aria-hidden={true}
-            ratio="1/1"
           />
         </button>
         <button
@@ -110,15 +107,11 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
             if (weekIdx < weeks.length - 1) setWeekIdx(weekIdx + 1);
           }}
         >
-          <Asset.Icon
-            frameShape={Asset.frameShape.CleanW32}
-            backgroundColor="transparent"
-            name="icon-arrow-right-sidebar-mono"
+          <ArrowRightSidebarIcon
+            size={28}
             color={
               weekIdx === weeks.length - 1 ? adaptive.grey200 : adaptive.blue400
             }
-            aria-hidden={true}
-            ratio="1/1"
           />
         </button>
       </div>

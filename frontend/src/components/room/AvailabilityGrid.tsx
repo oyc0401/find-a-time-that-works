@@ -301,7 +301,9 @@ export default function AvailabilityGrid() {
   if (grid.length === 0) return null;
 
   const weekdays = t("weekdays", { returnObjects: true }) as string[];
-  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
+  const dateHeaders = columns.map((col) =>
+    formatDateHeader(col.date, weekdays),
+  );
   const baseBg = "white";
 
   const TIME_WIDTH = 16;
@@ -327,6 +329,7 @@ export default function AvailabilityGrid() {
         >
           {selectedDatesLabel ? (
             <span className="truncate block">✅: {selectedDatesLabel}</span>
+
           ) : (
             t("availability.dragGuide")
           )}
@@ -500,7 +503,7 @@ export default function AvailabilityGrid() {
       <BottomSheet
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
-        header={<BottomSheet.Header>{t("availability.dateTitle")}</BottomSheet.Header>}
+        header={<BottomSheet.Header>날짜</BottomSheet.Header>}
       >
         <CalendarView
           highlightedDates={highlightedDates}
