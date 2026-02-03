@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FixedBottomCTA, Top } from "@toss/tds-mobile";
+import { Button, FixedBottomCTA, List, ListRow, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import DateSelector from "../components/DateSelector";
 import TimeSlider from "../components/TimeSlider";
@@ -34,6 +34,28 @@ function formatHour(hour: number): string {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
+function LastRoomCard() {
+  return (
+    <List>
+      <ListRow
+        left={<ListRow.AssetIcon name="icon-refresh-clock" />}
+        contents={
+          <ListRow.Texts
+            type="2RowTypeA"
+            top="최근에 방문한 방 이동하기"
+            bottom="오유찬의 방"
+          />
+        }
+        right={
+          <Button color="primary" size="small" variant="weak">
+            전체보기
+          </Button>
+        }
+        withTouchEffect
+      />
+    </List>
+  );
+}
 export default function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -81,7 +103,9 @@ export default function Home() {
   return (
     <div className="h-screen">
       <Header />
+      <LastRoomCard />
       <DateSelector />
+
       <TimeSlider />
       <FixedBottomCTA
         onTap={handleCreateRoom}

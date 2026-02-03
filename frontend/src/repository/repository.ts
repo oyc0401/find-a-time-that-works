@@ -1,11 +1,12 @@
 import { TossRepository } from "./toss-repository";
 
 const KEYS = {
-  userId: "findtime_user_id",
+  userId: "userId",
   generatedNickname: "generatedNickname",
-  savedNickname: "nickname2",
+  savedNickname: "savedNickname",
   rememberNicknameFlag: "rememberNicknameFlag",
   defaultThumbnail: "defaultThumbnail",
+  recentRoomId: "recentRoomId",
 } as const;
 
 export const Repository = {
@@ -52,5 +53,14 @@ export const Repository = {
 
   async setDefaultThumbnail(value: string): Promise<void> {
     await TossRepository.setItem(KEYS.defaultThumbnail, value);
+  },
+
+  async getRecentRoomId(): Promise<string | undefined> {
+    const value = await TossRepository.getItem(KEYS.recentRoomId);
+    return value ?? undefined;
+  },
+
+  async setRecentRoomId(value: string): Promise<void> {
+    await TossRepository.setItem(KEYS.recentRoomId, value);
   },
 };

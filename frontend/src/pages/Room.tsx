@@ -27,6 +27,7 @@ import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
 import { getSavedNickname, getGeneratedNickname } from "@/repository/nickname";
 import { getDefaultThumbnail } from "@/repository/thumbnail";
+import { Repository } from "@/repository/repository";
 import { handleShare } from "@/lib/share";
 import { useTranslation, Trans } from "react-i18next";
 import { WifiOff } from "lucide-react";
@@ -137,6 +138,7 @@ export default function Room() {
     if (!loadedRef.current) {
       loadedRef.current = true;
       store.init(timeSlots.length, room.dates.length);
+      Repository.setRecentRoomId(room.id);
 
       getUserId().then(async (userId) => {
         setIsCreator(room.creatorId === userId);
