@@ -10,7 +10,7 @@ import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "../repository/userId";
-import { getDefaultName } from "../repository/nickname";
+import { getGeneratedNickname } from "../repository/nickname";
 
 function Header() {
   const { t } = useTranslation();
@@ -61,13 +61,13 @@ export default function Home() {
   });
 
   const handleCreateRoom = async () => {
-    const [creatorId, defaultName] = await Promise.all([
+    const [creatorId, generatedNickname] = await Promise.all([
       getUserId(),
-      getDefaultName(),
+      getGeneratedNickname(),
     ]);
     createRoom({
       data: {
-        name: `${defaultName}${t("home.roomNameSuffix")}`,
+        name: `${generatedNickname}${t("home.roomNameSuffix")}`,
         creatorId,
         dates: selectedDates,
         startTime: formatHour(startHour),

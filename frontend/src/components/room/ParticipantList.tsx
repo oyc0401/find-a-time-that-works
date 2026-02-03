@@ -14,7 +14,7 @@ import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
 import {
-  setDefaultName,
+  setGeneratedNickname,
   getRememberName,
   setRememberName,
 } from "@/repository/nickname";
@@ -66,7 +66,7 @@ export default function ParticipantList({
     useRoomStore.getState().setNickname(trimmed);
     setRememberName(rememberDefault);
     if (rememberDefault) {
-      setDefaultName(trimmed);
+      setGeneratedNickname(trimmed);
     }
     setIsNicknameOpen(false);
   }, [nicknameInput, rememberDefault, id]);

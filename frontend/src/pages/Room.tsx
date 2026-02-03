@@ -25,7 +25,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
-import { getDefaultName } from "@/repository/nickname";
+import { getGeneratedNickname } from "@/repository/nickname";
 import { getDefaultThumbnail } from "@/repository/thumbnail";
 import { handleShare } from "@/lib/share";
 import { useTranslation, Trans } from "react-i18next";
@@ -134,7 +134,7 @@ export default function Room() {
       getUserId().then(async (userId) => {
         setIsCreator(room.creatorId === userId);
         const myParticipant = participants.find((p) => p.userId === userId);
-        const nickname = myParticipant?.name ?? (await getDefaultName());
+        const nickname = myParticipant?.name ?? (await getGeneratedNickname());
         const thumbnail =
           myParticipant?.thumbnail ?? (await getDefaultThumbnail());
         const store = useRoomStore.getState();

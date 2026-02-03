@@ -1,16 +1,14 @@
 import { nanoid } from "nanoid";
-import { TossRepository } from "./toss-repository";
-
-const USER_ID_KEY = "findtime_user_id";
+import { Repository } from "./repository";
 
 let cached: string | undefined;
 
 export async function getUserId(): Promise<string> {
   if (cached) return cached;
-  let userId = await TossRepository.getItem(USER_ID_KEY);
+  let userId = await Repository.getUserId();
   if (!userId) {
     userId = nanoid();
-    await TossRepository.setItem(USER_ID_KEY, userId);
+    await Repository.setUserId(userId);
   }
   cached = userId;
   return userId;
