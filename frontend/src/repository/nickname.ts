@@ -4,7 +4,7 @@ import i18n from "@/i18n";
 
 let cachedGeneratedNickname: string | undefined;
 
-/** 생성된 닉네임 조회. 없으면 랜덤 생성 후 저장. 결과는 캐시됨 */
+/** 랜덤 생성 닉네임 조회. 없으면 랜덤 생성 후 저장. 최초 1회만 생성되며 이후 불변 */
 export async function getGeneratedNickname(): Promise<string> {
   if (cachedGeneratedNickname) return cachedGeneratedNickname;
 
@@ -21,25 +21,40 @@ export async function getGeneratedNickname(): Promise<string> {
   return name;
 }
 
-/** 생성된 닉네임 변경 */
-export async function setGeneratedNickname(name: string): Promise<void> {
-  await Repository.setGeneratedNickname(name);
-  cachedGeneratedNickname = name;
+let cachedNickname: string | undefined;
+
+/** 사용자가 저장한 닉네임 조회 */
+export async function getNickname(): Promise<string | undefined> {
+  if (cachedNickname) return cachedNickname;
+
+  const existing = await Repository.getNickname();
+  if (existing) {
+    cachedNickname = existing;
+    return existing;
+  }
+
+  return undefined;
 }
 
-let cachedRememberName: boolean | undefined;
+/** 사용자 닉네임 저장 */
+export async function setNickname(name: string): Promise<void> {
+  await Repository.setNickname(name);
+  cachedNickname = name;
+}
+
+let cachedRememberNicknameFlag: boolean | undefined;
 
 /** "다음에도 기억하기" 설정 조회. 없으면 true */
-export async function getRememberName(): Promise<boolean> {
-  if (cachedRememberName !== undefined) return cachedRememberName;
+export async function getRememberNicknameFlag(): Promise<boolean> {
+  if (cachedRememberNicknameFlag !== undefined) return cachedRememberNicknameFlag;
 
-  const existing = await Repository.getRememberName();
-  cachedRememberName = existing === undefined ? true : existing === "true";
-  return cachedRememberName;
+  const existing = await Repository.getRememberNicknameFlag();
+  cachedRememberNicknameFlag = existing === undefined ? true : existing === "true";
+  return cachedRememberNicknameFlag;
 }
 
 /** "다음에도 기억하기" 설정 저장 */
-export async function setRememberName(value: boolean): Promise<void> {
-  await Repository.setRememberName(value ? "true" : "false");
-  cachedRememberName = value;
+export async function setRememberNicknameFlag(value: boolean): Promise<void> {
+  await Repository.setRememberNicknameFlag(value ? "true" : "false");
+  cachedRememberNicknameFlag = value;
 }

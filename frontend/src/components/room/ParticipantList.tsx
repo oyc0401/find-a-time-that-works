@@ -14,9 +14,9 @@ import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
 import {
-  setGeneratedNickname,
-  getRememberName,
-  setRememberName,
+  setNickname,
+  getRememberNicknameFlag,
+  setRememberNicknameFlag,
 } from "@/repository/nickname";
 import { useTranslation } from "react-i18next";
 import {
@@ -51,7 +51,7 @@ export default function ParticipantList({
   const [rememberDefault, setRememberDefault] = useState(false);
 
   useEffect(() => {
-    getRememberName().then(setRememberDefault);
+    getRememberNicknameFlag().then(setRememberDefault);
   }, []);
 
   const handleNicknameOpen = useCallback(() => {
@@ -64,9 +64,9 @@ export default function ParticipantList({
     if (!trimmed || !id) return;
 
     useRoomStore.getState().setNickname(trimmed);
-    setRememberName(rememberDefault);
+    setRememberNicknameFlag(rememberDefault);
     if (rememberDefault) {
-      setGeneratedNickname(trimmed);
+      setNickname(trimmed);
     }
     setIsNicknameOpen(false);
   }, [nicknameInput, rememberDefault, id]);

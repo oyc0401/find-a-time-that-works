@@ -1,14 +1,19 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsArray, Matches, ArrayMinSize } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsString, IsArray, Matches, ArrayMinSize, IsOptional } from "class-validator";
 
 export class CreateRoomDto {
-  @ApiProperty({ example: "팀 회의" })
+  @ApiPropertyOptional({ example: "팀 회의" })
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
   @ApiProperty({ example: "user-uuid-1234" })
   @IsString()
   creatorId: string;
+
+  @ApiProperty({ example: "홍길동", description: "방 생성자 닉네임" })
+  @IsString()
+  creatorName: string;
 
   @ApiProperty({
     example: ["2026-03-04", "2026-03-05"],

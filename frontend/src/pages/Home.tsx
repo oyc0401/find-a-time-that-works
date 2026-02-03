@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FixedBottomCTA, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
@@ -10,7 +10,7 @@ import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "../repository/userId";
-import { getGeneratedNickname } from "../repository/nickname";
+import { getNickname, getGeneratedNickname } from "../repository/nickname";
 
 function Header() {
   const { t } = useTranslation();
@@ -60,15 +60,17 @@ export default function Home() {
     },
   });
 
+  useEffect(() => {
+    getGeneratedNickname();
+  }, []);
+
   const handleCreateRoom = async () => {
-    const [creatorId, generatedNickname] = await Promise.all([
-      getUserId(),
-      getGeneratedNickname(),
-    ]);
+    const creatorId = await getUserId();
+    const creatorName = (await getNickname()) ?? (await getGeneratedNickname());
     createRoom({
       data: {
-        name: `${generatedNickname}${t("home.roomNameSuffix")}`,
         creatorId,
+        creatorName,
         dates: selectedDates,
         startTime: formatHour(startHour),
         endTime: formatHour(endHour),

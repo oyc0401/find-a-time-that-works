@@ -8,7 +8,7 @@ datasource db {
 
 model Room {
   id           String        @id @db.VarChar(8)
-  name         String
+  name         String?
   creatorId    String        @map("creator_id")
   dates        DateTime[]    @db.Date
   startTime    String        @map("start_time")

@@ -53,6 +53,14 @@ export class RoomsService {
       },
     });
 
+    await this.prisma.participant.create({
+      data: {
+        roomId: id,
+        userId: dto.creatorId,
+        name: dto.creatorName,
+      },
+    });
+
     return { id: room.id };
   }
 
@@ -74,7 +82,7 @@ export class RoomsService {
     return {
       room: {
         id: room.id,
-        name: room.name,
+        name: room.name ?? undefined,
         creatorId: room.creatorId,
         dates: room.dates.map((d) => d.toISOString().split("T")[0]),
         startTime: room.startTime,

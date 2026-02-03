@@ -3,7 +3,8 @@ import { TossRepository } from "./toss-repository";
 const KEYS = {
   userId: "findtime_user_id",
   generatedNickname: "defaultName",
-  rememberName: "rememberName",
+  nickname: "nickname",
+  rememberNicknameFlag: "rememberNicknameFlag",
   defaultThumbnail: "defaultThumbnail",
 } as const;
 
@@ -26,13 +27,22 @@ export const Repository = {
     await TossRepository.setItem(KEYS.generatedNickname, value);
   },
 
-  async getRememberName(): Promise<string | undefined> {
-    const value = await TossRepository.getItem(KEYS.rememberName);
+  async getNickname(): Promise<string | undefined> {
+    const value = await TossRepository.getItem(KEYS.nickname);
     return value ?? undefined;
   },
 
-  async setRememberName(value: string): Promise<void> {
-    await TossRepository.setItem(KEYS.rememberName, value);
+  async setNickname(value: string): Promise<void> {
+    await TossRepository.setItem(KEYS.nickname, value);
+  },
+
+  async getRememberNicknameFlag(): Promise<string | undefined> {
+    const value = await TossRepository.getItem(KEYS.rememberNicknameFlag);
+    return value ?? undefined;
+  },
+
+  async setRememberNicknameFlag(value: string): Promise<void> {
+    await TossRepository.setItem(KEYS.rememberNicknameFlag, value);
   },
 
   async getDefaultThumbnail(): Promise<string | undefined> {

@@ -4,8 +4,8 @@ export class RoomDto {
   @ApiProperty({ example: "aB3kZ9xQ" })
   id: string;
 
-  @ApiProperty({ example: "팀 회의" })
-  name: string;
+  @ApiProperty({ example: "팀 회의", required: false })
+  name?: string;
 
   @ApiProperty({ example: "user-uuid-1234" })
   creatorId: string;
