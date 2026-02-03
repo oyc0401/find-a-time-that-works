@@ -137,7 +137,7 @@ export default function Home() {
   return (
     <div className="h-screen">
       <Header />
-      <LastRoomCard />
+      {/* <LastRoomCard /> */}
       <DateSelector />
 
       <TimeSlider />

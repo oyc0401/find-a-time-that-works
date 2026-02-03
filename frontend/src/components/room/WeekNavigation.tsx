@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { adaptive } from "@toss/tds-colors";
 import { Asset } from "@toss/tds-mobile";
+import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 
 interface WeekNavigationProps {
   onDateClick?: () => void;
@@ -89,7 +90,10 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
           aria-label={t("week.prevWeek")}
           disabled={weekIdx === 0}
           onClick={() => {
-            if (weekIdx > 0) setWeekIdx(weekIdx - 1);
+            if (weekIdx > 0) {
+              generateHapticFeedback({ type: "tickWeak" });
+              setWeekIdx(weekIdx - 1);
+            }
           }}
         >
           <ArrowLeftSidebarIcon
@@ -104,7 +108,10 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
           aria-label={t("week.nextWeek")}
           disabled={weekIdx === weeks.length - 1}
           onClick={() => {
-            if (weekIdx < weeks.length - 1) setWeekIdx(weekIdx + 1);
+            if (weekIdx < weeks.length - 1) {
+              generateHapticFeedback({ type: "tickWeak" });
+              setWeekIdx(weekIdx + 1);
+            }
           }}
         >
           <ArrowRightSidebarIcon

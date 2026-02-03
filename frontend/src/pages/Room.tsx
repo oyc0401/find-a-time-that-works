@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { graniteEvent } from "@apps-in-toss/web-framework";
+import { graniteEvent, generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
@@ -216,7 +216,10 @@ export default function Room() {
           </div>
         }
       />
-      <Tab size="large" onChange={setTabIdx}>
+      <Tab size="large" onChange={(idx) => {
+          generateHapticFeedback({ type: "tickWeak" });
+          setTabIdx(idx);
+        }}>
         <Tab.Item selected={tabIdx === 0}>{t("room.tab.schedule")}</Tab.Item>
         <Tab.Item selected={tabIdx === 1}>{t("room.tab.overview")}</Tab.Item>
         <Tab.Item selected={tabIdx === 2}>

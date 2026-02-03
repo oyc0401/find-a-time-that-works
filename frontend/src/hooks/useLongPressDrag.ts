@@ -36,6 +36,7 @@ export function useLongPressDrag<TCell>({
   );
   const pointerIdRef = useRef<number | undefined>(undefined);
   const containerRef = useRef<HTMLElement | undefined>(undefined);
+  const lastDragCellRef = useRef<TCell | undefined>(undefined);
 
   const clearTimer = useCallback(() => {
     if (longPressTimerRef.current !== undefined) {
@@ -66,6 +67,7 @@ export function useLongPressDrag<TCell>({
     pointerIdRef.current = undefined;
     containerRef.current = undefined;
     hasMovedRef.current = false;
+    lastDragCellRef.current = undefined;
     return wasDragging;
   }, [clearTimer]);
 
@@ -103,10 +105,18 @@ export function useLongPressDrag<TCell>({
 
         generateHapticFeedback({ type: "softMedium" });
         isDraggingRef.current = true;
+        lastDragCellRef.current = startCellRef.current;
         onLongPressStart(startCellRef.current, e);
       }, duration);
     },
-    [getCellFromPoint, onLongPressStart, duration, clearTimer, resetDragState, onEnd],
+    [
+      getCellFromPoint,
+      onLongPressStart,
+      duration,
+      clearTimer,
+      resetDragState,
+      onEnd,
+    ],
   );
 
   const onPointerMove = useCallback(
@@ -133,7 +143,15 @@ export function useLongPressDrag<TCell>({
       const cell = getCellFromPoint(e.clientX, e.clientY);
       if (cell === undefined) return;
 
-      onDrag(cell);
+      // 셀이 변경되었을 때만 진동 + onDrag 호출
+      if (
+        lastDragCellRef.current === undefined ||
+        !isSameCell(cell, lastDragCellRef.current)
+      ) {
+        generateHapticFeedback({ type: "tickWeak" });
+        lastDragCellRef.current = cell;
+        onDrag(cell);
+      }
     },
     [getCellFromPoint, isSameCell, onDrag, clearTimer],
   );
