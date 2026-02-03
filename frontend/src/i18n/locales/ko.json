@@ -3,7 +3,8 @@
     "title": "모두가 가능한 시간으로\n일정을 정해요",
     "subtitle": "방을 만들고 사람들을 초대해요",
     "roomNameSuffix": "의 방",
-    "createRoom": "방 생성하기"
+    "createRoom": "방 생성하기",
+    "recentRoom": "최근에 방문한 방 이동하기"
   },
   "room": {
     "loading": "로딩 중...",

@@ -3,7 +3,8 @@
     "title": "Find the best time for everyone",
     "subtitle": "Create a room and invite people",
     "roomNameSuffix": "'s Room",
-    "createRoom": "Create Room"
+    "createRoom": "Create Room",
+    "recentRoom": "Go to recent room"
   },
   "room": {
     "loading": "Loading...",

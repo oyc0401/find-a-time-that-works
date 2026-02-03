@@ -1,16 +1,20 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, FixedBottomCTA, List, ListRow, Top } from "@toss/tds-mobile";
+import { FixedBottomCTA, List, ListRow, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import DateSelector from "../components/DateSelector";
 import TimeSlider from "../components/TimeSlider";
-import { useRoomsControllerCreate } from "../api/model/rooms/rooms";
+import {
+  useRoomsControllerCreate,
+  useRoomsControllerFindById,
+} from "../api/model/rooms/rooms";
 import { useDateSelectionStore } from "../stores/useDateSelectionStore";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "../repository/userId";
 import { getNickname, getGeneratedNickname } from "../repository/nickname";
+import { Repository } from "../repository/repository";
 
 function Header() {
   const { t } = useTranslation();
@@ -35,22 +39,52 @@ function formatHour(hour: number): string {
 }
 
 function LastRoomCard() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [recentRoomId, setRecentRoomId] = useState<string>();
+
+  useEffect(() => {
+    Repository.getRecentRoomId().then(setRecentRoomId);
+  }, []);
+
+  const { data, isLoading } = useRoomsControllerFindById(recentRoomId ?? "", {
+    query: {
+      enabled: Boolean(recentRoomId),
+      retry: false,
+    },
+  });
+
+  const room = data?.status === 200 ? data.data.data.room : undefined;
+  const participants = data?.status === 200 ? data.data.data.participants : [];
+
+  if (isLoading || !room) return null;
+
+  const creator = participants.find((p) => p.userId === room.creatorId);
+  const roomTitle = room.name || `${creator?.name}${t("home.roomNameSuffix")}`;
+
   return (
     <List>
       <ListRow
-        left={<ListRow.AssetIcon name="icon-refresh-clock" />}
+        onClick={() => navigate(`/rooms/${room.id}`, { replace: true })}
+        left={
+          creator?.thumbnail ? (
+            <ListRow.AssetImageCircle size={40} src={creator.thumbnail} />
+          ) : (
+            <ListRow.AssetIcon name="icon-refresh-clock" />
+          )
+        }
         contents={
           <ListRow.Texts
             type="2RowTypeA"
-            top="최근에 방문한 방 이동하기"
-            bottom="오유찬의 방"
+            top={t("home.recentRoom")}
+            bottom={roomTitle}
           />
         }
-        right={
-          <Button color="primary" size="small" variant="weak">
-            전체보기
-          </Button>
-        }
+        // right={
+        //   <Button color="primary" size="small" variant="weak">
+        //     전체보기
+        //   </Button>
+        // }
         withTouchEffect
       />
     </List>
