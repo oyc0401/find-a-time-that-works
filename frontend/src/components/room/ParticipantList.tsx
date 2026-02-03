@@ -14,7 +14,7 @@ import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
 import {
-  setNickname,
+  setSavedNickname,
   getRememberNicknameFlag,
   setRememberNicknameFlag,
 } from "@/repository/nickname";
@@ -35,6 +35,7 @@ export default function ParticipantList({
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
+  const generatedNickname = useRoomStore((s) => s.generatedNickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
   const { setTabIdx, setSelectedUserId } = useRoomStore();
   const [myUserId, setMyUserId] = useState<string>();
@@ -55,18 +56,20 @@ export default function ParticipantList({
   }, []);
 
   const handleNicknameOpen = useCallback(() => {
-    setNicknameInput(nickname);
+    setNicknameInput(nickname === generatedNickname ? "" : nickname);
     setIsNicknameOpen(true);
-  }, [nickname]);
+  }, [nickname, generatedNickname]);
 
   const handleNicknameSave = useCallback(() => {
     const trimmed = nicknameInput.trim();
     if (!trimmed || !id) return;
 
-    useRoomStore.getState().setNickname(trimmed);
+    const store = useRoomStore.getState();
+    store.setNickname(trimmed);
+    store.setSavedNickname(trimmed);
     setRememberNicknameFlag(rememberDefault);
     if (rememberDefault) {
-      setNickname(trimmed);
+      setSavedNickname(trimmed);
     }
     setIsNicknameOpen(false);
   }, [nicknameInput, rememberDefault, id]);
@@ -201,7 +204,7 @@ export default function ParticipantList({
           variant="box"
           label={t("participant.nameLabel")}
           labelOption="sustain"
-          placeholder={t("participant.namePlaceholder")}
+          placeholder={generatedNickname || t("participant.namePlaceholder")}
           value={nicknameInput}
           onChange={(e) => setNicknameInput(e.target.value)}
         />

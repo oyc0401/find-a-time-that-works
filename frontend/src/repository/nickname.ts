@@ -24,10 +24,10 @@ export async function getGeneratedNickname(): Promise<string> {
 let cachedNickname: string | undefined;
 
 /** 사용자가 저장한 닉네임 조회 */
-export async function getNickname(): Promise<string | undefined> {
+export async function getSavedNickname(): Promise<string | undefined> {
   if (cachedNickname) return cachedNickname;
 
-  const existing = await Repository.getNickname();
+  const existing = await Repository.getSavedNickname();
   if (existing) {
     cachedNickname = existing;
     return existing;
@@ -36,9 +36,14 @@ export async function getNickname(): Promise<string | undefined> {
   return undefined;
 }
 
+/** 사용자가 저장한 닉네임 조회. 없으면 generatedNickname 반환 */
+export async function getNickname(): Promise<string> {
+  return (await getSavedNickname()) ?? (await getGeneratedNickname());
+}
+
 /** 사용자 닉네임 저장 */
-export async function setNickname(name: string): Promise<void> {
-  await Repository.setNickname(name);
+export async function setSavedNickname(name: string): Promise<void> {
+  await Repository.setSavedNickname(name);
   cachedNickname = name;
 }
 

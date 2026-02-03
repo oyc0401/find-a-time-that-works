@@ -66,7 +66,7 @@ export default function Home() {
 
   const handleCreateRoom = async () => {
     const creatorId = await getUserId();
-    const creatorName = (await getNickname()) ?? (await getGeneratedNickname());
+    const creatorName = await getNickname();
     createRoom({
       data: {
         creatorId,

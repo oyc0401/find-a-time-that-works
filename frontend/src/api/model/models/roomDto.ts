@@ -8,7 +8,7 @@
 
 export interface RoomDto {
   id: string;
-  name: string;
+  name?: string;
   creatorId: string;
   dates: string[];
   startTime: string;

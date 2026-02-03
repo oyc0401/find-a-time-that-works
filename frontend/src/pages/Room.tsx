@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { graniteEvent } from "@apps-in-toss/web-framework";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
-import { getNickname, getGeneratedNickname } from "@/repository/nickname";
+import { getSavedNickname, getGeneratedNickname } from "@/repository/nickname";
 import { getDefaultThumbnail } from "@/repository/thumbnail";
 import { handleShare } from "@/lib/share";
 import { useTranslation, Trans } from "react-i18next";
@@ -44,6 +44,13 @@ export default function Room() {
   const { tabIdx, setTabIdx } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
   const queryClient = useQueryClient();
+
+  const roomTitle = useMemo(() => {
+    if (room?.name) return room.name;
+    const creator = participants?.find((p) => p.userId === room?.creatorId);
+    if (creator) return `${creator.name}${t("home.roomNameSuffix")}`;
+    return "";
+  }, [room, participants, t]);
 
   // ── Loading delay ──
   const [showLoader, setShowLoader] = useState(false);
@@ -74,7 +81,7 @@ export default function Room() {
 
   const handleRoomNameOpen = useCallback(() => {
     if (!room) return;
-    setRoomNameInput(room.name);
+    setRoomNameInput(room.name || "");
     setIsRoomNameOpen(true);
   }, [room]);
 
@@ -134,11 +141,15 @@ export default function Room() {
       getUserId().then(async (userId) => {
         setIsCreator(room.creatorId === userId);
         const myParticipant = participants.find((p) => p.userId === userId);
-        const nickname = myParticipant?.name ?? (await getNickname()) ?? (await getGeneratedNickname());
+        const savedNickname = await getSavedNickname();
+        const generatedNickname = await getGeneratedNickname();
+        const nickname = myParticipant?.name ?? savedNickname ?? generatedNickname;
         const thumbnail =
           myParticipant?.thumbnail ?? (await getDefaultThumbnail());
         const store = useRoomStore.getState();
         store.setNickname(nickname);
+        store.setSavedNickname(savedNickname ?? "");
+        store.setGeneratedNickname(generatedNickname);
         store.setThumbnail(thumbnail);
         if (myParticipant && myParticipant.slots.length > 0) {
           useAvailabilityStore
@@ -177,7 +188,7 @@ export default function Room() {
               onClick={handleRoomNameOpen}
             >
               <Top.TitleParagraph size={28} color={adaptive.grey900}>
-                {truncateTitle(room.name)}
+                {truncateTitle(roomTitle)}
               </Top.TitleParagraph>
               <Asset.Icon
                 frameShape={Asset.frameShape.CleanW24}
@@ -191,7 +202,7 @@ export default function Room() {
             </button>
           ) : (
             <Top.TitleParagraph size={28} color={adaptive.grey900}>
-              {truncateTitle(room.name)}
+              {truncateTitle(roomTitle)}
             </Top.TitleParagraph>
           )
         }

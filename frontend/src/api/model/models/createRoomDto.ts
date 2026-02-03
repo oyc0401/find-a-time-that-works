@@ -7,8 +7,10 @@
  */
 
 export interface CreateRoomDto {
-  name: string;
+  name?: string;
   creatorId: string;
+  /** 방 생성자 닉네임 */
+  creatorName: string;
   /** 대상 날짜 리스트 (YYYY-MM-DD) */
   dates: string[];
   /** 시작 시각 (HH:mm) */
