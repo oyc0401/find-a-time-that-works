@@ -9,8 +9,8 @@ import { useDateSelectionStore } from "../stores/useDateSelectionStore";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { buildCalendarCells, getSelectedDates } from "../lib/calendar";
 import { useTranslation } from "react-i18next";
-import { getUserId } from "../lib/userId";
-import { getDefaultName } from "../lib/nickname";
+import { getUserId } from "../repository/userId";
+import { getDefaultName } from "../repository/nickname";
 
 function Header() {
   const { t } = useTranslation();
@@ -23,9 +23,7 @@ function Header() {
           </Top.TitleParagraph>
         }
         subtitleBottom={
-          <Top.SubtitleParagraph>
-            {t("home.subtitle")}
-          </Top.SubtitleParagraph>
+          <Top.SubtitleParagraph>{t("home.subtitle")}</Top.SubtitleParagraph>
         }
       />
     </>
@@ -55,7 +53,9 @@ export default function Home() {
         useDateSelectionStore.getState().clear();
         useTimeSliderStore.getState().setStartHour(8);
         useTimeSliderStore.getState().setEndHour(19);
-        navigate(`/rooms/${response.data.data.id}?created=true`, { replace: true });
+        navigate(`/rooms/${response.data.data.id}?created=true`, {
+          replace: true,
+        });
       },
     },
   });

@@ -11,7 +11,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import { useTranslation } from "react-i18next";
-import { getUserId } from "@/lib/userId";
+import { getUserId } from "@/repository/userId";
 import HeatmapCalendarView from "./HeatmapCalendarView";
 import WeekNavigation from "./WeekNavigation";
 
@@ -308,7 +308,9 @@ export default function OverviewGrid() {
   }, [selectedSlots, participants]);
 
   const weekdays = t("weekdays", { returnObjects: true }) as string[];
-  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
+  const dateHeaders = columns.map((col) =>
+    formatDateHeader(col.date, weekdays),
+  );
   const baseBg = "white";
 
   const overlayRect = previewRect ?? selectionRect;
@@ -535,7 +537,11 @@ export default function OverviewGrid() {
       <BottomSheet
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
-        header={<BottomSheet.Header>{t("overview.participationStatus")}</BottomSheet.Header>}
+        header={
+          <BottomSheet.Header>
+            {t("overview.participationStatus")}
+          </BottomSheet.Header>
+        }
       >
         <HeatmapCalendarView
           highlightedDates={highlightedDates}

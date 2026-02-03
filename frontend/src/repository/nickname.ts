@@ -1,5 +1,5 @@
-import { Repository } from "./repository";
-import { generateRandomNameKo, generateRandomNameEn } from "./randomName";
+import { TossRepository } from "./toss-repository";
+import { generateRandomNameKo, generateRandomNameEn } from "../lib/randomName";
 import i18n from "@/i18n";
 
 const DEFAULT_NAME_KEY = "defaultName";
@@ -9,7 +9,7 @@ let cachedDefaultName: string | undefined;
 export async function getDefaultName(): Promise<string> {
   if (cachedDefaultName) return cachedDefaultName;
 
-  const existing = await Repository.getItem(DEFAULT_NAME_KEY);
+  const existing = await TossRepository.getItem(DEFAULT_NAME_KEY);
   if (existing) {
     cachedDefaultName = existing;
     return existing;
@@ -17,14 +17,14 @@ export async function getDefaultName(): Promise<string> {
 
   const name =
     i18n.language === "ko" ? generateRandomNameKo() : generateRandomNameEn();
-  await Repository.setItem(DEFAULT_NAME_KEY, name);
+  await TossRepository.setItem(DEFAULT_NAME_KEY, name);
   cachedDefaultName = name;
   return name;
 }
 
 /** 디폴트 이름 변경 */
 export async function setDefaultName(name: string): Promise<void> {
-  await Repository.setItem(DEFAULT_NAME_KEY, name);
+  await TossRepository.setItem(DEFAULT_NAME_KEY, name);
   cachedDefaultName = name;
 }
 
@@ -35,13 +35,13 @@ let cachedRememberName: boolean | undefined;
 export async function getRememberName(): Promise<boolean> {
   if (cachedRememberName !== undefined) return cachedRememberName;
 
-  const existing = await Repository.getItem(REMEMBER_NAME_KEY);
+  const existing = await TossRepository.getItem(REMEMBER_NAME_KEY);
   cachedRememberName = existing === null ? true : existing === "true";
   return cachedRememberName;
 }
 
 /** "다음에도 기억하기" 설정 저장 */
 export async function setRememberName(value: boolean): Promise<void> {
-  await Repository.setItem(REMEMBER_NAME_KEY, value ? "true" : "false");
+  await TossRepository.setItem(REMEMBER_NAME_KEY, value ? "true" : "false");
   cachedRememberName = value;
 }

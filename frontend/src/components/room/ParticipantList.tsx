@@ -12,14 +12,18 @@ import {
 import { adaptive } from "@toss/tds-colors";
 import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
-import { getUserId } from "@/lib/userId";
+import { getUserId } from "@/repository/userId";
 import {
   setDefaultName,
   getRememberName,
   setRememberName,
-} from "@/lib/nickname";
+} from "@/repository/nickname";
 import { useTranslation } from "react-i18next";
-import { THUMBNAILS, thumbnailUrl, setDefaultThumbnail } from "@/lib/thumbnail";
+import {
+  THUMBNAILS,
+  thumbnailUrl,
+  setDefaultThumbnail,
+} from "@/repository/thumbnail";
 
 interface ParticipantListProps {
   participants: ParticipantDto[];
@@ -168,7 +172,9 @@ export default function ParticipantList({
       <BottomSheet
         open={isNicknameOpen}
         onClose={() => setIsNicknameOpen(false)}
-        header={<BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>}
+        header={
+          <BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>
+        }
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -218,7 +224,11 @@ export default function ParticipantList({
       <BottomSheet
         open={isThumbnailOpen}
         onClose={() => setIsThumbnailOpen(false)}
-        header={<BottomSheet.Header>{t("participant.changeProfile")}</BottomSheet.Header>}
+        header={
+          <BottomSheet.Header>
+            {t("participant.changeProfile")}
+          </BottomSheet.Header>
+        }
         cta={
           <BottomSheet.DoubleCTA
             leftButton={
@@ -230,7 +240,9 @@ export default function ParticipantList({
                 {t("common.close")}
               </Button>
             }
-            rightButton={<Button onClick={handleThumbnailSave}>{t("common.save")}</Button>}
+            rightButton={
+              <Button onClick={handleThumbnailSave}>{t("common.save")}</Button>
+            }
           />
         }
       >

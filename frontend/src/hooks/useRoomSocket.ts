@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Socket } from "socket.io-client";
 import { getRoomsControllerFindByIdQueryKey } from "@/api/model/rooms/rooms";
 import { getSocket, disconnectSocket } from "@/lib/socket";
-import { getUserId } from "@/lib/userId";
+import { getUserId } from "@/repository/userId";
 import {
   WsEventType,
   type RoomUpdatedPayload,

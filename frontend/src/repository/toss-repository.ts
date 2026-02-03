@@ -1,6 +1,6 @@
 import { Storage } from "@apps-in-toss/web-framework";
 
-export const Repository = {
+export const TossRepository = {
   async getItem(key: string): Promise<string | undefined> {
     const value = await Storage.getItem(key);
     return value ?? undefined;

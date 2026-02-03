@@ -1,4 +1,4 @@
-import { Repository } from "./repository";
+import { TossRepository } from "./toss-repository";
 
 export const THUMBNAILS = [
   "u1F31D-texture",
@@ -49,20 +49,20 @@ let cachedDefaultThumbnail: string | undefined;
 export async function getDefaultThumbnail(): Promise<string> {
   if (cachedDefaultThumbnail) return cachedDefaultThumbnail;
 
-  const existing = await Repository.getItem(DEFAULT_THUMBNAIL_KEY);
+  const existing = await TossRepository.getItem(DEFAULT_THUMBNAIL_KEY);
   if (existing) {
     cachedDefaultThumbnail = existing;
     return existing;
   }
 
   const thumbnail = pickRandomThumbnail();
-  await Repository.setItem(DEFAULT_THUMBNAIL_KEY, thumbnail);
+  await TossRepository.setItem(DEFAULT_THUMBNAIL_KEY, thumbnail);
   cachedDefaultThumbnail = thumbnail;
   return thumbnail;
 }
 
 /** 디폴트 썸네일 변경 */
 export async function setDefaultThumbnail(thumbnail: string): Promise<void> {
-  await Repository.setItem(DEFAULT_THUMBNAIL_KEY, thumbnail);
+  await TossRepository.setItem(DEFAULT_THUMBNAIL_KEY, thumbnail);
   cachedDefaultThumbnail = thumbnail;
 }

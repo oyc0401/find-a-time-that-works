@@ -6,7 +6,7 @@ import {
   type RoomsControllerFindByIdQueryResult,
 } from "@/api/model/rooms/rooms";
 import type { AvailabilitySlotDto } from "@/api/model/models";
-import { getUserId } from "@/lib/userId";
+import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
 import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -89,7 +89,11 @@ export function useSubmitAvailability(roomId?: string) {
     if (!roomId) return;
 
     const unsub = useRoomStore.subscribe((state, prev) => {
-      if (state.nickname === prev.nickname && state.thumbnail === prev.thumbnail) return;
+      if (
+        state.nickname === prev.nickname &&
+        state.thumbnail === prev.thumbnail
+      )
+        return;
       if (!enabledRef.current) return;
       submitCurrent(roomId);
     });
