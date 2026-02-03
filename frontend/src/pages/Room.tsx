@@ -148,7 +148,6 @@ export default function Room() {
           myParticipant?.thumbnail ?? (await getDefaultThumbnail());
         const store = useRoomStore.getState();
         store.setNickname(nickname);
-        store.setSavedNickname(savedNickname ?? "");
         store.setGeneratedNickname(generatedNickname);
         store.setThumbnail(thumbnail);
         if (myParticipant && myParticipant.slots.length > 0) {

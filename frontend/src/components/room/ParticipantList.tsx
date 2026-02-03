@@ -64,9 +64,7 @@ export default function ParticipantList({
     const trimmed = nicknameInput.trim();
     if (!trimmed || !id) return;
 
-    const store = useRoomStore.getState();
-    store.setNickname(trimmed);
-    store.setSavedNickname(trimmed);
+    useRoomStore.getState().setNickname(trimmed);
     setRememberNicknameFlag(rememberDefault);
     if (rememberDefault) {
       setSavedNickname(trimmed);
@@ -204,7 +202,7 @@ export default function ParticipantList({
           variant="box"
           label={t("participant.nameLabel")}
           labelOption="sustain"
-          placeholder={generatedNickname || t("participant.namePlaceholder")}
+          placeholder={nickname === generatedNickname ? generatedNickname : t("participant.namePlaceholder")}
           value={nicknameInput}
           onChange={(e) => setNicknameInput(e.target.value)}
         />
