@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { getUserId } from "../repository/userId";
 import { getNickname, getGeneratedNickname } from "../repository/nickname";
 import { Repository } from "../repository/repository";
+import { thumbnailUrl } from "../repository/thumbnail";
 
 function Header() {
   const { t } = useTranslation();
@@ -68,7 +69,11 @@ function LastRoomCard() {
         onClick={() => navigate(`/rooms/${room.id}`, { replace: true })}
         left={
           creator?.thumbnail ? (
-            <ListRow.AssetImageCircle size={40} src={creator.thumbnail} />
+            <ListRow.AssetIcon
+              shape="circle-background"
+              url={thumbnailUrl(creator.thumbnail)}
+              backgroundColor={adaptive.grey100}
+            />
           ) : (
             <ListRow.AssetIcon name="icon-refresh-clock" />
           )
@@ -137,7 +142,7 @@ export default function Home() {
   return (
     <div className="h-screen">
       <Header />
-      {/* <LastRoomCard /> */}
+      <LastRoomCard />
       <DateSelector />
 
       <TimeSlider />
