@@ -58,6 +58,7 @@ export class RoomsService {
         roomId: id,
         userId: dto.creatorId,
         name: dto.creatorName,
+        thumbnail: dto.creatorThumbnail,
       },
     });
 

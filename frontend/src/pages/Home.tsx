@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { getUserId } from "../repository/userId";
 import { getNickname, getGeneratedNickname } from "../repository/nickname";
 import { Repository } from "../repository/repository";
-import { thumbnailUrl } from "../repository/thumbnail";
+import { thumbnailUrl, getDefaultThumbnail } from "../repository/thumbnail";
 
 function Header() {
   const { t } = useTranslation();
@@ -150,10 +150,12 @@ export default function Home() {
   const handleCreateRoom = async () => {
     const creatorId = await getUserId();
     const creatorName = await getNickname();
+    const creatorThumbnail = await getDefaultThumbnail();
     createRoom({
       data: {
         creatorId,
         creatorName,
+        creatorThumbnail,
         dates: selectedDates,
         startTime: formatHour(startHour),
         endTime: formatHour(endHour),

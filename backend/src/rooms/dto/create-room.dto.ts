@@ -15,6 +15,11 @@ export class CreateRoomDto {
   @IsString()
   creatorName: string;
 
+  @ApiPropertyOptional({ example: "u1F431", description: "방 생성자 썸네일 ID" })
+  @IsOptional()
+  @IsString()
+  creatorThumbnail?: string;
+
   @ApiProperty({
     example: ["2026-03-04", "2026-03-05"],
     description: "대상 날짜 리스트 (YYYY-MM-DD)",

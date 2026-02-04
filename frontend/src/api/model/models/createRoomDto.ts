@@ -11,6 +11,8 @@ export interface CreateRoomDto {
   creatorId: string;
   /** 방 생성자 닉네임 */
   creatorName: string;
+  /** 방 생성자 썸네일 ID */
+  creatorThumbnail?: string;
   /** 대상 날짜 리스트 (YYYY-MM-DD) */
   dates: string[];
   /** 시작 시각 (HH:mm) */
