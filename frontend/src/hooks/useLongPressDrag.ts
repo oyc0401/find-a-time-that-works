@@ -164,6 +164,7 @@ export function useLongPressDrag<TCell>({
     if (wasDragging) {
       onEnd();
     } else if (startCell !== undefined && !hasMoved) {
+      generateHapticFeedback({ type: "tap" });
       onTap(startCell);
     }
   }, [onEnd, onTap, resetDragState]);

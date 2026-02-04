@@ -10,7 +10,7 @@ import { RoomDetailResponseDto, CreateRoomResponseDto, ExtendRoomResponseDto } f
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const generateId = customAlphabet(ALPHABET, 8);
 
-const INITIAL_EXPIRY_DAYS = 10;
+const INITIAL_EXPIRY_DAYS = 30;
 const EXTEND_DAYS = 30;
 
 @Injectable()
