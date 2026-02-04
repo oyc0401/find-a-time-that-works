@@ -63,4 +63,8 @@ export const Repository = {
   async setRecentRoomId(value: string): Promise<void> {
     await TossRepository.setItem(KEYS.recentRoomId, value);
   },
+
+  async removeRecentRoomId(): Promise<void> {
+    await TossRepository.removeItem(KEYS.recentRoomId);
+  },
 };

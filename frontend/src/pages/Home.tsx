@@ -64,7 +64,28 @@ function LastRoomCard() {
   const room = data?.status === 200 ? data.data.data.room : undefined;
   const participants = data?.status === 200 ? data.data.data.participants : [];
 
-  if (isLoading || !room) return null;
+  useEffect(() => {
+    if (data && data.status !== 200) {
+      Repository.removeRecentRoomId();
+      setRecentRoomId(undefined);
+    }
+  }, [data]);
+
+  if (!recentRoomId) return null;
+
+  if (isLoading) {
+    return (
+      <div className="h-[66px] overflow-hidden">
+        <div className="origin-top-left scale-[0.85]">
+          <List>
+            <ListRow.Loader type="circle" verticalPadding="extraSmall" />
+          </List>
+        </div>
+      </div>
+    );
+  }
+
+  if (!room) return null;
 
   const creator = participants.find((p) => p.userId === room.creatorId);
   const roomTitle = room.name || `${creator?.name}${t("home.roomNameSuffix")}`;
@@ -91,11 +112,6 @@ function LastRoomCard() {
             bottom={roomTitle}
           />
         }
-        // right={
-        //   <Button color="primary" size="small" variant="weak">
-        //     전체보기
-        //   </Button>
-        // }
         withTouchEffect
       />
     </List>
