@@ -1,24 +1,10 @@
 import { Repository } from "./repository";
-import { generateRandomNameKo, generateRandomNameEn } from "../lib/randomName";
-import i18n from "@/i18n";
-
-let cachedGeneratedNickname: string | undefined;
+import { getDefaultProfile } from "./profile";
 
 /** 랜덤 생성 닉네임 조회. 없으면 랜덤 생성 후 저장. 최초 1회만 생성되며 이후 불변 */
 export async function getGeneratedNickname(): Promise<string> {
-  if (cachedGeneratedNickname) return cachedGeneratedNickname;
-
-  const existing = await Repository.getGeneratedNickname();
-  if (existing) {
-    cachedGeneratedNickname = existing;
-    return existing;
-  }
-
-  const name =
-    i18n.language === "ko" ? generateRandomNameKo() : generateRandomNameEn();
-  await Repository.setGeneratedNickname(name);
-  cachedGeneratedNickname = name;
-  return name;
+  const profile = await getDefaultProfile();
+  return profile.nickname;
 }
 
 let cachedNickname: string | undefined;
