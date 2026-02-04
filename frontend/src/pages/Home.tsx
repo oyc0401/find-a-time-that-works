@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FixedBottomCTA, List, ListRow, Top } from "@toss/tds-mobile";
+import {
+  BottomCTA,
+  FixedBottomCTA,
+  List,
+  ListRow,
+  Top,
+} from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import DateSelector from "../components/DateSelector";
 import TimeSlider from "../components/TimeSlider";
@@ -146,14 +152,27 @@ export default function Home() {
       <DateSelector />
 
       <TimeSlider />
-      <FixedBottomCTA
-        onTap={handleCreateRoom}
-        loading={isPending}
-        disabled={selectedDates.length === 0}
-        color="primary"
-      >
-        {t("home.createRoom")}
-      </FixedBottomCTA>
+      {selectedDates.length === 0 && (
+        <BottomCTA.Single
+          onTap={handleCreateRoom}
+          loading={isPending}
+          disabled={true}
+          color="primary"
+          fixed={true}
+        >
+          {t("home.createRoom")}
+        </BottomCTA.Single>
+      )}
+      {selectedDates.length !== 0 && (
+        <BottomCTA.Single
+          onTap={handleCreateRoom}
+          loading={isPending}
+          color="primary"
+          fixed={true}
+        >
+          {t("home.createRoom")}
+        </BottomCTA.Single>
+      )}
     </div>
   );
 }
