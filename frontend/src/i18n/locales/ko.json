@@ -54,7 +54,8 @@
   "week": {
     "label": "{{monthName}} {{weekNum}}주",
     "prevWeek": "이전 주",
-    "nextWeek": "다음 주"
+    "nextWeek": "다음 주",
+    "noData": "일정 데이터를 불러올 수 없습니다"
   },
   "weekdays": ["일", "월", "화", "수", "목", "금", "토"],
   "months": [

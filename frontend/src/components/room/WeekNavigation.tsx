@@ -21,7 +21,7 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
 
   const weekLabel = useMemo(() => {
     const currentWeek = weeks[weekIdx];
-    if (!currentWeek) return undefined;
+    if (!currentWeek) return "weeks";
 
     // 주에 포함된 날짜 중 가장 많은 월을 대표 월로 사용
     const monthCounts = new Map<number, number>();
@@ -60,8 +60,13 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
     return t("week.label", { monthName: months[repMonth - 1], weekNum });
   }, [weeks, weekIdx, t]);
 
-  if (weeks.length <= 1) return null;
-  if (!weekLabel) return null;
+  if (weeks.length < 1 || !weekLabel) {
+    return (
+      <div className="pt-3 pl-4 pr-4 pb-1 text-grey-500">
+        {t("week.noData")}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-between pt-3 pl-4 pr-4 pb-1">
