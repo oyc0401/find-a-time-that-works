@@ -16,7 +16,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle("FindTime API")
-    .setDescription("겹치는 시간 찾기 API")
+    .setDescription("공통 시간 찾기 API")
     .setVersion("1.0")
     .build();
   const document = SwaggerModule.createDocument(app, config);
@@ -30,3 +30,5 @@ bootstrap().catch((err) => {
   console.error("Failed to start application:", err);
   process.exit(1);
 });
+
+//
