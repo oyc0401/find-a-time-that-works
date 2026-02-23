@@ -309,7 +309,7 @@ export default function AvailabilityGrid() {
 
   const TIME_WIDTH = 16;
   return (
-    <div className="w-full pb-16">
+    <div className="w-full pb-32">
       <div className="">
         <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       </div>
@@ -511,15 +511,6 @@ export default function AvailabilityGrid() {
           onDateClick={handleCalendarDateClick}
         />
       </BottomSheet>
-
-      <BottomCTA.Single
-        onTap={() => handleShare(id ?? "")}
-        color="primary"
-        fixedAboveKeyboard={false}
-        fixed
-      >
-        {t("common.invite")}
-      </BottomCTA.Single>
     </div>
   );
 }

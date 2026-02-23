@@ -317,7 +317,7 @@ export default function OverviewGrid() {
   const overlayRect = previewRect ?? selectionRect;
 
   return (
-    <div className="w-full pb-16">
+    <div className="w-full pb-32">
       <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
       <div className="bg-white px-4">
         {/* Participant badges */}
@@ -551,15 +551,6 @@ export default function OverviewGrid() {
           onDateClick={handleCalendarDateClick}
         />
       </BottomSheet>
-
-      <BottomCTA.Single
-        onTap={() => handleShare(id ?? "")}
-        color="primary"
-        fixedAboveKeyboard={false}
-        fixed
-      >
-        {t("common.invite")}
-      </BottomCTA.Single>
     </div>
   );
 }

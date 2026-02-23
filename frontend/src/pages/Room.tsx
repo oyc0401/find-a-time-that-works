@@ -332,11 +332,19 @@ export default function Room() {
         </Tab.Item>
       </Tab>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1">
         {tabIdx === 0 && <AvailabilityGrid />}
         {tabIdx === 1 && <OverviewGrid />}
         {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
+      <BottomCTA.Single
+        onTap={() => handleShare(id ?? "")}
+        color="primary"
+        fixedAboveKeyboard={false}
+        fixed
+      >
+        {t("common.invite")}
+      </BottomCTA.Single>
 
       <BottomSheet
         open={isTutorialOpen}

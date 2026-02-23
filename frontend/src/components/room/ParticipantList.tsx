@@ -119,15 +119,6 @@ export default function ParticipantList({
           </button>
         ))
       )}
-
-      <BottomCTA.Single
-        onTap={() => handleShare(id ?? "")}
-        color="primary"
-        fixedAboveKeyboard={false}
-        fixed
-      >
-        {t("common.invite")}
-      </BottomCTA.Single>
     </div>
   );
 }
