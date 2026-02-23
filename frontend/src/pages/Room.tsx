@@ -337,14 +337,19 @@ export default function Room() {
         {tabIdx === 1 && <OverviewGrid />}
         {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
-      <BottomCTA.Single
-        onTap={() => handleShare(id ?? "")}
-        color="primary"
-        fixedAboveKeyboard={false}
-        fixed
-      >
-        {t("common.invite")}
-      </BottomCTA.Single>
+      {!isTutorialOpen &&
+        !isRoomNameOpen &&
+        !isNicknameDialogOpen &&
+        !isThumbnailDialogOpen && (
+          <BottomCTA.Single
+            onTap={() => handleShare(id ?? "")}
+            color="primary"
+            fixedAboveKeyboard={false}
+            fixed
+          >
+            {t("common.invite")}
+          </BottomCTA.Single>
+        )}
 
       <BottomSheet
         open={isTutorialOpen}
