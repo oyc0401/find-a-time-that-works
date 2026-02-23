@@ -12,6 +12,7 @@ import {
   BottomSheet,
   Button,
   Checkbox,
+  CTAButton,
   FixedBottomCTA,
   Loader,
   Menu,
@@ -349,19 +350,14 @@ export default function Room() {
         {tabIdx === 1 && <OverviewGrid />}
         {tabIdx === 2 && <ParticipantList participants={participants} />}
       </div>
-      {!isTutorialOpen &&
-        !isRoomNameOpen &&
-        !isNicknameDialogOpen &&
-        !isThumbnailDialogOpen && (
-          <BottomCTA.Single
-            onTap={() => handleShare(id ?? "")}
-            color="primary"
-            fixedAboveKeyboard={false}
-            fixed
-          >
+      <BottomCTA.Double
+        fixed
+        rightButton={
+          <CTAButton onTap={() => handleShare(id ?? "")}>
             {t("common.invite")}
-          </BottomCTA.Single>
-        )}
+          </CTAButton>
+        }
+      />
 
       <BottomSheet
         open={isTutorialOpen}
