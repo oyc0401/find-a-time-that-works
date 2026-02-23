@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { graniteEvent, generateHapticFeedback } from "@apps-in-toss/web-framework";
+import {
+  graniteEvent,
+  generateHapticFeedback,
+} from "@apps-in-toss/web-framework";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
+  BottomCTA,
   BottomSheet,
   Button,
+  FixedBottomCTA,
   Loader,
   Post,
   Tab,
@@ -145,7 +150,8 @@ export default function Room() {
         const myParticipant = participants.find((p) => p.userId === userId);
         const savedNickname = await getSavedNickname();
         const generatedNickname = await getGeneratedNickname();
-        const nickname = myParticipant?.name ?? savedNickname ?? generatedNickname;
+        const nickname =
+          myParticipant?.name ?? savedNickname ?? generatedNickname;
         const thumbnail =
           myParticipant?.thumbnail ?? (await getDefaultThumbnail());
         const store = useRoomStore.getState();
@@ -208,18 +214,18 @@ export default function Room() {
           )
         }
         right={
-          <div className="flex items-center gap-2">
-            {isDisconnected && <WifiOff size={20} color={adaptive.red200} />}
-            <Top.RightButton onClick={() => handleShare(id ?? "")}>
-              {t("common.invite")}
-            </Top.RightButton>
-          </div>
+          isDisconnected ? (
+            <WifiOff size={20} color={adaptive.red200} />
+          ) : undefined
         }
       />
-      <Tab size="large" onChange={(idx) => {
+      <Tab
+        size="large"
+        onChange={(idx) => {
           generateHapticFeedback({ type: "tickWeak" });
           setTabIdx(idx);
-        }}>
+        }}
+      >
         <Tab.Item selected={tabIdx === 0}>{t("room.tab.schedule")}</Tab.Item>
         <Tab.Item selected={tabIdx === 1}>{t("room.tab.overview")}</Tab.Item>
         <Tab.Item selected={tabIdx === 2}>
@@ -319,6 +325,13 @@ export default function Room() {
           onChange={(e) => setRoomNameInput(e.target.value)}
         />
       </BottomSheet>
+      <BottomCTA.Single
+        fixed={true}
+        onClick={() => handleShare(id ?? "")}
+        color="primary"
+      >
+        {t("common.invite")}
+      </BottomCTA.Single>
     </div>
   );
 }
