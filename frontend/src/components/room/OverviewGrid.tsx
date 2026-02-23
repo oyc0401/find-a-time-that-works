@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
+import { BottomCTA, BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
 import Badge from "@/components/Badge";
 import { handleShare } from "@/lib/share";
 import { cn } from "@/lib/cn";
@@ -552,9 +552,14 @@ export default function OverviewGrid() {
         />
       </BottomSheet>
 
-      <FixedBottomCTA onTap={() => handleShare(id ?? "")} color="primary">
+      <BottomCTA.Single
+        onTap={() => handleShare(id ?? "")}
+        color="primary"
+        fixedAboveKeyboard={false}
+        fixed
+      >
         {t("common.invite")}
-      </FixedBottomCTA>
+      </BottomCTA.Single>
     </div>
   );
 }

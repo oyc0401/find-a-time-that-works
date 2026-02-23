@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
+import { BottomCTA, BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { handleShare } from "@/lib/share";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
@@ -330,7 +330,6 @@ export default function AvailabilityGrid() {
         >
           {selectedDatesLabel ? (
             <span className="truncate block">✅: {selectedDatesLabel}</span>
-
           ) : (
             t("availability.dragGuide")
           )}
@@ -513,9 +512,14 @@ export default function AvailabilityGrid() {
         />
       </BottomSheet>
 
-      <FixedBottomCTA onTap={() => handleShare(id ?? "")} color="primary">
+      <BottomCTA.Single
+        onTap={() => handleShare(id ?? "")}
+        color="primary"
+        fixedAboveKeyboard={false}
+        fixed
+      >
         {t("common.invite")}
-      </FixedBottomCTA>
+      </BottomCTA.Single>
     </div>
   );
 }

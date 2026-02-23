@@ -7,12 +7,16 @@ interface RoomState {
   thumbnail: string;
   tabIdx: number;
   selectedUserId?: string;
+  isNicknameDialogOpen: boolean;
+  isThumbnailDialogOpen: boolean;
   setWeekIdx: (idx: number) => void;
   setNickname: (name: string) => void;
   setGeneratedNickname: (name: string) => void;
   setThumbnail: (thumbnail: string) => void;
   setTabIdx: (idx: number) => void;
   setSelectedUserId: (userId?: string) => void;
+  setIsNicknameDialogOpen: (open: boolean) => void;
+  setIsThumbnailDialogOpen: (open: boolean) => void;
   reset: () => void;
 }
 
@@ -23,12 +27,25 @@ export const useRoomStore = create<RoomState>((set) => ({
   thumbnail: "",
   tabIdx: 0,
   selectedUserId: undefined,
+  isNicknameDialogOpen: false,
+  isThumbnailDialogOpen: false,
   setWeekIdx: (idx) => set({ weekIdx: idx }),
   setNickname: (name) => set({ nickname: name }),
   setGeneratedNickname: (name) => set({ generatedNickname: name }),
   setThumbnail: (thumbnail) => set({ thumbnail }),
   setTabIdx: (idx) => set({ tabIdx: idx }),
   setSelectedUserId: (userId) => set({ selectedUserId: userId }),
+  setIsNicknameDialogOpen: (open) => set({ isNicknameDialogOpen: open }),
+  setIsThumbnailDialogOpen: (open) => set({ isThumbnailDialogOpen: open }),
   reset: () =>
-    set({ weekIdx: 0, nickname: "", generatedNickname: "", thumbnail: "", tabIdx: 0, selectedUserId: undefined }),
+    set({
+      weekIdx: 0,
+      nickname: "",
+      generatedNickname: "",
+      thumbnail: "",
+      tabIdx: 0,
+      selectedUserId: undefined,
+      isNicknameDialogOpen: false,
+      isThumbnailDialogOpen: false,
+    }),
 }));

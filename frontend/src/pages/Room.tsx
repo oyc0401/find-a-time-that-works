@@ -10,8 +10,10 @@ import {
   BottomCTA,
   BottomSheet,
   Button,
+  Checkbox,
   FixedBottomCTA,
   Loader,
+  Menu,
   Post,
   Tab,
   TextField,
@@ -30,8 +32,19 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
-import { getSavedNickname, getGeneratedNickname } from "@/repository/nickname";
-import { getDefaultThumbnail } from "@/repository/thumbnail";
+import {
+  getSavedNickname,
+  getGeneratedNickname,
+  setSavedNickname,
+  getRememberNicknameFlag,
+  setRememberNicknameFlag,
+} from "@/repository/nickname";
+import {
+  getDefaultThumbnail,
+  setDefaultThumbnail,
+  THUMBNAILS,
+  thumbnailUrl,
+} from "@/repository/thumbnail";
 import { Repository } from "@/repository/repository";
 import { handleShare } from "@/lib/share";
 import { useTranslation, Trans } from "react-i18next";
@@ -47,7 +60,17 @@ export default function Room() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { room, participants, isLoading } = useRoomData(id);
-  const { tabIdx, setTabIdx } = useRoomStore();
+  const {
+    tabIdx,
+    setTabIdx,
+    nickname,
+    generatedNickname,
+    thumbnail,
+    isNicknameDialogOpen,
+    isThumbnailDialogOpen,
+    setIsNicknameDialogOpen,
+    setIsThumbnailDialogOpen,
+  } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
   const queryClient = useQueryClient();
 
@@ -80,6 +103,9 @@ export default function Room() {
   const loadedRef = useRef(false);
   const [isCreator, setIsCreator] = useState(false);
 
+  // ── Settings menu ──
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   // ── Room name bottom sheet ──
   const [isRoomNameOpen, setIsRoomNameOpen] = useState(false);
   const [roomNameInput, setRoomNameInput] = useState("");
@@ -109,6 +135,49 @@ export default function Room() {
       );
     });
   }, [roomNameInput, id, updateRoomName, queryClient]);
+
+  // ── Nickname bottom sheet ──
+  const [nicknameInput, setNicknameInput] = useState("");
+  const [rememberDefault, setRememberDefault] = useState(false);
+
+  useEffect(() => {
+    getRememberNicknameFlag().then(setRememberDefault);
+  }, []);
+
+  useEffect(() => {
+    if (isNicknameDialogOpen) {
+      setNicknameInput(nickname === generatedNickname ? "" : nickname);
+    }
+  }, [isNicknameDialogOpen, nickname, generatedNickname]);
+
+  const handleNicknameSave = useCallback(() => {
+    const trimmed = nicknameInput.trim();
+    if (!trimmed || !id) return;
+
+    useRoomStore.getState().setNickname(trimmed);
+    setRememberNicknameFlag(rememberDefault);
+    if (rememberDefault) {
+      setSavedNickname(trimmed);
+    }
+    setIsNicknameDialogOpen(false);
+  }, [nicknameInput, rememberDefault, id, setIsNicknameDialogOpen]);
+
+  // ── Thumbnail bottom sheet ──
+  const [selectedThumbnail, setSelectedThumbnail] = useState("");
+
+  useEffect(() => {
+    if (isThumbnailDialogOpen) {
+      setSelectedThumbnail(thumbnail);
+    }
+  }, [isThumbnailDialogOpen, thumbnail]);
+
+  const handleThumbnailSave = useCallback(() => {
+    if (!selectedThumbnail) return;
+
+    useRoomStore.getState().setThumbnail(selectedThumbnail);
+    setDefaultThumbnail(selectedThumbnail);
+    setIsThumbnailDialogOpen(false);
+  }, [selectedThumbnail, setIsThumbnailDialogOpen]);
 
   useEffect(() => {
     if (searchParams.get("created") === "true" && id) {
@@ -188,35 +257,65 @@ export default function Room() {
     <div className="flex h-screen flex-col">
       <Top
         title={
-          isCreator ? (
-            <button
-              type="button"
-              className="flex items-center gap-2 text-left cursor-pointer transition-transform duration-200 active:scale-99"
-              onClick={handleRoomNameOpen}
-            >
-              <Top.TitleParagraph size={28} color={adaptive.grey900}>
-                {truncateTitle(roomTitle)}
-              </Top.TitleParagraph>
-              <Asset.Icon
-                frameShape={Asset.frameShape.CleanW24}
-                backgroundColor="transparent"
-                name="icon-pencil-line-mono"
-                color={adaptive.grey400}
-                scale={1}
-                aria-hidden={true}
-                ratio="1/1"
-              />
-            </button>
-          ) : (
-            <Top.TitleParagraph size={28} color={adaptive.grey900}>
-              {truncateTitle(roomTitle)}
-            </Top.TitleParagraph>
-          )
+          <Top.TitleParagraph size={28} color={adaptive.grey900}>
+            {truncateTitle(roomTitle)}
+          </Top.TitleParagraph>
         }
         right={
-          isDisconnected ? (
-            <WifiOff size={20} color={adaptive.red200} />
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {isDisconnected && <WifiOff size={20} color={adaptive.red200} />}
+            <Menu.Trigger
+              open={isMenuOpen}
+              onOpen={() => setIsMenuOpen(true)}
+              onClose={() => setIsMenuOpen(false)}
+              placement="bottom-end"
+              dropdown={
+                <Menu.Dropdown>
+                  {isCreator && (
+                    <Menu.DropdownItem
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleRoomNameOpen();
+                      }}
+                    >
+                      {t("room.renameTitle")}
+                    </Menu.DropdownItem>
+                  )}
+                  <Menu.DropdownItem
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsNicknameDialogOpen(true);
+                    }}
+                  >
+                    {t("participant.changeName")}
+                  </Menu.DropdownItem>
+                  <Menu.DropdownItem
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsThumbnailDialogOpen(true);
+                    }}
+                  >
+                    {t("participant.changeProfile")}
+                  </Menu.DropdownItem>
+                </Menu.Dropdown>
+              }
+            >
+              <button
+                type="button"
+                className="cursor-pointer flex items-center justify-center p-4"
+              >
+                <Asset.Icon
+                  frameShape={Asset.frameShape.CleanW24}
+                  backgroundColor="transparent"
+                  name="icon-setting-mono"
+                  color={adaptive.grey600}
+                  scale={1}
+                  aria-hidden={true}
+                  ratio="1/1"
+                />
+              </button>
+            </Menu.Trigger>
+          </div>
         }
       />
       <Tab
@@ -324,6 +423,124 @@ export default function Room() {
           value={roomNameInput}
           onChange={(e) => setRoomNameInput(e.target.value)}
         />
+      </BottomSheet>
+
+      {/* ── Nickname Bottom Sheet ── */}
+      <BottomSheet
+        open={isNicknameDialogOpen}
+        onClose={() => setIsNicknameDialogOpen(false)}
+        header={
+          <BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>
+        }
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsNicknameDialogOpen(false)}
+              >
+                {t("common.close")}
+              </Button>
+            }
+            rightButton={
+              <Button
+                onClick={handleNicknameSave}
+                disabled={!nicknameInput.trim()}
+              >
+                {t("common.save")}
+              </Button>
+            }
+          />
+        }
+      >
+        <TextField
+          variant="box"
+          label={t("participant.nameLabel")}
+          labelOption="sustain"
+          placeholder={
+            nickname === generatedNickname
+              ? generatedNickname
+              : t("participant.namePlaceholder")
+          }
+          value={nicknameInput}
+          onChange={(e) => setNicknameInput(e.target.value)}
+        />
+        <button
+          type="button"
+          className="flex w-full items-center justify-end gap-2 pr-5 cursor-pointer"
+          onClick={() => setRememberDefault((prev) => !prev)}
+        >
+          <Checkbox.Circle
+            checked={rememberDefault}
+            onCheckedChange={setRememberDefault}
+          />
+          <span style={{ fontSize: 14, color: adaptive.grey600 }}>
+            {t("participant.rememberMe")}
+          </span>
+        </button>
+      </BottomSheet>
+
+      {/* ── Thumbnail Bottom Sheet ── */}
+      <BottomSheet
+        open={isThumbnailDialogOpen}
+        onClose={() => setIsThumbnailDialogOpen(false)}
+        header={
+          <BottomSheet.Header>
+            {t("participant.changeProfile")}
+          </BottomSheet.Header>
+        }
+        cta={
+          <BottomSheet.DoubleCTA
+            leftButton={
+              <Button
+                variant="weak"
+                color="dark"
+                onClick={() => setIsThumbnailDialogOpen(false)}
+              >
+                {t("common.close")}
+              </Button>
+            }
+            rightButton={
+              <Button onClick={handleThumbnailSave}>{t("common.save")}</Button>
+            }
+          />
+        }
+      >
+        <div
+          className="grid px-4 py-2"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, 84px)",
+            justifyContent: "space-evenly",
+            justifyItems: "center",
+          }}
+        >
+          {THUMBNAILS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className="flex cursor-pointer items-center justify-center w-[84px] h-[84px]"
+              onClick={() => setSelectedThumbnail(t)}
+            >
+              <div
+                style={{
+                  padding: 8,
+                  background:
+                    selectedThumbnail === t
+                      ? adaptive.grey300
+                      : adaptive.grey100,
+                  borderRadius: 9999,
+                }}
+              >
+                <Asset.Image
+                  src={thumbnailUrl(t)}
+                  frameShape={Asset.frameShape.Circle2XLarge}
+                  scale={0.9}
+                />
+              </div>
+            </button>
+          ))}
+        </div>
       </BottomSheet>
     </div>
   );

@@ -1,30 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Asset,
-  BottomSheet,
-  Button,
-  Checkbox,
+  BottomCTA,
   FixedBottomCTA,
   ListRow,
   Result,
-  TextField,
 } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
 import type { ParticipantDto } from "@/api/model/models";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
-import {
-  setSavedNickname,
-  getRememberNicknameFlag,
-  setRememberNicknameFlag,
-} from "@/repository/nickname";
 import { useTranslation } from "react-i18next";
-import {
-  THUMBNAILS,
-  thumbnailUrl,
-  setDefaultThumbnail,
-} from "@/repository/thumbnail";
+import { thumbnailUrl } from "@/repository/thumbnail";
 import { handleShare } from "@/lib/share";
 
 interface ParticipantListProps {
@@ -37,9 +25,13 @@ export default function ParticipantList({
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
-  const generatedNickname = useRoomStore((s) => s.generatedNickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
-  const { setTabIdx, setSelectedUserId } = useRoomStore();
+  const {
+    setTabIdx,
+    setSelectedUserId,
+    setIsNicknameDialogOpen,
+    setIsThumbnailDialogOpen,
+  } = useRoomStore();
   const [myUserId, setMyUserId] = useState<string>();
 
   useEffect(() => {
@@ -47,49 +39,6 @@ export default function ParticipantList({
   }, []);
 
   const others = participants.filter((p) => p.userId !== myUserId);
-
-  // ── Nickname bottom sheet ──
-  const [isNicknameOpen, setIsNicknameOpen] = useState(false);
-  const [nicknameInput, setNicknameInput] = useState("");
-  const [rememberDefault, setRememberDefault] = useState(false);
-
-  useEffect(() => {
-    getRememberNicknameFlag().then(setRememberDefault);
-  }, []);
-
-  const handleNicknameOpen = useCallback(() => {
-    setNicknameInput(nickname === generatedNickname ? "" : nickname);
-    setIsNicknameOpen(true);
-  }, [nickname, generatedNickname]);
-
-  const handleNicknameSave = useCallback(() => {
-    const trimmed = nicknameInput.trim();
-    if (!trimmed || !id) return;
-
-    useRoomStore.getState().setNickname(trimmed);
-    setRememberNicknameFlag(rememberDefault);
-    if (rememberDefault) {
-      setSavedNickname(trimmed);
-    }
-    setIsNicknameOpen(false);
-  }, [nicknameInput, rememberDefault, id]);
-
-  // ── Thumbnail bottom sheet ──
-  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
-  const [selectedThumbnail, setSelectedThumbnail] = useState("");
-
-  const handleThumbnailOpen = useCallback(() => {
-    setSelectedThumbnail(thumbnail);
-    setIsThumbnailOpen(true);
-  }, [thumbnail]);
-
-  const handleThumbnailSave = useCallback(() => {
-    if (!selectedThumbnail) return;
-
-    useRoomStore.getState().setThumbnail(selectedThumbnail);
-    setDefaultThumbnail(selectedThumbnail);
-    setIsThumbnailOpen(false);
-  }, [selectedThumbnail]);
 
   return (
     <div>
@@ -103,7 +52,7 @@ export default function ParticipantList({
               type="button"
               className="cursor-pointer transition-transform duration-200 active:scale-95"
               style={{ flexShrink: 0 }}
-              onClick={handleThumbnailOpen}
+              onClick={() => setIsThumbnailDialogOpen(true)}
             >
               <div className="pl-5 py-3">
                 <ListRow.AssetIcon
@@ -116,7 +65,7 @@ export default function ParticipantList({
             <button
               type="button"
               className="min-w-0 flex-1 cursor-pointer transition-transform duration-200 active:scale-99"
-              onClick={handleNicknameOpen}
+              onClick={() => setIsNicknameDialogOpen(true)}
             >
               <ListRow
                 horizontalPadding="small"
@@ -171,124 +120,14 @@ export default function ParticipantList({
         ))
       )}
 
-      {/* ── Nickname Bottom Sheet ── */}
-      <BottomSheet
-        open={isNicknameOpen}
-        onClose={() => setIsNicknameOpen(false)}
-        header={
-          <BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>
-        }
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsNicknameOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button
-                onClick={handleNicknameSave}
-                disabled={!nicknameInput.trim()}
-              >
-                {t("common.save")}
-              </Button>
-            }
-          />
-        }
+      <BottomCTA.Single
+        onTap={() => handleShare(id ?? "")}
+        color="primary"
+        fixedAboveKeyboard={false}
+        fixed
       >
-        <TextField
-          variant="box"
-          label={t("participant.nameLabel")}
-          labelOption="sustain"
-          placeholder={nickname === generatedNickname ? generatedNickname : t("participant.namePlaceholder")}
-          value={nicknameInput}
-          onChange={(e) => setNicknameInput(e.target.value)}
-        />
-        <button
-          type="button"
-          className="flex w-full items-center justify-end gap-2 pr-5 cursor-pointer"
-          onClick={() => setRememberDefault((prev) => !prev)}
-        >
-          <Checkbox.Circle
-            checked={rememberDefault}
-            onCheckedChange={setRememberDefault}
-          />
-          <span style={{ fontSize: 14, color: adaptive.grey600 }}>
-            {t("participant.rememberMe")}
-          </span>
-        </button>
-      </BottomSheet>
-
-      {/* ── Thumbnail Bottom Sheet ── */}
-      <BottomSheet
-        open={isThumbnailOpen}
-        onClose={() => setIsThumbnailOpen(false)}
-        header={
-          <BottomSheet.Header>
-            {t("participant.changeProfile")}
-          </BottomSheet.Header>
-        }
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsThumbnailOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button onClick={handleThumbnailSave}>{t("common.save")}</Button>
-            }
-          />
-        }
-      >
-        <div
-          className="grid px-4 py-2"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit, 84px)", // 아이템 폭 고정
-            justifyContent: "space-evenly",
-            justifyItems: "center",
-          }}
-        >
-          {THUMBNAILS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className="flex cursor-pointer items-center justify-center w-[84px] h-[84px] "
-              onClick={() => setSelectedThumbnail(t)}
-            >
-              <div
-                style={{
-                  padding: 8,
-                  background:
-                    selectedThumbnail === t
-                      ? adaptive.grey300
-                      : adaptive.grey100,
-
-                  borderRadius: 9999,
-                }}
-              >
-                <Asset.Image
-                  src={thumbnailUrl(t)}
-                  frameShape={Asset.frameShape.Circle2XLarge}
-                  scale={0.9}
-                />
-              </div>
-            </button>
-          ))}
-        </div>
-      </BottomSheet>
-
-      <FixedBottomCTA onTap={() => handleShare(id ?? "")} color="primary">
         {t("common.invite")}
-      </FixedBottomCTA>
+      </BottomCTA.Single>
     </div>
   );
 }
