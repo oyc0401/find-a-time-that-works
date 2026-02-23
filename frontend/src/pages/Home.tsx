@@ -58,6 +58,9 @@ function LastRoomCard() {
     query: {
       enabled: Boolean(recentRoomId),
       retry: false,
+      meta: {
+        silent: true, // 백그라운드 조회이므로 에러 알림 표시 안 함
+      },
     },
   });
 
