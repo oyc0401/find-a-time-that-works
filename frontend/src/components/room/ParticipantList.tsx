@@ -5,6 +5,7 @@ import {
   BottomSheet,
   Button,
   Checkbox,
+  FixedBottomCTA,
   ListRow,
   Result,
   TextField,
@@ -24,6 +25,7 @@ import {
   thumbnailUrl,
   setDefaultThumbnail,
 } from "@/repository/thumbnail";
+import { handleShare } from "@/lib/share";
 
 interface ParticipantListProps {
   participants: ParticipantDto[];
@@ -283,6 +285,10 @@ export default function ParticipantList({
           ))}
         </div>
       </BottomSheet>
+
+      <FixedBottomCTA onTap={() => handleShare(id ?? "")} color="primary">
+        {t("common.invite")}
+      </FixedBottomCTA>
     </div>
   );
 }

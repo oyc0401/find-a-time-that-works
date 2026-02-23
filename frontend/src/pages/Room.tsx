@@ -325,13 +325,6 @@ export default function Room() {
           onChange={(e) => setRoomNameInput(e.target.value)}
         />
       </BottomSheet>
-      <BottomCTA.Single
-        fixed={true}
-        onClick={() => handleShare(id ?? "")}
-        color="primary"
-      >
-        {t("common.invite")}
-      </BottomCTA.Single>
     </div>
   );
 }

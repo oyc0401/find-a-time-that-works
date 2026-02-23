@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomSheet } from "@toss/tds-mobile";
+import { BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
 import Badge from "@/components/Badge";
+import { handleShare } from "@/lib/share";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
@@ -550,6 +551,10 @@ export default function OverviewGrid() {
           onDateClick={handleCalendarDateClick}
         />
       </BottomSheet>
+
+      <FixedBottomCTA onTap={() => handleShare(id ?? "")} color="primary">
+        {t("common.invite")}
+      </FixedBottomCTA>
     </div>
   );
 }
