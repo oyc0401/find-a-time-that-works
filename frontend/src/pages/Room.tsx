@@ -7,6 +7,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
+  Border,
   BottomCTA,
   BottomSheet,
   Button,
@@ -261,16 +262,15 @@ export default function Room() {
               placement="bottom-end"
               dropdown={
                 <Menu.Dropdown>
-                  {isCreator && (
-                    <Menu.DropdownItem
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleRoomNameOpen();
-                      }}
-                    >
-                      {t("room.renameTitle")}
-                    </Menu.DropdownItem>
-                  )}
+                  <Menu.DropdownItem
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      navigate("/");
+                    }}
+                  >
+                    {t("home.createRoom")}
+                  </Menu.DropdownItem>
+
                   <Menu.DropdownItem
                     onClick={() => {
                       setIsMenuOpen(false);
@@ -279,6 +279,7 @@ export default function Room() {
                   >
                     {t("participant.changeName")}
                   </Menu.DropdownItem>
+
                   <Menu.DropdownItem
                     onClick={() => {
                       setIsMenuOpen(false);
@@ -287,13 +288,33 @@ export default function Room() {
                   >
                     {t("participant.changeProfile")}
                   </Menu.DropdownItem>
+
+                  {isCreator && (
+                    <>
+                      <div className="py-1">
+                        <Border variant="full" />
+                      </div>
+
+                      <Menu.DropdownItem
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          handleRoomNameOpen();
+                        }}
+                      >
+                        {t("room.renameTitle")}
+                      </Menu.DropdownItem>
+                    </>
+                  )}
                 </Menu.Dropdown>
               }
             >
               <button
                 type="button"
                 className="cursor-pointer flex items-center justify-center p-4"
-                style={{ outline: "none", WebkitTapHighlightColor: "transparent" }}
+                style={{
+                  outline: "none",
+                  WebkitTapHighlightColor: "transparent",
+                }}
               >
                 <Asset.Icon
                   frameShape={Asset.frameShape.CleanW24}
