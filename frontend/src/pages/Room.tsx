@@ -36,8 +36,6 @@ import {
   getSavedNickname,
   getGeneratedNickname,
   setSavedNickname,
-  getRememberNicknameFlag,
-  setRememberNicknameFlag,
 } from "@/repository/nickname";
 import {
   getDefaultThumbnail,
@@ -138,11 +136,6 @@ export default function Room() {
 
   // ── Nickname bottom sheet ──
   const [nicknameInput, setNicknameInput] = useState("");
-  const [rememberDefault, setRememberDefault] = useState(false);
-
-  useEffect(() => {
-    getRememberNicknameFlag().then(setRememberDefault);
-  }, []);
 
   useEffect(() => {
     if (isNicknameDialogOpen) {
@@ -155,12 +148,9 @@ export default function Room() {
     if (!trimmed || !id) return;
 
     useRoomStore.getState().setNickname(trimmed);
-    setRememberNicknameFlag(rememberDefault);
-    if (rememberDefault) {
-      setSavedNickname(trimmed);
-    }
+    setSavedNickname(trimmed); // 항상 저장
     setIsNicknameDialogOpen(false);
-  }, [nicknameInput, rememberDefault, id, setIsNicknameDialogOpen]);
+  }, [nicknameInput, id, setIsNicknameDialogOpen]);
 
   // ── Thumbnail bottom sheet ──
   const [selectedThumbnail, setSelectedThumbnail] = useState("");
@@ -303,6 +293,7 @@ export default function Room() {
               <button
                 type="button"
                 className="cursor-pointer flex items-center justify-center p-4"
+                style={{ outline: "none", WebkitTapHighlightColor: "transparent" }}
               >
                 <Asset.Icon
                   frameShape={Asset.frameShape.CleanW24}
@@ -479,19 +470,6 @@ export default function Room() {
           value={nicknameInput}
           onChange={(e) => setNicknameInput(e.target.value)}
         />
-        <button
-          type="button"
-          className="flex w-full items-center justify-end gap-2 pr-5 cursor-pointer"
-          onClick={() => setRememberDefault((prev) => !prev)}
-        >
-          <Checkbox.Circle
-            checked={rememberDefault}
-            onCheckedChange={setRememberDefault}
-          />
-          <span style={{ fontSize: 14, color: adaptive.grey600 }}>
-            {t("participant.rememberMe")}
-          </span>
-        </button>
       </BottomSheet>
 
       {/* ── Thumbnail Bottom Sheet ── */}
