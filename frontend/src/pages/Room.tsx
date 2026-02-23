@@ -115,7 +115,7 @@ export default function Room() {
   useEffect(() => {
     const unsubscription = graniteEvent.addEventListener("backEvent", {
       onEvent: () => {
-        navigate("/", { replace: true });
+        navigate(-1);
       },
       onError: (error) => {
         console.error(`backEvent 에러: ${error}`);

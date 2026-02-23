@@ -93,7 +93,7 @@ function LastRoomCard() {
   return (
     <List>
       <ListRow
-        onClick={() => navigate(`/rooms/${room.id}`, { replace: true })}
+        onClick={() => navigate(`/rooms/${room.id}`)}
         left={
           creator?.thumbnail ? (
             <ListRow.AssetIcon
@@ -136,9 +136,7 @@ export default function Home() {
         useDateSelectionStore.getState().clear();
         useTimeSliderStore.getState().setStartHour(8);
         useTimeSliderStore.getState().setEndHour(19);
-        navigate(`/rooms/${response.data.data.id}?created=true`, {
-          replace: true,
-        });
+        navigate(`/rooms/${response.data.data.id}?created=true`);
       },
     },
   });
