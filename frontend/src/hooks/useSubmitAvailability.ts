@@ -29,7 +29,13 @@ function gridToSlots(
 
 export function useSubmitAvailability(roomId?: string) {
   const queryClient = useQueryClient();
-  const { mutate } = useRoomsControllerSubmitAvailability();
+  const { mutate } = useRoomsControllerSubmitAvailability({
+    mutation: {
+      meta: { silent: true },
+      retry: 3,
+      retryDelay: (attempt) => attempt * 1000,
+    },
+  });
   const enabledRef = useRef(false);
 
   const enable = useCallback(() => {
