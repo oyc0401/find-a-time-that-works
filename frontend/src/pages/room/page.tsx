@@ -252,7 +252,7 @@ export default function Room() {
           isCreator ? (
             <button
               type="button"
-              className="cursor-pointer"
+              className="cursor-pointer active:scale-[0.97] transition-transform"
               onClick={handleRoomNameOpen}
             >
               <Top.TitleParagraph size={28} color={adaptive.grey900}>
@@ -323,7 +323,7 @@ export default function Room() {
             >
               <button
                 type="button"
-                className="cursor-pointer flex items-center justify-center p-4"
+                className="cursor-pointer flex items-center justify-center p-4 active:scale-90 transition-transform"
                 style={{
                   outline: "none",
                   WebkitTapHighlightColor: "transparent",
