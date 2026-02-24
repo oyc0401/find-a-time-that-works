@@ -248,7 +248,7 @@ export default function Room() {
             >
               <button
                 type="button"
-                className="cursor-pointer flex items-center justify-center p-4 active:scale-90 transition-transform"
+                className="cursor-pointer flex items-center justify-center p-4 active:scale-90 active:opacity-50 transition-transform"
                 style={{
                   outline: "none",
                   WebkitTapHighlightColor: "transparent",
