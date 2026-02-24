@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
@@ -97,18 +97,6 @@ export default function AvailabilityGrid() {
   const [preview, setPreview] = useState<boolean[][]>([]);
   const [dragMode, setDragMode] = useState<DragMode>("select");
 
-  // ── Header drag preview ──
-  const [headerPreviewCols, setHeaderPreviewCols] = useState<{ dc0: number; dc1: number }>();
-
-  // Clear header preview on week change
-  const prevWeekIdx = useRef(weekIdx);
-  useEffect(() => {
-    if (prevWeekIdx.current !== weekIdx) {
-      setHeaderPreviewCols(undefined);
-      prevWeekIdx.current = weekIdx;
-    }
-  }, [weekIdx]);
-
   const startCell = useRef<Cell | undefined>(undefined);
   const currentRect = useRef<{
     r0: number;
@@ -116,6 +104,7 @@ export default function AvailabilityGrid() {
     dc0: number;
     dc1: number;
   }>();
+  const isHeaderDragging = useRef(false);
 
   const makeEmptyPreview = useCallback(
     () => Array.from({ length: rows }, () => Array(displayCols).fill(false)),
@@ -246,34 +235,47 @@ export default function AvailabilityGrid() {
   });
 
   // ── Header long-press + drag ──
+  const handleHeaderPreview = useCallback(
+    (dc0: number, dc1: number) => {
+      // dragMode는 드래그 시작 시 1회만 결정
+      if (!isHeaderDragging.current) {
+        isHeaderDragging.current = true;
+        setDragMode(allSelectedCols[dc0] ? "deselect" : "select");
+      }
+
+      // currentRect는 건드리지 않음 — 셀 오버레이 div는 셀 드래그 전용
+      const p = makeEmptyPreview();
+      for (let r = 0; r < rows; r++) {
+        for (let dc = dc0; dc <= dc1; dc++) {
+          p[r][dc] = true;
+        }
+      }
+      setPreview(p);
+    },
+    [rows, allSelectedCols, makeEmptyPreview],
+  );
+
   const handleHeaderSelect = useCallback(
     (dc0: number, dc1: number) => {
-      const mode = allSelectedCols[dc0] ? "deselect" : "select";
-      for (let dc = dc0; dc <= dc1; dc++) {
-        const sc = columns[dc]?.storeColIdx;
-        if (sc === undefined) continue;
-        if (mode === "select") select(0, rows - 1, sc, sc);
-        else deselect(0, rows - 1, sc, sc);
-      }
+      applySelection({ r0: 0, r1: rows - 1, dc0, dc1 });
+      isHeaderDragging.current = false;
+      setPreview(makeEmptyPreview());
     },
-    [allSelectedCols, columns, rows, select, deselect],
+    [applySelection, rows, makeEmptyPreview],
   );
+
+  const handleHeaderCancelPreview = useCallback(() => {
+    isHeaderDragging.current = false;
+    setPreview(makeEmptyPreview());
+  }, [makeEmptyPreview]);
 
   const headerHandlers = useHeaderLongPressDrag({
     displayCols,
     onTap: handleDateHeaderClick,
     onSelect: handleHeaderSelect,
-    onPreview: (dc0, dc1) => setHeaderPreviewCols({ dc0, dc1 }),
-    onCancelPreview: () => setHeaderPreviewCols(undefined),
+    onPreview: handleHeaderPreview,
+    onCancelPreview: handleHeaderCancelPreview,
   });
-
-  const isInHeaderPreview = useCallback(
-    (i: number) => {
-      if (!headerPreviewCols) return false;
-      return i >= headerPreviewCols.dc0 && i <= headerPreviewCols.dc1;
-    },
-    [headerPreviewCols],
-  );
 
   const { setIsSelectCalendarOpen } = useRoomStore();
 
@@ -356,8 +358,8 @@ export default function AvailabilityGrid() {
               <div
                 style={{
                   fontSize: 13,
-                  fontWeight: (allSelectedCols[i] || isInHeaderPreview(i)) ? 700 : 400,
-                  color: (allSelectedCols[i] || isInHeaderPreview(i))
+                  fontWeight: allSelectedCols[i] ? 700 : 400,
+                  color: allSelectedCols[i]
                     ? adaptive.blue400
                     : h.dayOfWeek === 0
                       ? adaptive.red400
@@ -507,6 +509,8 @@ export default function AvailabilityGrid() {
               })}
             </div>
           ))}
+
+
         </div>
       </div>
       <SelectCalendarSheet />
