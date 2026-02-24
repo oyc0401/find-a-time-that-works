@@ -4,7 +4,6 @@ const KEYS = {
   userId: "userId",
   generatedNickname: "generatedNickname",
   savedNickname: "savedNickname",
-  rememberNicknameFlag: "rememberNicknameFlag",
   defaultThumbnail: "defaultThumbnail",
   recentRoomId: "recentRoomId",
 } as const;
@@ -35,15 +34,6 @@ export const Repository = {
 
   async setSavedNickname(value: string): Promise<void> {
     await TossRepository.setItem(KEYS.savedNickname, value);
-  },
-
-  async getRememberNicknameFlag(): Promise<string | undefined> {
-    const value = await TossRepository.getItem(KEYS.rememberNicknameFlag);
-    return value ?? undefined;
-  },
-
-  async setRememberNicknameFlag(value: string): Promise<void> {
-    await TossRepository.setItem(KEYS.rememberNicknameFlag, value);
   },
 
   async getDefaultThumbnail(): Promise<string | undefined> {
