@@ -68,7 +68,7 @@ function LastRoomCard() {
   const participants = data?.status === 200 ? data.data.data.participants : [];
 
   useEffect(() => {
-    if (data && data.status !== 200) {
+    if (data && data.status == 404) {
       Repository.removeRecentRoomId();
       setRecentRoomId(undefined);
     }

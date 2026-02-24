@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, GoneException, ForbiddenException } from "@nestjs/common";
+import { Injectable, NotFoundException, /* GoneException, */ ForbiddenException } from "@nestjs/common";
 import { customAlphabet } from "nanoid";
 import { PrismaService } from "../prisma/prisma.service";
 import { RoomsEventService } from "./rooms-event.service";
@@ -29,11 +29,11 @@ export class RoomsService {
     throw new Error("ID 생성 실패: 재시도 초과");
   }
 
-  private assertNotExpired(expiresAt: Date): void {
-    if (new Date() > expiresAt) {
-      throw new GoneException("만료된 방입니다");
-    }
-  }
+  // private assertNotExpired(expiresAt: Date): void {
+  //   if (new Date() > expiresAt) {
+  //     throw new GoneException("만료된 방입니다");
+  //   }
+  // }
 
   async create(dto: CreateRoomDto): Promise<CreateRoomResponseDto> {
     const id = await this.generateUniqueId();
@@ -78,7 +78,7 @@ export class RoomsService {
     if (!room) {
       throw new NotFoundException("방을 찾을 수 없습니다");
     }
-    this.assertNotExpired(room.expiresAt);
+    // this.assertNotExpired(room.expiresAt);
 
     return {
       room: {
@@ -109,7 +109,7 @@ export class RoomsService {
     if (!room) {
       throw new NotFoundException("방을 찾을 수 없습니다");
     }
-    this.assertNotExpired(room.expiresAt);
+    // this.assertNotExpired(room.expiresAt);
 
     const updateData: { name: string; thumbnail?: string } = { name: dto.participantName };
     const createData: { roomId: string; userId: string; name: string; thumbnail?: string } = {

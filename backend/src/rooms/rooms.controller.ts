@@ -32,7 +32,7 @@ export class RoomsController {
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 200, type: RoomDetailApiResponseDto })
   @SwaggerApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
-  @SwaggerApiResponse({ status: 410, description: "만료된 방입니다" })
+  // @SwaggerApiResponse({ status: 410, description: "만료된 방입니다" })
   async findById(@Param("id") id: string): Promise<RoomDetailApiResponseDto> {
     const data = await this.roomsService.findById(id);
     return { data, message: "조회 성공" };
@@ -43,7 +43,7 @@ export class RoomsController {
   @ApiParam({ name: "id", description: "방 ID (8자)", example: "aB3kZ9xQ" })
   @SwaggerApiResponse({ status: 201, type: SubmitAvailabilityApiResponseDto })
   @SwaggerApiResponse({ status: 404, description: "방을 찾을 수 없습니다" })
-  @SwaggerApiResponse({ status: 410, description: "만료된 방입니다" })
+  // @SwaggerApiResponse({ status: 410, description: "만료된 방입니다" })
   async submitAvailability(
     @Param("id") roomId: string,
     @Body() dto: SubmitAvailabilityDto,
