@@ -6,6 +6,7 @@ interface BadgeProps {
   title: string;
   onClick?: () => void;
   className?: string;
+  borderColor?: string;
 }
 
 export default function Badge({
@@ -14,6 +15,7 @@ export default function Badge({
   title,
   onClick,
   className,
+  borderColor,
 }: BadgeProps) {
   return (
     <button
@@ -27,6 +29,7 @@ export default function Badge({
         color: textColor,
         borderRadius: 9999,
         fontSize: 14,
+        border: `2px solid ${borderColor ?? "transparent"}`,
       }}
       onClick={onClick}
     >

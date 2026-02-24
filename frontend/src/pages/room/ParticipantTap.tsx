@@ -25,7 +25,7 @@ export default function ParticipantTap({
   const nickname = useRoomStore((s) => s.nickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
   const setTabIdx = useRoomStore((state) => state.setTabIdx);
-  const setSelectedUserId = useRoomStore((state) => state.setSelectedUserId);
+  const setSelectedUserIds = useRoomStore((state) => state.setSelectedUserIds);
   const setIsNicknameDialogOpen = useRoomStore(
     (state) => state.setIsNicknameDialogOpen,
   );
@@ -102,7 +102,7 @@ export default function ParticipantTap({
             type="button"
             className="w-full cursor-pointer transition-transform duration-200 active:scale-99"
             onClick={() => {
-              setSelectedUserId(p.userId);
+              setSelectedUserIds([p.userId]);
               setTabIdx(1);
             }}
           >

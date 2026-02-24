@@ -285,7 +285,18 @@ export default function SelectTap() {
     (state) => state.setIsSelectCalendarOpen,
   );
 
-
+  // 나중에 사용 예정
+  const selectedDatesSet = useMemo(() => {
+    const dates = room?.dates ?? [];
+    const set = new Set<string>();
+    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
+      if (grid.some((row) => row[colIdx])) {
+        set.add(dates[colIdx]);
+      }
+    }
+    return set;
+  }, [room?.dates, grid]);
+  void selectedDatesSet;
 
   if (grid.length === 0) return null;
 
@@ -298,7 +309,7 @@ export default function SelectTap() {
  
       {/* Guide / Selected dates */}
       <div
-        className="flex items-center pl-4 pr-2 pb-2"
+        className="flex items-center pl-4 pr-2 pb-1"
         style={{
           paddingTop: 1,
         }}

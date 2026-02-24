@@ -25,6 +25,7 @@ import {
 } from "@/lib/gridUtils";
 import OverviewCalendarSheet from "./bottomSheet/OverviewCalendarSheet";
 import WeekNavigation from "./WeekNavigation";
+import { Border } from "@toss/tds-mobile";
 
 type Rect = { r0: number; r1: number; dc0: number; dc1: number };
 
@@ -37,8 +38,8 @@ export default function OverviewTap() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, columns } = useRoomData(id);
-  const selectedUserId = useRoomStore((state) => state.selectedUserId);
-  const setSelectedUserId = useRoomStore((state) => state.setSelectedUserId);
+  const selectedUserIds = useRoomStore((state) => state.selectedUserIds);
+  const setSelectedUserIds = useRoomStore((state) => state.setSelectedUserIds);
 
   const timeSlots = useMemo(
     () =>
@@ -58,10 +59,10 @@ export default function OverviewTap() {
   // ── Filter by participant ──
   const filteredParticipants = useMemo(
     () =>
-      selectedUserId
-        ? participants.filter((p) => p.userId === selectedUserId)
+      selectedUserIds.length > 0
+        ? participants.filter((p) => selectedUserIds.includes(p.userId))
         : participants,
-    [participants, selectedUserId],
+    [participants, selectedUserIds],
   );
 
   // ── Heatmap data ──
@@ -118,7 +119,6 @@ export default function OverviewTap() {
 
   // ── Grid drag handlers ──
   const handleLongPressStart = useCallback((cell: Cell) => {
-    setSelectedUserId(undefined);
     startCell.current = cell;
 
     const rect: Rect = {
@@ -130,7 +130,7 @@ export default function OverviewTap() {
     currentRect.current = rect;
     setSelectionRect(undefined);
     setPreviewRect(rect);
-  }, [setSelectedUserId]);
+  }, []);
 
   const handleDrag = useCallback((cell: Cell) => {
     if (!startCell.current) return;
@@ -146,7 +146,6 @@ export default function OverviewTap() {
   }, []);
 
   const handleTap = useCallback((cell: Cell) => {
-    setSelectedUserId(undefined);
     setSelectionRect((prev) => {
       if (
         prev &&
@@ -164,7 +163,7 @@ export default function OverviewTap() {
         dc1: cell.col,
       };
     });
-  }, [setSelectedUserId]);
+  }, []);
 
   const handleEnd = useCallback(() => {
     const rect = currentRect.current;
@@ -199,7 +198,6 @@ export default function OverviewTap() {
       const dc0 = Math.max(0, Math.min(colA, colB));
       const dc1 = Math.min(displayCols - 1, Math.max(colA, colB));
 
-      setSelectedUserId(undefined);
       startCell.current = undefined;
       currentRect.current = undefined;
 
@@ -211,7 +209,7 @@ export default function OverviewTap() {
         dc1,
       });
     },
-    [rows, displayCols, setSelectedUserId],
+    [rows, displayCols],
   );
 
   const previewHeaderCols = useCallback(
@@ -221,7 +219,6 @@ export default function OverviewTap() {
       const dc0 = Math.max(0, Math.min(colA, colB));
       const dc1 = Math.min(displayCols - 1, Math.max(colA, colB));
 
-      setSelectedUserId(undefined);
       startCell.current = undefined;
       currentRect.current = undefined;
 
@@ -233,7 +230,7 @@ export default function OverviewTap() {
         dc1,
       });
     },
-    [rows, displayCols, setSelectedUserId],
+    [rows, displayCols],
   );
 
   // ── Participant panel data ──
@@ -273,6 +270,12 @@ export default function OverviewTap() {
       .sort((a, b) => b.covered - a.covered);
   }, [selectedSlots, participants]);
 
+  // 드래그 범위 내 참가자 userId Set
+  const coverageUserIdSet = useMemo(
+    () => new Set(participantCoverage.map((p) => p.userId)),
+    [participantCoverage],
+  );
+
   const baseBg = "white";
 
   const overlayRect = previewRect ?? selectionRect;
@@ -297,55 +300,55 @@ export default function OverviewTap() {
 
   return (
     <div className="w-full pb-32">
-      <WeekNavigation onDateClick={() => setIsOverviewCalendarOpen(true)} />
-
-      <div className="bg-white px-4">
+     
+      <div className="bg-white px-4 pt-4">
         {/* Participant badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Badge
             title={t("overview.all")}
-            color={!selectedUserId ? adaptive.blue400 : adaptive.grey100}
-            textColor={!selectedUserId ? "white" : adaptive.grey600}
+            color={selectedUserIds.length === 0 ? adaptive.blue400 : adaptive.grey100}
+            textColor={selectedUserIds.length === 0 ? "white" : adaptive.grey600}
             className="shrink-0"
             onClick={() => {
-              setSelectedUserId(undefined);
-              setSelectionRect(undefined);
-              setPreviewRect(undefined);
+              setSelectedUserIds([]);
             }}
           />
-          {(() => {
-            const list = activeRect ? participantCoverage : participants;
-            const sorted = [...list].sort((a, b) => {
-              const aIsMe = "userId" in a && a.userId === myUserId;
-              const bIsMe = "userId" in b && b.userId === myUserId;
+          {[...participants]
+            .sort((a, b) => {
+              const aIsMe = a.userId === myUserId;
+              const bIsMe = b.userId === myUserId;
               if (aIsMe && !bIsMe) return -1;
               if (!aIsMe && bIsMe) return 1;
               return 0;
-            });
-
-            return sorted.map((p) => {
-              const name = p.name;
-              const pUserId = "userId" in p ? p.userId : undefined;
-              const isSelected = pUserId === selectedUserId;
+            })
+            .map((p) => {
+              const isSelected = selectedUserIds.includes(p.userId);
+              const inRange = activeRect !== undefined && coverageUserIdSet.has(p.userId);
               return (
                 <Badge
-                  key={pUserId ?? name}
-                  title={name}
+                  key={p.userId}
+                  title={p.name}
                   color={isSelected ? adaptive.blue400 : adaptive.grey100}
                   textColor={isSelected ? "white" : adaptive.grey600}
+                  borderColor={inRange ? adaptive.blue400 : undefined}
                   className="shrink-0"
                   onClick={() => {
-                    setSelectedUserId(isSelected ? undefined : pUserId);
-                    setSelectionRect(undefined);
-                    setPreviewRect(undefined);
+                    setSelectedUserIds(
+                      isSelected
+                        ? selectedUserIds.filter((id) => id !== p.userId)
+                        : [...selectedUserIds, p.userId],
+                    );
                   }}
                 />
               );
-            });
-          })()}
+            })}
         </div>
 
       </div>
+<div className="py-4">
+<Border variant="height16" />
+</div>
+
 
       {/* Grid body */}
       <div className="pl-4 flex flex-row">

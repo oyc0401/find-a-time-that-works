@@ -9,10 +9,10 @@ interface RoomState {
   /** 뷰 상태 섹션 */
   // 방 페이지 탭 선택 상태 (0:선택,1:개요,2:참가자)
   tabIdx: number;
-  // Overview에서 강조할 참가자 ID
-  selectedUserId?: string;
+  // Overview에서 강조할 참가자 ID 목록 (다중선택)
+  selectedUserIds: string[];
   setTabIdx: (idx: number) => void;
-  setSelectedUserId: (userId?: string) => void;
+  setSelectedUserIds: (userIds: string[]) => void;
 
   /** 사용자 섹션 */
   // 사용자가 직접 입력 중인 닉네임
@@ -67,9 +67,9 @@ interface RoomState {
 export const useRoomStore = create<RoomState>((set) => ({
   // ── View state ──
   tabIdx: 0,
-  selectedUserId: undefined,
+  selectedUserIds: [],
   setTabIdx: (idx) => set({ tabIdx: idx }),
-  setSelectedUserId: (userId) => set({ selectedUserId: userId }),
+  setSelectedUserIds: (userIds) => set({ selectedUserIds: userIds }),
 
   // ── User state ──
   nickname: "",
@@ -140,7 +140,7 @@ export const useRoomStore = create<RoomState>((set) => ({
   reset: () =>
     set({
       tabIdx: 0,
-      selectedUserId: undefined,
+      selectedUserIds: [],
       nickname: "",
       generatedNickname: "",
       thumbnail: "",
