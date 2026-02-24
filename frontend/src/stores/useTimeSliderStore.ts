@@ -9,7 +9,7 @@ interface TimeSliderState {
 
 export const useTimeSliderStore = create<TimeSliderState>((set) => ({
   startHour: 8,
-  endHour: 19,
+  endHour:22,
   setStartHour: (hour) => set({ startHour: hour }),
   setEndHour: (hour) => set({ endHour: hour }),
 }));
