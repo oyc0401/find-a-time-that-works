@@ -4,7 +4,12 @@
     "subtitle": "Create a room and invite people",
     "roomNameSuffix": "'s Room",
     "createRoom": "Create Room",
-    "recentRoom": "Go to recent room"
+    "recentRoom": "Go to recent room",
+    "viewAll": "View All"
+  },
+  "recent": {
+    "title": "Recent Rooms",
+    "empty": "No recently visited rooms"
   },
   "room": {
     "loading": "Loading...",

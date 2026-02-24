@@ -6,6 +6,7 @@ const KEYS = {
   savedNickname: "savedNickname",
   defaultThumbnail: "defaultThumbnail",
   recentRoomId: "recentRoomId",
+  recentRoomIds: "recentRoomIds",
 } as const;
 
 export const Repository = {
@@ -52,9 +53,29 @@ export const Repository = {
 
   async setRecentRoomId(value: string): Promise<void> {
     await TossRepository.setItem(KEYS.recentRoomId, value);
+    await Repository.prependRecentRoomId(value);
   },
 
   async removeRecentRoomId(): Promise<void> {
     await TossRepository.removeItem(KEYS.recentRoomId);
+  },
+
+  async getRecentRoomIds(): Promise<string[]> {
+    const value = await TossRepository.getItem(KEYS.recentRoomIds);
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed as string[];
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  async prependRecentRoomId(roomId: string): Promise<void> {
+    const ids = await Repository.getRecentRoomIds();
+    const filtered = ids.filter((id) => id !== roomId);
+    const updated = [roomId, ...filtered];
+    await TossRepository.setItem(KEYS.recentRoomIds, JSON.stringify(updated));
   },
 };

@@ -94,30 +94,42 @@ function LastRoomCard() {
   const roomTitle = room.name || `${creator?.name}${t("home.roomNameSuffix")}`;
 
   return (
-    <List>
-      <ListRow
-        onClick={() => navigate(`/rooms/${room.id}`)}
-        left={
-          creator?.thumbnail ? (
-            <ListRow.AssetIcon
-              shape="circle-background"
-              url={thumbnailUrl(creator.thumbnail)}
-              backgroundColor={adaptive.grey100}
+    <div>
+      <div className="flex items-center justify-between px-4 pt-4 pb-1">
+        <span className="text-sm text-gray-500">{t("home.recentRoom")}</span>
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-blue-500"
+          onClick={() => navigate("/recent")}
+        >
+          {t("home.viewAll")}
+        </button>
+      </div>
+      <List>
+        <ListRow
+          onClick={() => navigate(`/rooms/${room.id}`)}
+          left={
+            creator?.thumbnail ? (
+              <ListRow.AssetIcon
+                shape="circle-background"
+                url={thumbnailUrl(creator.thumbnail)}
+                backgroundColor={adaptive.grey100}
+              />
+            ) : (
+              <ListRow.AssetIcon name="icon-refresh-clock" />
+            )
+          }
+          contents={
+            <ListRow.Texts
+              type="2RowTypeA"
+              top={t("home.recentRoom")}
+              bottom={roomTitle}
             />
-          ) : (
-            <ListRow.AssetIcon name="icon-refresh-clock" />
-          )
-        }
-        contents={
-          <ListRow.Texts
-            type="2RowTypeA"
-            top={t("home.recentRoom")}
-            bottom={roomTitle}
-          />
-        }
-        withTouchEffect
-      />
-    </List>
+          }
+          withTouchEffect
+        />
+      </List>
+    </div>
   );
 }
 export default function Home() {

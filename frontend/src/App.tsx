@@ -4,6 +4,7 @@ import { ApiErrorAlert } from "./components/ApiErrorAlert";
 import Home from "./pages/page";
 
 const Room = lazy(() => import("./pages/room/page"));
+const RecentRooms = lazy(() => import("./pages/recent/page"));
 
 function App() {
   return (
@@ -16,6 +17,14 @@ function App() {
         element={
           <Suspense fallback={<div />}>
             <Room />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/recent"
+        element={
+          <Suspense fallback={<div />}>
+            <RecentRooms />
           </Suspense>
         }
       />
