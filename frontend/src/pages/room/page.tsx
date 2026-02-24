@@ -66,8 +66,12 @@ export default function Room() {
     nickname,
     generatedNickname,
     thumbnail,
+    isTutorialOpen,
+    isRoomNameOpen,
     isNicknameDialogOpen,
     isThumbnailDialogOpen,
+    setIsTutorialOpen,
+    setIsRoomNameOpen,
     setIsNicknameDialogOpen,
     setIsThumbnailDialogOpen,
   } = useRoomStore();
@@ -89,8 +93,7 @@ export default function Room() {
     return () => clearTimeout(timer);
   }, [isLoading]);
 
-  // ── Tutorial bottom sheet ──
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  // ── Tutorial bottom sheet ── (open 상태는 useRoomStore에서 관리)
 
   // WebSocket 연결
   const { connected } = useRoomSocket({
@@ -106,8 +109,7 @@ export default function Room() {
   // ── Settings menu ──
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // ── Room name bottom sheet ──
-  const [isRoomNameOpen, setIsRoomNameOpen] = useState(false);
+  // ── Room name bottom sheet ── (open 상태는 useRoomStore에서 관리)
   const [roomNameInput, setRoomNameInput] = useState("");
   const { mutate: updateRoomName } = useRoomsControllerUpdateRoomName();
 

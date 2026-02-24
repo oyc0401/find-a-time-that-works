@@ -141,8 +141,8 @@ export default function OverviewGrid() {
     [countGrid],
   );
 
-  // ── Calendar bottom sheet ──
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // ── Calendar bottom sheet ── (open 상태는 useRoomStore에서 관리)
+  const { isOverviewCalendarOpen, setIsOverviewCalendarOpen } = useRoomStore();
   const highlightedDates = useMemo(
     () => new Set(room?.dates ?? []),
     [room?.dates],
@@ -181,7 +181,7 @@ export default function OverviewGrid() {
       );
       if (targetIdx !== -1) {
         setWeekIdx(targetIdx);
-        setIsCalendarOpen(false);
+        setIsOverviewCalendarOpen(false);
       }
     },
     [weeks, setWeekIdx],
@@ -326,7 +326,7 @@ export default function OverviewGrid() {
 
   return (
     <div className="w-full pb-32">
-      <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
+      <WeekNavigation onDateClick={() => setIsOverviewCalendarOpen(true)} />
       <div className="bg-white px-4">
         {/* Participant badges */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
@@ -544,8 +544,8 @@ export default function OverviewGrid() {
 
       {/* Heatmap Calendar BottomSheet */}
       <BottomSheet
-        open={isCalendarOpen}
-        onClose={() => setIsCalendarOpen(false)}
+        open={isOverviewCalendarOpen}
+        onClose={() => setIsOverviewCalendarOpen(false)}
         header={
           <BottomSheet.Header>
             {t("overview.participationStatus")}

@@ -256,8 +256,8 @@ export default function AvailabilityGrid() {
     onEnd: handleEnd,
   });
 
-  // ── Calendar bottom sheet ──
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // ── Calendar bottom sheet ── (open 상태는 useRoomStore에서 관리)
+  const { isSelectCalendarOpen, setIsSelectCalendarOpen } = useRoomStore();
   const highlightedDates = useMemo(
     () => new Set(room?.dates ?? []),
     [room?.dates],
@@ -278,7 +278,7 @@ export default function AvailabilityGrid() {
       );
       if (targetIdx !== -1) {
         setWeekIdx(targetIdx);
-        setIsCalendarOpen(false);
+        setIsSelectCalendarOpen(false);
       }
     },
     [weeks, setWeekIdx],
@@ -319,7 +319,7 @@ export default function AvailabilityGrid() {
   return (
     <div className="w-full pb-32">
       <div className="">
-        <WeekNavigation onDateClick={() => setIsCalendarOpen(true)} />
+        <WeekNavigation onDateClick={() => setIsSelectCalendarOpen(true)} />
       </div>
       {/* Guide / Selected dates */}
       <div
@@ -509,8 +509,8 @@ export default function AvailabilityGrid() {
       </div>
 
       <BottomSheet
-        open={isCalendarOpen}
-        onClose={() => setIsCalendarOpen(false)}
+        open={isSelectCalendarOpen}
+        onClose={() => setIsSelectCalendarOpen(false)}
         header={<BottomSheet.Header>날짜</BottomSheet.Header>}
       >
         <CalendarView
