@@ -50,12 +50,15 @@ interface RoomState {
   isOverviewCalendarOpen: boolean;
   // 날짜 선택 시트 표시 여부
   isSelectCalendarOpen: boolean;
+  // 방 이동 시트 표시 여부
+  isRoomNavigateOpen: boolean;
   setIsTutorialOpen: (open: boolean) => void;
   setIsRoomNameOpen: (open: boolean) => void;
   setIsNicknameDialogOpen: (open: boolean) => void;
   setIsThumbnailDialogOpen: (open: boolean) => void;
   setIsOverviewCalendarOpen: (open: boolean) => void;
   setIsSelectCalendarOpen: (open: boolean) => void;
+  setIsRoomNavigateOpen: (open: boolean) => void;
 
   /** 리셋 섹션 */
   reset: () => void;
@@ -126,12 +129,14 @@ export const useRoomStore = create<RoomState>((set) => ({
   isThumbnailDialogOpen: false,
   isOverviewCalendarOpen: false,
   isSelectCalendarOpen: false,
+  isRoomNavigateOpen: false,
   setIsTutorialOpen: (open) => set({ isTutorialOpen: open }),
   setIsRoomNameOpen: (open) => set({ isRoomNameOpen: open }),
   setIsNicknameDialogOpen: (open) => set({ isNicknameDialogOpen: open }),
   setIsThumbnailDialogOpen: (open) => set({ isThumbnailDialogOpen: open }),
   setIsOverviewCalendarOpen: (open) => set({ isOverviewCalendarOpen: open }),
   setIsSelectCalendarOpen: (open) => set({ isSelectCalendarOpen: open }),
+  setIsRoomNavigateOpen: (open) => set({ isRoomNavigateOpen: open }),
   reset: () =>
     set({
       tabIdx: 0,
@@ -146,5 +151,6 @@ export const useRoomStore = create<RoomState>((set) => ({
       isThumbnailDialogOpen: false,
       isOverviewCalendarOpen: false,
       isSelectCalendarOpen: false,
+      isRoomNavigateOpen: false,
     }),
 }));

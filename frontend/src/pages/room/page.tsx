@@ -39,6 +39,7 @@ import TutorialSheet from "./bottomSheet/TutorialSheet";
 import RoomNameChangeSheet from "./bottomSheet/RoomNameChangeSheet";
 import NicknameChangeSheet from "./bottomSheet/NicknameChangeSheet";
 import ThumbnailChangeSheet from "./bottomSheet/ThumbnailChangeSheet";
+import RoomNavigateSheet from "./bottomSheet/RoomNavigateSheet";
 
 export default function Room() {
   const { t } = useTranslation();
@@ -50,6 +51,9 @@ export default function Room() {
   const setTabIdx = useRoomStore((state) => state.setTabIdx);
   const setIsTutorialOpen = useRoomStore((state) => state.setIsTutorialOpen);
   const setIsRoomNameOpen = useRoomStore((state) => state.setIsRoomNameOpen);
+  const setIsRoomNavigateOpen = useRoomStore(
+    (state) => state.setIsRoomNavigateOpen,
+  );
   const setIsNicknameDialogOpen = useRoomStore(
     (state) => state.setIsNicknameDialogOpen,
   );
@@ -60,6 +64,27 @@ export default function Room() {
 
   useEffect(() => {
     reset();
+  }, []);
+
+  // ── Room title long press (10s) → room navigate sheet ──
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const isLongPressRef = useRef(false);
+
+  const handleTitlePointerDown = () => {
+    isLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      generateHapticFeedback({ type: "success" });
+      setIsRoomNavigateOpen(true);
+    }, 10000);
+  };
+
+  const handleTitlePointerUp = () => {
+    clearTimeout(longPressTimerRef.current);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(longPressTimerRef.current);
   }, []);
   const { enable } = useSubmitAvailability(id);
 
@@ -174,16 +199,30 @@ export default function Room() {
             <button
               type="button"
               className="cursor-pointer active:scale-[0.97] transition-transform"
-              onClick={() => setIsRoomNameOpen(true)}
+              onClick={() => {
+                if (isLongPressRef.current) return;
+                setIsRoomNameOpen(true);
+              }}
+              onPointerDown={handleTitlePointerDown}
+              onPointerUp={handleTitlePointerUp}
+              onPointerLeave={handleTitlePointerUp}
+              onPointerCancel={handleTitlePointerUp}
             >
               <Top.TitleParagraph size={28} color={adaptive.grey900}>
                 {truncateTitle(roomTitle)}
               </Top.TitleParagraph>
             </button>
           ) : (
-            <Top.TitleParagraph size={28} color={adaptive.grey900}>
-              {truncateTitle(roomTitle)}
-            </Top.TitleParagraph>
+            <div
+              onPointerDown={handleTitlePointerDown}
+              onPointerUp={handleTitlePointerUp}
+              onPointerLeave={handleTitlePointerUp}
+              onPointerCancel={handleTitlePointerUp}
+            >
+              <Top.TitleParagraph size={28} color={adaptive.grey900}>
+                {truncateTitle(roomTitle)}
+              </Top.TitleParagraph>
+            </div>
           )
         }
         right={
@@ -299,6 +338,7 @@ export default function Room() {
       <RoomNameChangeSheet />
       <NicknameChangeSheet />
       <ThumbnailChangeSheet />
+      <RoomNavigateSheet />
     </div>
   );
 }

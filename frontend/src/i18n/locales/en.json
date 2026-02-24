@@ -18,6 +18,10 @@
     "renameTitle": "Rename Room",
     "renameLabel": "Room name",
     "renamePlaceholder": "Enter room name",
+    "navigateTitle": "Go to Room",
+    "navigateLabel": "Room ID",
+    "navigatePlaceholder": "Enter room ID to navigate",
+    "navigateButton": "Go",
     "tutorial": {
       "step1": "Share the link with friends using the <strong>Invite</strong> button below",
       "step2": "Select available times in the <strong>Schedule</strong> tab",
