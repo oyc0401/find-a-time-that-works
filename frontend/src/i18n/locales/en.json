@@ -50,7 +50,8 @@
   "availability": {
     "dragGuide": "Long press and drag to select times",
     "dateTitle": "Date",
-    "selectedDaysMore": "and {{count}} more"
+    "selectedDaysMore": "and {{count}} more",
+    "selectedDaysCount": "✅: {{count}}"
   },
   "overview": {
     "all": "All",

@@ -41,7 +41,7 @@ export default function ParticipantTap({
   const others = participants.filter((p) => p.userId !== myUserId);
 
   return (
-    <div>
+    <div className="pb-32">
       <div style={{ padding: 16 }}>
         <div
           className="w-full overflow-hidden"

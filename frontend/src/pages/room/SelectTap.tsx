@@ -285,31 +285,7 @@ export default function SelectTap() {
     (state) => state.setIsSelectCalendarOpen,
   );
 
-  const selectedDatesSet = useMemo(() => {
-    const dates = room?.dates ?? [];
-    const set = new Set<string>();
-    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
-      if (grid.some((row) => row[colIdx])) {
-        set.add(dates[colIdx]);
-      }
-    }
-    return set;
-  }, [room?.dates, grid]);
 
-  const selectedDatesLabel = useMemo(() => {
-    if (selectedDatesSet.size === 0) return undefined;
-    const currentMonth = new Date().getMonth();
-    const sorted = [...selectedDatesSet].sort();
-    const toLabel = (d: string) => {
-      const date = new Date(d);
-      if (date.getMonth() === currentMonth) return `${date.getDate()}`;
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    };
-    const MAX = 3;
-    const preview = sorted.slice(0, MAX).map(toLabel).join(", ");
-    if (sorted.length <= MAX) return preview;
-    return `${preview} ${t("availability.selectedDaysMore", { count: sorted.length })}`;
-  }, [selectedDatesSet, t]);
 
   if (grid.length === 0) return null;
 
@@ -335,11 +311,7 @@ export default function SelectTap() {
             color: adaptive.grey500,
           }}
         >
-          {selectedDatesLabel ? (
-            <span className="truncate block">✅: {selectedDatesLabel}</span>
-          ) : (
-            t("availability.dragGuide")
-          )}
+          {t("availability.dragGuide")}
         </div>
       </div>
 
