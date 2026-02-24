@@ -50,9 +50,9 @@ import { handleShare } from "@/lib/share";
 import { useTranslation, Trans } from "react-i18next";
 import { WifiOff } from "lucide-react";
 import { truncateTitle } from "@/lib/truncateTitle";
-import AvailabilityGrid from "../components/room/AvailabilityGrid";
-import OverviewGrid from "../components/room/OverviewGrid";
-import ParticipantList from "../components/room/ParticipantList";
+import AvailabilityGrid from "./AvailabilityGrid";
+import OverviewGrid from "./OverviewGrid";
+import ParticipantList from "./ParticipantList";
 
 export default function Room() {
   const { t } = useTranslation();

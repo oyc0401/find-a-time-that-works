@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { ApiErrorAlert } from "./components/ApiErrorAlert";
 import Home from "./pages/Home";
 
-const Room = lazy(() => import("./pages/Room"));
+const Room = lazy(() => import("./pages/room/page"));
 
 function App() {
   return (

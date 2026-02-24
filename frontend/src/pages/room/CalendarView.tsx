@@ -1,9 +1,8 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
-import { heatColor } from "@/lib/heatColor";
-import CalendarGrid2, { type CalendarCellModel } from "../CalendarGrid2";
+import CalendarGrid2, { type CalendarCellModel } from "../../components/CalendarGrid2";
 
 const W = 7;
 const H = 5;
@@ -15,41 +14,46 @@ function toDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function countToHeatBg(count: number, maxCount: number): string {
-  if (count <= 0) return "white";
-  const ratio = maxCount > 0 ? (count - 1) / maxCount : 0;
-  return heatColor(ratio);
+function countColor(count: number) {
+  if (count === 3) return { bg: adaptive.blue300, whiteText: true };
+  if (count === 2) return { bg: adaptive.blue200, whiteText: true };
+  if (count === 1) return { bg: adaptive.blue100, whiteText: false };
+  return { bg: "white", whiteText: false };
 }
 
-interface HeatmapCalendarViewProps {
+interface CalendarViewProps {
   baseDate: Date;
   highlightedDates: Set<string>;
-  dateCountMap: Map<string, number>;
-  maxCount: number;
+  selectedDates?: Set<string>;
   onDateClick?: (dateKey: string) => void;
 }
 
-export default function HeatmapCalendarView({
+export default function CalendarView({
   baseDate,
   highlightedDates,
-  dateCountMap,
-  maxCount,
+  selectedDates,
   onDateClick,
-}: HeatmapCalendarViewProps) {
+}: CalendarViewProps) {
   const cells = useMemo(() => buildCalendarCells(baseDate), [baseDate]);
+  const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
-  // 가중치 기반 countGrid: 참여인원 + 1 (0은 빈칸 전용)
   const countGrid = useMemo(() => {
     const grid: number[][] = Array.from({ length: H }, () => Array(W).fill(0));
     for (let i = 0; i < cells.length; i++) {
-      const dateKey = toDateKey(cells[i].date);
-      if (!highlightedDates.has(dateKey)) continue;
+      const key = toDateKey(cells[i].date);
+      if (!highlightedDates.has(key)) continue;
       const r = Math.floor(i / W);
       const c = i % W;
-      grid[r][c] = (dateCountMap.get(dateKey) ?? 0) + 1;
+      if (i === pressedIdx) {
+        grid[r][c] = 1;
+      } else if (selectedDates?.has(key)) {
+        grid[r][c] = 3;
+      } else {
+        grid[r][c] = 2;
+      }
     }
     return grid;
-  }, [cells, highlightedDates, dateCountMap]);
+  }, [cells, highlightedDates, selectedDates, pressedIdx]);
 
   const renderGrid = useMemo(
     () => buildRenderGrid2(countGrid),
@@ -70,32 +74,44 @@ export default function HeatmapCalendarView({
       const rc = renderGrid[r][c];
       const center = rc.center;
       const isPast = cell.date < todayStart;
-      const dateKey = toDateKey(cell.date);
-      const count = dateCountMap.get(dateKey) ?? 0;
 
-      const centerBg = center > 0 ? countToHeatBg(center, maxCount) : undefined;
-      const isRoomDate = highlightedDates.has(dateKey);
+      const { bg, whiteText } = countColor(center);
+      const centerBg = center > 0 ? bg : undefined;
       const textColor =
-        center > 0 && count / maxCount > 0.5
-          ? "#fff"
-          : isPast || !isRoomDate
+        center > 0 && whiteText
+          ? "#ffffff"
+          : isPast
             ? adaptive.grey400
             : adaptive.grey800;
 
       return {
         hidden: cell.hidden,
         day: cell.day,
-        text: center > 0 ? String(count) : undefined,
         isToday: cell.isToday,
         textColor,
         center: centerBg,
-        lt: countToHeatBg(rc.lt, maxCount),
-        rt: countToHeatBg(rc.rt, maxCount),
-        lb: countToHeatBg(rc.lb, maxCount),
-        rb: countToHeatBg(rc.rb, maxCount),
+        lt: countColor(rc.lt).bg,
+        rt: countColor(rc.rt).bg,
+        lb: countColor(rc.lb).bg,
+        rb: countColor(rc.rb).bg,
       };
     });
-  }, [cells, renderGrid, dateCountMap, maxCount]);
+  }, [cells, renderGrid]);
+
+  const handlePressStart = useCallback(
+    (idx: number) => {
+      const cell = cells[idx];
+      if (!cell) return;
+      if (highlightedDates.has(toDateKey(cell.date))) {
+        setPressedIdx(idx);
+      }
+    },
+    [cells, highlightedDates],
+  );
+
+  const handlePressEnd = useCallback(() => {
+    setPressedIdx(undefined);
+  }, []);
 
   const handleCellClick = useCallback(
     (idx: number) => {
@@ -112,6 +128,8 @@ export default function HeatmapCalendarView({
     <CalendarGrid2
       cells={calendarCells}
       onCellClick={handleCellClick}
+      onCellPressStart={handlePressStart}
+      onCellPressEnd={handlePressEnd}
     />
   );
 }
