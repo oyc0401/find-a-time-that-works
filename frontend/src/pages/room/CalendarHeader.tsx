@@ -1,33 +1,42 @@
 import { useCallback, useRef } from "react";
+import { adaptive } from "@toss/tds-colors";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
-import { getHeaderColFromPoint } from "@/lib/gridUtils";
+import { useTranslation } from "react-i18next";
+import { formatDateHeader } from "@/lib/timeSlots";
+import { getHeaderColFromPoint, TIME_WIDTH } from "@/lib/gridUtils";
+import type { WeekColumn } from "@/lib/weekGroup";
 
 const LONG_PRESS_MS = 250;
 const MOVE_CANCEL_PX = 8;
 
-interface UseHeaderLongPressDragOptions {
-  displayCols: number;
+interface CalendarHeaderProps {
+  /** 현재 주(week)에 표시할 날짜 컬럼 목록 (날짜 텍스트 렌더링에 사용) */
+  columns: WeekColumn[];
+  /** 각 컬럼이 전체 선택된 상태인지 여부 (true면 파란색 bold 표시) */
+  allSelectedCols: boolean[];
+  /** 롱프레스 없이 탭했을 때 — 단일 컬럼 토글 */
   onTap: (col: number) => void;
+  /** 롱프레스 후 드래그 완료 — 범위 확정 */
   onSelect: (dc0: number, dc1: number) => void;
+  /** 롱프레스 후 드래그 중 — 범위 미리보기 */
   onPreview?: (dc0: number, dc1: number) => void;
+  /** 드래그 취소 또는 완료 후 미리보기 초기화 */
   onCancelPreview?: () => void;
 }
 
-type HeaderPointerHandlers = {
-  onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerMove: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerCancel: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onLostPointerCapture: (e: React.PointerEvent<HTMLDivElement>) => void;
-};
-
-export function useHeaderLongPressDrag({
-  displayCols,
+export default function CalendarHeader({
+  columns,
+  allSelectedCols,
   onTap,
   onSelect,
   onPreview,
   onCancelPreview,
-}: UseHeaderLongPressDragOptions): HeaderPointerHandlers {
+}: CalendarHeaderProps) {
+  const { t } = useTranslation();
+  const weekdays = t("weekdays", { returnObjects: true }) as string[];
+  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
+  const displayCols = columns.length;
+
   const longPressTimerRef = useRef<number | null>(null);
   const pointerIdRef = useRef<number | null>(null);
   const startColRef = useRef<number | null>(null);
@@ -52,7 +61,16 @@ export function useHeaderLongPressDrag({
     containerRef.current = null;
   }, []);
 
-  const onPointerDown = useCallback(
+  const confirmOrCancelDrag = useCallback(() => {
+    if (longPressActivatedRef.current && startColRef.current != null) {
+      const start = startColRef.current;
+      const end = currentColRef.current ?? start;
+      onSelect(Math.min(start, end), Math.max(start, end));
+    }
+    onCancelPreview?.();
+  }, [onSelect, onCancelPreview]);
+
+  const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       const col = getHeaderColFromPoint(e.clientX, e.clientY);
       if (col == null) return;
@@ -76,7 +94,7 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, onPreview],
   );
 
-  const onPointerMove = useCallback(
+  const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
       if (startColRef.current == null) return;
@@ -85,8 +103,7 @@ export function useHeaderLongPressDrag({
       if (!longPressActivatedRef.current && startPt) {
         const dx = e.clientX - startPt.x;
         const dy = e.clientY - startPt.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > MOVE_CANCEL_PX) {
+        if (Math.sqrt(dx * dx + dy * dy) > MOVE_CANCEL_PX) {
           clearLongPressTimer();
         }
       }
@@ -112,7 +129,7 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, displayCols, onPreview],
   );
 
-  const onPointerUp = useCallback(
+  const handlePointerUp = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
 
@@ -137,16 +154,7 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, onSelect, onCancelPreview, onTap, resetState],
   );
 
-  const confirmOrCancelDrag = useCallback(() => {
-    if (longPressActivatedRef.current && startColRef.current != null) {
-      const start = startColRef.current;
-      const end = currentColRef.current ?? start;
-      onSelect(Math.min(start, end), Math.max(start, end));
-    }
-    onCancelPreview?.();
-  }, [onSelect, onCancelPreview]);
-
-  const onPointerCancel = useCallback(
+  const handlePointerCancel = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
       clearLongPressTimer();
@@ -156,7 +164,7 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, confirmOrCancelDrag, resetState],
   );
 
-  const onLostPointerCapture = useCallback(
+  const handleLostPointerCapture = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
       clearLongPressTimer();
@@ -166,11 +174,40 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, confirmOrCancelDrag, resetState],
   );
 
-  return {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel,
-    onLostPointerCapture,
-  };
+  return (
+    <div
+      className="flex"
+      style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onLostPointerCapture={handleLostPointerCapture}
+    >
+      {dateHeaders.map((h, i) => (
+        <div
+          key={columns[i].date}
+          data-header-col={i}
+          className="flex-1 text-center select-none"
+          style={{ minWidth: 44 }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: allSelectedCols[i] ? 700 : 400,
+              color: allSelectedCols[i]
+                ? adaptive.blue400
+                : h.dayOfWeek === 0
+                  ? adaptive.red400
+                  : h.dayOfWeek === 6
+                    ? adaptive.blue300
+                    : adaptive.grey500,
+            }}
+          >
+            {`${h.day} (${h.weekday})`}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }

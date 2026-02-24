@@ -4,7 +4,7 @@ import { adaptive } from "@toss/tds-colors";
 import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { handleShare } from "@/lib/share";
-import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
+import { generateTimeSlots } from "@/lib/timeSlots";
 import {
   type Owner,
   type RenderCell,
@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
-import { useHeaderLongPressDrag } from "@/hooks/useHeaderLongPressDrag";
+import CalendarHeader from "./CalendarHeader";
 import {
   type Cell,
   type CornerPos,
@@ -269,14 +269,6 @@ export default function AvailabilityGrid() {
     setPreview(makeEmptyPreview());
   }, [makeEmptyPreview]);
 
-  const headerHandlers = useHeaderLongPressDrag({
-    displayCols,
-    onTap: handleDateHeaderClick,
-    onSelect: handleHeaderSelect,
-    onPreview: handleHeaderPreview,
-    onCancelPreview: handleHeaderCancelPreview,
-  });
-
   const { setIsSelectCalendarOpen } = useRoomStore();
 
   const selectedDatesSet = useMemo(() => {
@@ -307,10 +299,6 @@ export default function AvailabilityGrid() {
 
   if (grid.length === 0) return null;
 
-  const weekdays = t("weekdays", { returnObjects: true }) as string[];
-  const dateHeaders = columns.map((col) =>
-    formatDateHeader(col.date, weekdays),
-  );
   const baseBg = "white";
 
   return (
@@ -342,37 +330,14 @@ export default function AvailabilityGrid() {
       </div>
 
       <div className="bg-white px-4">
-        {/* Date headers (tap: single column toggle, long-press + drag: multi columns) */}
-        <div
-          className="flex"
-          style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
-          {...headerHandlers}
-        >
-          {dateHeaders.map((h, i) => (
-            <div
-              key={columns[i].date}
-              data-header-col={i}
-              className="flex-1 text-center select-none"
-              style={{ minWidth: 44 }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: allSelectedCols[i] ? 700 : 400,
-                  color: allSelectedCols[i]
-                    ? adaptive.blue400
-                    : h.dayOfWeek === 0
-                      ? adaptive.red400
-                      : h.dayOfWeek === 6
-                        ? adaptive.blue300
-                        : adaptive.grey500,
-                }}
-              >
-                {`${h.day} (${h.weekday})`}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CalendarHeader
+          columns={columns}
+          allSelectedCols={allSelectedCols}
+          onTap={handleDateHeaderClick}
+          onSelect={handleHeaderSelect}
+          onPreview={handleHeaderPreview}
+          onCancelPreview={handleHeaderCancelPreview}
+        />
       </div>
       {/* Grid body */}
       <div className="mt-2 px-4 flex">

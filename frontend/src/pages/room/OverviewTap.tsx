@@ -3,13 +3,13 @@ import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import Badge from "@/components/Badge";
 import { cn } from "@/lib/cn";
-import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
+import { generateTimeSlots } from "@/lib/timeSlots";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
-import { useHeaderLongPressDrag } from "@/hooks/useHeaderLongPressDrag";
+import CalendarHeader from "./CalendarHeader";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "@/repository/userId";
 import {
@@ -235,15 +235,6 @@ export default function OverviewGrid() {
     [rows, displayCols, setSelectedUserId],
   );
 
-  // ── Header long-press + drag ──
-  const headerHandlers = useHeaderLongPressDrag({
-    displayCols,
-    onTap: (col) => selectHeaderCols(col, col),
-    onSelect: (dc0, dc1) => selectHeaderCols(dc0, dc1),
-    onPreview: (dc0, dc1) => previewHeaderCols(dc0, dc1),
-    onCancelPreview: () => setPreviewRect(undefined),
-  });
-
   // ── Participant panel data ──
   const activeRect = previewRect ?? selectionRect;
 
@@ -281,8 +272,6 @@ export default function OverviewGrid() {
       .sort((a, b) => b.covered - a.covered);
   }, [selectedSlots, participants]);
 
-  const weekdays = t("weekdays", { returnObjects: true }) as string[];
-  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
   const baseBg = "white";
 
   const overlayRect = previewRect ?? selectionRect;
@@ -355,37 +344,14 @@ export default function OverviewGrid() {
           })()}
         </div>
 
-        {/* Date headers (tap: single column, long-press + drag: multi columns) */}
-        <div
-          className="flex"
-          style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
-          {...headerHandlers}
-        >
-          {dateHeaders.map((h, i) => (
-            <div
-              key={columns[i].date}
-              data-header-col={i}
-              className="flex-1 text-center select-none"
-              style={{ minWidth: 44 }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: allSelectedCols[i] ? 700 : 400,
-                  color: allSelectedCols[i]
-                    ? adaptive.blue400
-                    : h.dayOfWeek === 0
-                      ? adaptive.red400
-                      : h.dayOfWeek === 6
-                        ? adaptive.blue300
-                        : adaptive.grey500,
-                }}
-              >
-                {`${h.day} (${h.weekday})`}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CalendarHeader
+          columns={columns}
+          allSelectedCols={allSelectedCols}
+          onTap={(col) => selectHeaderCols(col, col)}
+          onSelect={(dc0, dc1) => selectHeaderCols(dc0, dc1)}
+          onPreview={(dc0, dc1) => previewHeaderCols(dc0, dc1)}
+          onCancelPreview={() => setPreviewRect(undefined)}
+        />
       </div>
 
       {/* Grid body */}
