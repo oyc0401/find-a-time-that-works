@@ -13,17 +13,15 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
 import { useTranslation } from "react-i18next";
 import { thumbnailUrl } from "@/repository/thumbnail";
-import { handleShare } from "@/lib/share";
 
 interface ParticipantListProps {
   participants: ParticipantDto[];
 }
 
-export default function ParticipantList({
+export default function ParticipantTap({
   participants,
 }: ParticipantListProps) {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
   const setTabIdx = useRoomStore((state) => state.setTabIdx);

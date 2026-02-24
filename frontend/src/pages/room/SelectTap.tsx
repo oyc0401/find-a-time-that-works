@@ -53,7 +53,7 @@ function needsCornerOp(center: Owner, corner: Owner) {
   return corner !== "empty";
 }
 
-export default function AvailabilityGrid() {
+export default function SelectTap() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);

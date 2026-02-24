@@ -32,7 +32,7 @@ function intensityColor(count: number, max: number): string {
   return heatColor(count / max);
 }
 
-export default function OverviewGrid() {
+export default function OverviewTap() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);

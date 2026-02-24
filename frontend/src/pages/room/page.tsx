@@ -32,9 +32,9 @@ import { handleShare } from "@/lib/share";
 import { useTranslation } from "react-i18next";
 import { WifiOff } from "lucide-react";
 import { truncateTitle } from "@/lib/truncateTitle";
-import AvailabilityGrid from "./SelectTap";
-import OverviewGrid from "./OverviewTap";
-import ParticipantList from "./ParticipantTap";
+import SelectTap from "./SelectTap";
+import OverviewTap from "./OverviewTap";
+import ParticipantTap from "./ParticipantTap";
 import TutorialSheet from "./bottomSheet/TutorialSheet";
 import RoomNameChangeSheet from "./bottomSheet/RoomNameChangeSheet";
 import NicknameChangeSheet from "./bottomSheet/NicknameChangeSheet";
@@ -282,9 +282,9 @@ export default function Room() {
       </Tab>
 
       <div className="min-h-0 flex-1">
-        {tabIdx === 0 && <AvailabilityGrid />}
-        {tabIdx === 1 && <OverviewGrid />}
-        {tabIdx === 2 && <ParticipantList participants={participants} />}
+        {tabIdx === 0 && <SelectTap />}
+        {tabIdx === 1 && <OverviewTap />}
+        {tabIdx === 2 && <ParticipantTap participants={participants} />}
       </div>
       <BottomCTA.Double
         fixed
