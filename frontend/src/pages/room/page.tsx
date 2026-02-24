@@ -285,6 +285,9 @@ export default function Room() {
                   >
                     {t("home.createRoom")}
                   </Menu.DropdownItem>
+                  <div className="py-1">
+                        <Border variant="full" />
+                      </div>
 
                   <Menu.DropdownItem
                     onClick={() => {
