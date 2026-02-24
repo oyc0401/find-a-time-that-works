@@ -8,7 +8,7 @@ import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { heatColor } from "@/lib/heatColor";
-import CalendarGrid2, { type CalendarCellModel } from "../../../components/CalendarGrid2";
+import CalendarGrid, { type CalendarCellModel } from "../../../components/CalendarGrid";
 
 const W = 7;
 const H = 5;
@@ -114,7 +114,7 @@ function HeatmapCalendarView({
   );
 
   return (
-    <CalendarGrid2
+    <CalendarGrid
       cells={calendarCells}
       onCellClick={handleCellClick}
     />

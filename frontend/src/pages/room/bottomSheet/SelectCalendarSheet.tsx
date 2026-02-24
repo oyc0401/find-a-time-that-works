@@ -6,7 +6,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
-import CalendarGrid2, { type CalendarCellModel } from "../../../components/CalendarGrid2";
+import CalendarGrid, { type CalendarCellModel } from "../../../components/CalendarGrid";
 
 
 const W = 7;
@@ -130,7 +130,7 @@ function CalendarView({
   );
 
   return (
-    <CalendarGrid2
+    <CalendarGrid
       cells={calendarCells}
       onCellClick={handleCellClick}
       onCellPressStart={handlePressStart}

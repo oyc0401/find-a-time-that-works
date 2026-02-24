@@ -13,7 +13,7 @@ import {
   type RenderCell,
   buildRenderDragGrid,
 } from "@/lib/renderDragGrid";
-import CalendarGrid2, { type CalendarCellModel } from "../components/CalendarGrid2";
+import CalendarGrid, { type CalendarCellModel } from "../components/CalendarGrid";
 
 // =====================
 // Grid constants
@@ -237,7 +237,7 @@ export default function DateSelector() {
   );
 
   return (
-    <CalendarGrid2
+    <CalendarGrid
       cells={calendarCells}
       pointerHandlers={{
         onPointerDown: handlePointerDown,

@@ -246,7 +246,7 @@ export interface CalendarGrid2Props {
   baseBg?: string;
 }
 
-export default function CalendarGrid2({
+export default function CalendarGrid({
   cells,
   pointerHandlers,
   onCellClick,
