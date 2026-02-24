@@ -57,12 +57,10 @@ function needsCornerOp(center: Owner, corner: Owner) {
 export default function SelectTap() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { room, weeks } = useRoomData(id);
-  const weekIdx = useRoomStore((state) => state.weekIdx);
+  const { room, columns } = useRoomData(id);
   const grid = useRoomStore((state) => state.grid);
   const select = useRoomStore((state) => state.select);
   const deselect = useRoomStore((state) => state.deselect);
-  const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
     () =>

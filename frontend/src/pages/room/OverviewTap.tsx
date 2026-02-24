@@ -36,11 +36,9 @@ function intensityColor(count: number, max: number): string {
 export default function OverviewTap() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { room, participants, weeks } = useRoomData(id);
-  const weekIdx = useRoomStore((state) => state.weekIdx);
+  const { room, participants, columns } = useRoomData(id);
   const selectedUserId = useRoomStore((state) => state.selectedUserId);
   const setSelectedUserId = useRoomStore((state) => state.setSelectedUserId);
-  const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
     () =>
@@ -102,16 +100,6 @@ export default function OverviewTap() {
   const setIsOverviewCalendarOpen = useRoomStore(
     (state) => state.setIsOverviewCalendarOpen,
   );
-
-  // ── Clear selection on week change ──
-  const prevWeekIdx = useRef(weekIdx);
-  useEffect(() => {
-    if (prevWeekIdx.current !== weekIdx) {
-      setSelectionRect(undefined);
-      setPreviewRect(undefined);
-      prevWeekIdx.current = weekIdx;
-    }
-  }, [weekIdx]);
 
   // ── Selection state ──
   const [selectionRect, setSelectionRect] = useState<Rect>();

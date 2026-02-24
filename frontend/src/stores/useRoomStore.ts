@@ -7,13 +7,10 @@ function createGrid(rows: number, cols: number): boolean[][] {
 
 interface RoomState {
   /** 뷰 상태 섹션 */
-  // 주간 타임라인에서 현재 선택된 주 인덱스
-  weekIdx: number;
   // 방 페이지 탭 선택 상태 (0:선택,1:개요,2:참가자)
   tabIdx: number;
   // Overview에서 강조할 참가자 ID
   selectedUserId?: string;
-  setWeekIdx: (idx: number) => void;
   setTabIdx: (idx: number) => void;
   setSelectedUserId: (userId?: string) => void;
 
@@ -66,10 +63,8 @@ interface RoomState {
 
 export const useRoomStore = create<RoomState>((set) => ({
   // ── View state ──
-  weekIdx: 0,
   tabIdx: 0,
   selectedUserId: undefined,
-  setWeekIdx: (idx) => set({ weekIdx: idx }),
   setTabIdx: (idx) => set({ tabIdx: idx }),
   setSelectedUserId: (userId) => set({ selectedUserId: userId }),
 
@@ -139,7 +134,6 @@ export const useRoomStore = create<RoomState>((set) => ({
   setIsSelectCalendarOpen: (open) => set({ isSelectCalendarOpen: open }),
   reset: () =>
     set({
-      weekIdx: 0,
       tabIdx: 0,
       selectedUserId: undefined,
       nickname: "",

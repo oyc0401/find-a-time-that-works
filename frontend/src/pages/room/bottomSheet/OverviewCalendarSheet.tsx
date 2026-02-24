@@ -123,14 +123,13 @@ function HeatmapCalendarView({
 export default function OverviewCalendarSheet() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { room, participants, weeks } = useRoomData(id);
+  const { room, participants } = useRoomData(id);
   const isOverviewCalendarOpen = useRoomStore(
     (state) => state.isOverviewCalendarOpen,
   );
   const setIsOverviewCalendarOpen = useRoomStore(
     (state) => state.setIsOverviewCalendarOpen,
   );
-  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
   const selectedUserId = useRoomStore((state) => state.selectedUserId);
 
   const filteredParticipants = useMemo(
@@ -173,18 +172,9 @@ export default function OverviewCalendarSheet() {
     return countResult;
   }, [filteredParticipants]);
 
-  const handleDateClick = useCallback(
-    (dateKey: string) => {
-      const targetIdx = weeks.findIndex((w) =>
-        w.columns.some((col) => col.date === dateKey),
-      );
-      if (targetIdx !== -1) {
-        setWeekIdx(targetIdx);
-        setIsOverviewCalendarOpen(false);
-      }
-    },
-    [weeks, setWeekIdx, setIsOverviewCalendarOpen],
-  );
+  const handleDateClick = useCallback(() => {
+    setIsOverviewCalendarOpen(false);
+  }, [setIsOverviewCalendarOpen]);
 
   return (
     <BottomSheet

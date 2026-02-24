@@ -1,133 +1,21 @@
-import { useMemo } from "react";
-import { useParams } from "react-router-dom";
-import ArrowLeftSidebarIcon from "@/components/icons/ArrowLeftSidebarIcon";
-import ArrowRightSidebarIcon from "@/components/icons/ArrowRightSidebarIcon";
-import { useRoomData } from "@/hooks/useRoomData";
-import { useTranslation } from "react-i18next";
-import { useRoomStore } from "@/stores/useRoomStore";
+import { Calendar } from "lucide-react";
 import { adaptive } from "@toss/tds-colors";
-import { Asset } from "@toss/tds-mobile";
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 
 interface WeekNavigationProps {
   onDateClick?: () => void;
 }
 
 export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
-  const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
-  const { weeks } = useRoomData(id);
-  const weekIdx = useRoomStore((state) => state.weekIdx);
-  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
-
-  const weekLabel = useMemo(() => {
-    const currentWeek = weeks[weekIdx];
-    if (!currentWeek) return "weeks";
-
-    // 주에 포함된 날짜 중 가장 많은 월을 대표 월로 사용
-    const monthCounts = new Map<number, number>();
-    for (const col of currentWeek.columns) {
-      const month = new Date(col.date).getMonth() + 1;
-      monthCounts.set(month, (monthCounts.get(month) ?? 0) + 1);
-    }
-    let repMonth = 0;
-    let maxCount = 0;
-    for (const [month, count] of monthCounts) {
-      if (count > maxCount || (count === maxCount && month > repMonth)) {
-        repMonth = month;
-        maxCount = count;
-      }
-    }
-
-    // 해당 월의 몇 번째 주인지 계산 (일~토 기준)
-    // 월의 1일이 속한 주를 1주로 봄
-    const year = new Date(currentWeek.columns[0].date).getFullYear();
-    const firstOfMonth = new Date(year, repMonth - 1, 1);
-    const firstSunday = new Date(firstOfMonth);
-    firstSunday.setDate(1 - firstOfMonth.getDay()); // 1일이 속한 주의 일요일
-
-    // 현재 주의 일요일 구하기
-    const refDate = new Date(currentWeek.columns[0].date);
-    const currentSunday = new Date(refDate);
-    currentSunday.setDate(refDate.getDate() - refDate.getDay());
-
-    const diffWeeks = Math.round(
-      (currentSunday.getTime() - firstSunday.getTime()) /
-        (7 * 24 * 60 * 60 * 1000),
-    );
-    const weekNum = diffWeeks + 1;
-
-    const months = t("months", { returnObjects: true }) as string[];
-    return t("week.label", { monthName: months[repMonth - 1], weekNum });
-  }, [weeks, weekIdx, t]);
-
-  if (weeks.length < 1 || !weekLabel) {
-    return (
-      <div className="pt-3 pl-4 pr-4 pb-1 text-grey-500">
-        {t("week.noData")}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-between pt-3 pl-4 pr-4 pb-1">
+    <div className="flex items-center justify-end pt-3 pl-4 pr-4 pb-1">
       <button
         type="button"
-        className="flex items-center gap-0.5 cursor-pointer transition-[colors,transform] duration-50  active:scale-95"
-        style={{ fontSize: 20, fontWeight: 500, borderRadius: 8, padding: 4 }}
+        className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
+        style={{ width: 44, height: 44, borderRadius: 8 }}
         onClick={onDateClick}
       >
-        {weekLabel}
-        <Asset.Icon
-          frameShape={Asset.frameShape.CleanW24}
-          backgroundColor="transparent"
-          name="icon-arrow-down-small-mono"
-          color={adaptive.grey400}
-          scale={0.75}
-          aria-hidden={true}
-          ratio="1/1"
-        />
+        <Calendar size={24} color={adaptive.blue400} />
       </button>
-      <div className="flex items-center">
-        <button
-          type="button"
-          className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
-          style={{ width: 44, height: 44, borderRadius: 8 }}
-          aria-label={t("week.prevWeek")}
-          disabled={weekIdx === 0}
-          onClick={() => {
-            if (weekIdx > 0) {
-              generateHapticFeedback({ type: "tickWeak" });
-              setWeekIdx(weekIdx - 1);
-            }
-          }}
-        >
-          <ArrowLeftSidebarIcon
-            size={28}
-            color={weekIdx === 0 ? adaptive.grey200 : adaptive.blue400}
-          />
-        </button>
-        <button
-          type="button"
-          className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
-          style={{ width: 44, height: 44, borderRadius: 8 }}
-          aria-label={t("week.nextWeek")}
-          disabled={weekIdx === weeks.length - 1}
-          onClick={() => {
-            if (weekIdx < weeks.length - 1) {
-              generateHapticFeedback({ type: "tickWeak" });
-              setWeekIdx(weekIdx + 1);
-            }
-          }}
-        >
-          <ArrowRightSidebarIcon
-            size={28}
-            color={
-              weekIdx === weeks.length - 1 ? adaptive.grey200 : adaptive.blue400
-            }
-          />
-        </button>
-      </div>
     </div>
   );
 }

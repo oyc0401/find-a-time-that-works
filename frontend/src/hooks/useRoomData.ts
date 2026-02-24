@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useRoomsControllerFindById } from "@/api/model/rooms/rooms";
-import { groupDatesByWeek } from "@/lib/weekGroup";
 
 export function useRoomData(roomId?: string) {
   const query = useRoomsControllerFindById(roomId ?? "", {
@@ -14,10 +13,10 @@ export function useRoomData(roomId?: string) {
 
   const room = responseData?.room;
   const participants = responseData?.participants ?? [];
-  const weeks = useMemo(
-    () => (room ? groupDatesByWeek(room.dates) : []),
-    [room],
+  const columns = useMemo(
+    () => (room?.dates ?? []).map((date, idx) => ({ date, storeColIdx: idx })),
+    [room?.dates],
   );
 
-  return { room, participants, weeks, isLoading: query.isLoading };
+  return { room, participants, columns, isLoading: query.isLoading };
 }

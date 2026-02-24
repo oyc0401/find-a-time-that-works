@@ -141,14 +141,13 @@ function CalendarView({
 
 export default function SelectCalendarSheet() {
   const { id } = useParams<{ id: string }>();
-  const { room, weeks } = useRoomData(id);
+  const { room } = useRoomData(id);
   const isSelectCalendarOpen = useRoomStore(
     (state) => state.isSelectCalendarOpen,
   );
   const setIsSelectCalendarOpen = useRoomStore(
     (state) => state.setIsSelectCalendarOpen,
   );
-  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
   const grid = useRoomStore((state) => state.grid);
 
   const highlightedDates = useMemo(
@@ -175,18 +174,9 @@ export default function SelectCalendarSheet() {
     return set;
   }, [room?.dates, grid]);
 
-  const handleDateClick = useCallback(
-    (dateKey: string) => {
-      const targetIdx = weeks.findIndex((w) =>
-        w.columns.some((col) => col.date === dateKey),
-      );
-      if (targetIdx !== -1) {
-        setWeekIdx(targetIdx);
-        setIsSelectCalendarOpen(false);
-      }
-    },
-    [weeks, setWeekIdx, setIsSelectCalendarOpen],
-  );
+  const handleDateClick = useCallback(() => {
+    setIsSelectCalendarOpen(false);
+  }, [setIsSelectCalendarOpen]);
 
   return (
     <BottomSheet
