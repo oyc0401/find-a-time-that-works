@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { List, ListRow } from "@toss/tds-mobile";
+import { List, ListRow, Top } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import { ChevronLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useRoomsControllerFindById } from "../../api/model/rooms/rooms";
 import { Repository } from "../../repository/repository";
@@ -36,7 +35,7 @@ function RecentRoomItem({ roomId }: { roomId: string }) {
   const room = data.data.data.room;
   const participants = data.data.data.participants;
   const creator = participants.find((p) => p.userId === room.creatorId);
-  const roomTitle = room.name || `${creator?.name}${t("home.roomNameSuffix")}`;
+  const roomTitle = room.name ?? `${creator?.name}${t("home.roomNameSuffix")}`;
 
   return (
     <ListRow
@@ -52,9 +51,7 @@ function RecentRoomItem({ roomId }: { roomId: string }) {
           <ListRow.AssetIcon name="icon-refresh-clock" />
         )
       }
-      contents={
-        <ListRow.Texts type="1RowTypeA" bottom={roomTitle} />
-      }
+      contents={<ListRow.Texts type="1RowTypeC" top={roomTitle} />}
       withTouchEffect
     />
   );
@@ -62,7 +59,6 @@ function RecentRoomItem({ roomId }: { roomId: string }) {
 
 export default function RecentRoomsPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [roomIds, setRoomIds] = useState<string[]>();
 
   useEffect(() => {
@@ -71,16 +67,13 @@ export default function RecentRoomsPage() {
 
   return (
     <div className="h-screen">
-      <div className="flex items-center gap-2 px-4 py-3">
-        <button
-          type="button"
-          className="cursor-pointer"
-          onClick={() => navigate(-1)}
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <span className="text-lg font-semibold">{t("recent.title")}</span>
-      </div>
+      <Top
+        title={
+          <Top.TitleParagraph size={28} color={adaptive.grey900}>
+            {t("recent.title")}
+          </Top.TitleParagraph>
+        }
+      />
 
       {roomIds !== undefined && roomIds.length === 0 && (
         <div className="flex flex-col items-center justify-center pt-20 text-gray-400">

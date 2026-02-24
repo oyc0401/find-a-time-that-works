@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BottomCTA,
+  Button,
   FixedBottomCTA,
   List,
   ListRow,
@@ -95,15 +96,10 @@ function LastRoomCard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-4 pt-4 pb-1">
+      <div className="flex items-center justify-between pl-6 px-4 pt-4">
         <span className="text-sm text-gray-500">{t("home.recentRoom")}</span>
-        <button
-          type="button"
-          className="cursor-pointer text-sm text-blue-500"
-          onClick={() => navigate("/recent")}
-        >
-          {t("home.viewAll")}
-        </button>
+      
+        <Button size="small" color="light"  onClick={() => navigate("/recent")} > {t("home.viewAll")}</Button>
       </div>
       <List>
         <ListRow
@@ -121,9 +117,8 @@ function LastRoomCard() {
           }
           contents={
             <ListRow.Texts
-              type="2RowTypeA"
-              top={t("home.recentRoom")}
-              bottom={roomTitle}
+              type="1RowTypeC"
+              top={roomTitle}
             />
           }
           withTouchEffect
