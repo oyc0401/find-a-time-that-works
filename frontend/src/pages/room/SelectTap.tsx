@@ -117,6 +117,29 @@ export default function AvailabilityGrid() {
 
   const { grid, select, deselect } = useAvailabilityStore();
 
+  const allSelectedCols = useMemo(
+    () =>
+      columns.map(
+        (col) =>
+          rows > 0 &&
+          timeSlots.every((_, rowIdx) => grid[rowIdx]?.[col.storeColIdx] === true),
+      ),
+    [columns, grid, rows, timeSlots],
+  );
+
+  const handleDateHeaderClick = useCallback(
+    (displayIdx: number) => {
+      const sc = columns[displayIdx]?.storeColIdx;
+      if (sc === undefined) return;
+      if (allSelectedCols[displayIdx]) {
+        deselect(0, rows - 1, sc, sc);
+      } else {
+        select(0, rows - 1, sc, sc);
+      }
+    },
+    [columns, allSelectedCols, rows, select, deselect],
+  );
+
   const [preview, setPreview] = useState<boolean[][]>([]);
   const [dragMode, setDragMode] = useState<DragMode>("select");
 
@@ -330,19 +353,27 @@ export default function AvailabilityGrid() {
               className="flex-1 text-center"
               style={{ minWidth: 44 }}
             >
-              <div
-                style={{
-                  fontSize: 13,
-                  color:
-                    h.dayOfWeek === 0
-                      ? adaptive.red400
-                      : h.dayOfWeek === 6
-                        ? adaptive.blue300
-                        : adaptive.grey500,
-                }}
+              <button
+                type="button"
+                className="w-full cursor-pointer"
+                onClick={() => handleDateHeaderClick(i)}
               >
-                {`${h.day} (${h.weekday})`}
-              </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: allSelectedCols[i] ? 700 : 400,
+                    color: allSelectedCols[i]
+                      ? adaptive.blue400
+                      : h.dayOfWeek === 0
+                        ? adaptive.red400
+                        : h.dayOfWeek === 6
+                          ? adaptive.blue300
+                          : adaptive.grey500,
+                  }}
+                >
+                  {`${h.day} (${h.weekday})`}
+                </div>
+              </button>
             </div>
           ))}
         </div>
