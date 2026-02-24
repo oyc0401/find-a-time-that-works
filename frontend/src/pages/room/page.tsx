@@ -54,7 +54,12 @@ export default function Room() {
     setIsRoomNameOpen,
     setIsNicknameDialogOpen,
     setIsThumbnailDialogOpen,
+    reset,
   } = useRoomStore();
+
+  useEffect(() => {
+    reset();
+  }, []);
   const { enable } = useSubmitAvailability(id);
 
   const roomTitle = useMemo(() => {
