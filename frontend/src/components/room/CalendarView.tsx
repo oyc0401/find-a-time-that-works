@@ -61,15 +61,19 @@ export default function CalendarView({
   );
 
   const calendarCells: CalendarCellModel[] = useMemo(() => {
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
     return cells.map((cell, idx) => {
       const r = Math.floor(idx / W);
       const c = idx % W;
       const rc = renderGrid[r][c];
       const center = rc.center;
-      const isPast =
-        cell.date.getFullYear() < baseDate.getFullYear() ||
-        (cell.date.getFullYear() === baseDate.getFullYear() &&
-          cell.date.getMonth() < baseDate.getMonth());
+      const isPast = cell.date < todayStart;
 
       const { bg, whiteText } = countColor(center);
       const centerBg = center > 0 ? bg : undefined;
