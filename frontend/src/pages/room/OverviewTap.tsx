@@ -13,7 +13,7 @@ import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "@/repository/userId";
-import HeatmapCalendarView from "./HeatmapCalendarView";
+import OverviewCalendarSheet from "./bottomSheet/OverviewCalendarSheet";
 import WeekNavigation from "./WeekNavigation";
 
 const CELL_H = 20;
@@ -80,7 +80,7 @@ export default function OverviewGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const { weekIdx, setWeekIdx, selectedUserId, setSelectedUserId } =
+  const { weekIdx, selectedUserId, setSelectedUserId } =
     useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
@@ -141,51 +141,7 @@ export default function OverviewGrid() {
     [countGrid],
   );
 
-  // ── Calendar bottom sheet ── (open 상태는 useRoomStore에서 관리)
-  const { isOverviewCalendarOpen, setIsOverviewCalendarOpen } = useRoomStore();
-  const highlightedDates = useMemo(
-    () => new Set(room?.dates ?? []),
-    [room?.dates],
-  );
-
-  const calendarBaseDate = useMemo(() => {
-    const dates = room?.dates ?? [];
-    if (dates.length === 0) return new Date();
-    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
-    const [y, m, d] = earliest.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }, [room?.dates]);
-
-  // 날짜별 참여자 수 (시간 무관)
-  const dateCountMap = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    for (const p of filteredParticipants) {
-      for (const slot of p.slots) {
-        if (!map.has(slot.date)) {
-          map.set(slot.date, new Set());
-        }
-        map.get(slot.date)?.add(p.name);
-      }
-    }
-    const result = new Map<string, number>();
-    for (const [date, names] of map) {
-      result.set(date, names.size);
-    }
-    return result;
-  }, [filteredParticipants]);
-
-  const handleCalendarDateClick = useCallback(
-    (dateKey: string) => {
-      const targetIdx = weeks.findIndex((w) =>
-        w.columns.some((col) => col.date === dateKey),
-      );
-      if (targetIdx !== -1) {
-        setWeekIdx(targetIdx);
-        setIsOverviewCalendarOpen(false);
-      }
-    },
-    [weeks, setWeekIdx],
-  );
+  const { setIsOverviewCalendarOpen } = useRoomStore();
 
   // ── Clear selection on week change ──
   const prevWeekIdx = useRef(weekIdx);
@@ -542,24 +498,7 @@ export default function OverviewGrid() {
         </div>
       </div>
 
-      {/* Heatmap Calendar BottomSheet */}
-      <BottomSheet
-        open={isOverviewCalendarOpen}
-        onClose={() => setIsOverviewCalendarOpen(false)}
-        header={
-          <BottomSheet.Header>
-            {t("overview.participationStatus")}
-          </BottomSheet.Header>
-        }
-      >
-        <HeatmapCalendarView
-          baseDate={calendarBaseDate}
-          highlightedDates={highlightedDates}
-          dateCountMap={dateCountMap}
-          maxCount={maxCount}
-          onDateClick={handleCalendarDateClick}
-        />
-      </BottomSheet>
+      <OverviewCalendarSheet />
     </div>
   );
 }

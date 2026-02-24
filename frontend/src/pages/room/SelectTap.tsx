@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomCTA, BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
+import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { handleShare } from "@/lib/share";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
@@ -17,7 +17,7 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
 import WeekNavigation from "./WeekNavigation";
-import CalendarView from "./CalendarView";
+import SelectCalendarSheet from "./bottomSheet/SelectCalendarSheet";
 
 const CELL_H = 20;
 const CORNER_SIZE = 0;
@@ -104,7 +104,7 @@ export default function AvailabilityGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { weekIdx, setWeekIdx, nickname } = useRoomStore();
+  const { weekIdx, nickname } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -256,33 +256,7 @@ export default function AvailabilityGrid() {
     onEnd: handleEnd,
   });
 
-  // ── Calendar bottom sheet ── (open 상태는 useRoomStore에서 관리)
-  const { isSelectCalendarOpen, setIsSelectCalendarOpen } = useRoomStore();
-  const highlightedDates = useMemo(
-    () => new Set(room?.dates ?? []),
-    [room?.dates],
-  );
-
-  const calendarBaseDate = useMemo(() => {
-    const dates = room?.dates ?? [];
-    if (dates.length === 0) return new Date();
-    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
-    const [y, m, d] = earliest.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }, [room?.dates]);
-
-  const handleCalendarDateClick = useCallback(
-    (dateKey: string) => {
-      const targetIdx = weeks.findIndex((w) =>
-        w.columns.some((col) => col.date === dateKey),
-      );
-      if (targetIdx !== -1) {
-        setWeekIdx(targetIdx);
-        setIsSelectCalendarOpen(false);
-      }
-    },
-    [weeks, setWeekIdx],
-  );
+  const { setIsSelectCalendarOpen } = useRoomStore();
 
   const selectedDatesSet = useMemo(() => {
     const dates = room?.dates ?? [];
@@ -507,19 +481,7 @@ export default function AvailabilityGrid() {
           ))}
         </div>
       </div>
-
-      <BottomSheet
-        open={isSelectCalendarOpen}
-        onClose={() => setIsSelectCalendarOpen(false)}
-        header={<BottomSheet.Header>날짜</BottomSheet.Header>}
-      >
-        <CalendarView
-          baseDate={calendarBaseDate}
-          highlightedDates={highlightedDates}
-          selectedDates={selectedDatesSet}
-          onDateClick={handleCalendarDateClick}
-        />
-      </BottomSheet>
+      <SelectCalendarSheet />
     </div>
   );
 }

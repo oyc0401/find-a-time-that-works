@@ -1,9 +1,14 @@
 import { useCallback, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import { BottomSheet } from "@toss/tds-mobile";
+import { useTranslation } from "react-i18next";
+import { useRoomData } from "@/hooks/useRoomData";
+import { useRoomStore } from "@/stores/useRoomStore";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { heatColor } from "@/lib/heatColor";
-import CalendarGrid2, { type CalendarCellModel } from "../../components/CalendarGrid2";
+import CalendarGrid2, { type CalendarCellModel } from "../../../components/CalendarGrid2";
 
 const W = 7;
 const H = 5;
@@ -29,7 +34,7 @@ interface HeatmapCalendarViewProps {
   onDateClick?: (dateKey: string) => void;
 }
 
-export default function HeatmapCalendarView({
+function HeatmapCalendarView({
   baseDate,
   highlightedDates,
   dateCountMap,
@@ -113,5 +118,90 @@ export default function HeatmapCalendarView({
       cells={calendarCells}
       onCellClick={handleCellClick}
     />
+  );
+}
+
+export default function OverviewCalendarSheet() {
+  const { t } = useTranslation();
+  const { id } = useParams<{ id: string }>();
+  const { room, participants, weeks } = useRoomData(id);
+  const {
+    isOverviewCalendarOpen,
+    setIsOverviewCalendarOpen,
+    setWeekIdx,
+    selectedUserId,
+  } = useRoomStore();
+
+  const filteredParticipants = useMemo(
+    () =>
+      selectedUserId
+        ? participants.filter((p) => p.userId === selectedUserId)
+        : participants,
+    [participants, selectedUserId],
+  );
+
+  const maxCount = selectedUserId ? 1 : participants.length;
+
+  const highlightedDates = useMemo(
+    () => new Set(room?.dates ?? []),
+    [room?.dates],
+  );
+
+  const calendarBaseDate = useMemo(() => {
+    const dates = room?.dates ?? [];
+    if (dates.length === 0) return new Date();
+    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const [y, m, d] = earliest.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [room?.dates]);
+
+  const dateCountMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const p of filteredParticipants) {
+      for (const slot of p.slots) {
+        if (!map.has(slot.date)) {
+          map.set(slot.date, new Set());
+        }
+        map.get(slot.date)?.add(p.name);
+      }
+    }
+    const result = new Map<string, number>();
+    for (const [date, names] of map) {
+      result.set(date, names.size);
+    }
+    return result;
+  }, [filteredParticipants]);
+
+  const handleDateClick = useCallback(
+    (dateKey: string) => {
+      const targetIdx = weeks.findIndex((w) =>
+        w.columns.some((col) => col.date === dateKey),
+      );
+      if (targetIdx !== -1) {
+        setWeekIdx(targetIdx);
+        setIsOverviewCalendarOpen(false);
+      }
+    },
+    [weeks, setWeekIdx, setIsOverviewCalendarOpen],
+  );
+
+  return (
+    <BottomSheet
+      open={isOverviewCalendarOpen}
+      onClose={() => setIsOverviewCalendarOpen(false)}
+      header={
+        <BottomSheet.Header>
+          {t("overview.participationStatus")}
+        </BottomSheet.Header>
+      }
+    >
+      <HeatmapCalendarView
+        baseDate={calendarBaseDate}
+        highlightedDates={highlightedDates}
+        dateCountMap={dateCountMap}
+        maxCount={maxCount}
+        onDateClick={handleDateClick}
+      />
+    </BottomSheet>
   );
 }

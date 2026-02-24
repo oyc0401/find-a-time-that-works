@@ -1,8 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo,useState } from "react";
+import { useParams } from "react-router-dom";
+import { BottomSheet } from "@toss/tds-mobile";
+import { useRoomData } from "@/hooks/useRoomData";
+import { useRoomStore } from "@/stores/useRoomStore";
+import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
-import CalendarGrid2, { type CalendarCellModel } from "../../components/CalendarGrid2";
+import CalendarGrid2, { type CalendarCellModel } from "../../../components/CalendarGrid2";
+
 
 const W = 7;
 const H = 5;
@@ -28,7 +34,7 @@ interface CalendarViewProps {
   onDateClick?: (dateKey: string) => void;
 }
 
-export default function CalendarView({
+function CalendarView({
   baseDate,
   highlightedDates,
   selectedDates,
@@ -131,5 +137,65 @@ export default function CalendarView({
       onCellPressStart={handlePressStart}
       onCellPressEnd={handlePressEnd}
     />
+  );
+}
+
+export default function SelectCalendarSheet() {
+  const { id } = useParams<{ id: string }>();
+  const { room, weeks } = useRoomData(id);
+  const { isSelectCalendarOpen, setIsSelectCalendarOpen, setWeekIdx } =
+    useRoomStore();
+  const { grid } = useAvailabilityStore();
+
+  const highlightedDates = useMemo(
+    () => new Set(room?.dates ?? []),
+    [room?.dates],
+  );
+
+  const calendarBaseDate = useMemo(() => {
+    const dates = room?.dates ?? [];
+    if (dates.length === 0) return new Date();
+    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const [y, m, d] = earliest.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [room?.dates]);
+
+  const selectedDatesSet = useMemo(() => {
+    const dates = room?.dates ?? [];
+    const set = new Set<string>();
+    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
+      if (grid.some((row) => row[colIdx])) {
+        set.add(dates[colIdx]);
+      }
+    }
+    return set;
+  }, [room?.dates, grid]);
+
+  const handleDateClick = useCallback(
+    (dateKey: string) => {
+      const targetIdx = weeks.findIndex((w) =>
+        w.columns.some((col) => col.date === dateKey),
+      );
+      if (targetIdx !== -1) {
+        setWeekIdx(targetIdx);
+        setIsSelectCalendarOpen(false);
+      }
+    },
+    [weeks, setWeekIdx, setIsSelectCalendarOpen],
+  );
+
+  return (
+    <BottomSheet
+      open={isSelectCalendarOpen}
+      onClose={() => setIsSelectCalendarOpen(false)}
+      header={<BottomSheet.Header>날짜</BottomSheet.Header>}
+    >
+      <CalendarView
+        baseDate={calendarBaseDate}
+        highlightedDates={highlightedDates}
+        selectedDates={selectedDatesSet}
+        onDateClick={handleDateClick}
+      />
+    </BottomSheet>
   );
 }
