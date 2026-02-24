@@ -45,7 +45,8 @@
   },
   "availability": {
     "dragGuide": "시간표를 꾹 눌러 드래그 하세요",
-    "dateTitle": "날짜"
+    "dateTitle": "날짜",
+    "selectedDaysMore": "등 {{count}}개"
   },
   "overview": {
     "all": "전체",
