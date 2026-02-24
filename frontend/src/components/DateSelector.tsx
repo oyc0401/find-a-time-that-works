@@ -170,7 +170,11 @@ function buildCalendarCellModels(
   dragMode: DragMode,
 ): CalendarCellModel[] {
   const today = new Date();
-  const currentMonth = today.getMonth();
+  const todayStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
 
   return cells.map((cell, idx) => {
     const r = rowOf(idx);
@@ -179,17 +183,13 @@ function buildCalendarCellModels(
 
     const center = rc.lt.center;
     const { bg: centerBg, whiteText } = ownerColor(center, dragMode);
-    const isCurrentMonth = cell.date.getMonth() === currentMonth;
+    const isPast = cell.date < todayStart;
 
     let textColor: string;
     if (center !== "empty") {
-      textColor = whiteText
-        ? "#ffffff"
-        : isCurrentMonth
-          ? adaptive.grey800
-          : adaptive.grey400;
+      textColor = whiteText ? "#ffffff" : isPast ? adaptive.grey400 : adaptive.grey800;
     } else {
-      textColor = isCurrentMonth ? adaptive.grey800 : adaptive.grey400;
+      textColor = isPast ? adaptive.grey400 : adaptive.grey800;
     }
 
     // Corner colors - 항상 색상 설정 (empty는 white)

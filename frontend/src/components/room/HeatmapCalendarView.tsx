@@ -57,25 +57,26 @@ export default function HeatmapCalendarView({
   );
 
   const calendarCells: CalendarCellModel[] = useMemo(() => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-
     return cells.map((cell, idx) => {
       const r = Math.floor(idx / W);
       const c = idx % W;
       const rc = renderGrid[r][c];
       const center = rc.center;
-      const isCurrentMonth = cell.date.getMonth() === currentMonth;
+      const isPast =
+        cell.date.getFullYear() < baseDate.getFullYear() ||
+        (cell.date.getFullYear() === baseDate.getFullYear() &&
+          cell.date.getMonth() < baseDate.getMonth());
       const dateKey = toDateKey(cell.date);
       const count = dateCountMap.get(dateKey) ?? 0;
 
       const centerBg = center > 0 ? countToHeatBg(center, maxCount) : undefined;
+      const isRoomDate = highlightedDates.has(dateKey);
       const textColor =
         center > 0 && count / maxCount > 0.5
           ? "#fff"
-          : isCurrentMonth
-            ? adaptive.grey800
-            : adaptive.grey400;
+          : isPast || !isRoomDate
+            ? adaptive.grey400
+            : adaptive.grey800;
 
       return {
         hidden: cell.hidden,

@@ -61,24 +61,24 @@ export default function CalendarView({
   );
 
   const calendarCells: CalendarCellModel[] = useMemo(() => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-
     return cells.map((cell, idx) => {
       const r = Math.floor(idx / W);
       const c = idx % W;
       const rc = renderGrid[r][c];
       const center = rc.center;
-      const isCurrentMonth = cell.date.getMonth() === currentMonth;
+      const isPast =
+        cell.date.getFullYear() < baseDate.getFullYear() ||
+        (cell.date.getFullYear() === baseDate.getFullYear() &&
+          cell.date.getMonth() < baseDate.getMonth());
 
       const { bg, whiteText } = countColor(center);
       const centerBg = center > 0 ? bg : undefined;
       const textColor =
         center > 0 && whiteText
           ? "#ffffff"
-          : isCurrentMonth
-            ? adaptive.grey800
-            : adaptive.grey400;
+          : isPast
+            ? adaptive.grey400
+            : adaptive.grey800;
 
       return {
         hidden: cell.hidden,

@@ -249,9 +249,21 @@ export default function Room() {
     <div className="flex h-screen flex-col">
       <Top
         title={
-          <Top.TitleParagraph size={28} color={adaptive.grey900}>
-            {truncateTitle(roomTitle)}
-          </Top.TitleParagraph>
+          isCreator ? (
+            <button
+              type="button"
+              className="cursor-pointer"
+              onClick={handleRoomNameOpen}
+            >
+              <Top.TitleParagraph size={28} color={adaptive.grey900}>
+                {truncateTitle(roomTitle)}
+              </Top.TitleParagraph>
+            </button>
+          ) : (
+            <Top.TitleParagraph size={28} color={adaptive.grey900}>
+              {truncateTitle(roomTitle)}
+            </Top.TitleParagraph>
+          )
         }
         right={
           <div className="flex items-center gap-2">
