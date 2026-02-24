@@ -12,54 +12,36 @@ export interface CalendarCell {
   isToday: boolean;
 }
 
-export function buildCalendarCells(): CalendarCell[] {
+export function buildCalendarCells(baseDate: Date): CalendarCell[] {
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
   const todayDate = today.getDate();
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  // baseDate가 속한 주의 일요일부터 시작
+  const weekStart = new Date(baseDate);
+  weekStart.setDate(baseDate.getDate() - baseDate.getDay());
 
   const allCells: CalendarCell[] = [];
 
-  // prev month placeholders
-  const prevMonthDays = new Date(year, month, 0).getDate();
-  for (let i = firstDay - 1; i >= 0; i--) {
-    const day = prevMonthDays - i;
+  for (let i = 0; i < TOTAL_CELLS; i++) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+
     allCells.push({
-      date: new Date(year, month - 1, day),
-      day,
-      isCurrentMonth: false,
+      date,
+      day: date.getDate(),
+      isCurrentMonth:
+        date.getFullYear() === todayYear && date.getMonth() === todayMonth,
       hidden: false,
-      isToday: false,
+      isToday:
+        date.getFullYear() === todayYear &&
+        date.getMonth() === todayMonth &&
+        date.getDate() === todayDate,
     });
   }
 
-  // current month
-  for (let d = 1; d <= daysInMonth; d++) {
-    allCells.push({
-      date: new Date(year, month, d),
-      day: d,
-      isCurrentMonth: true,
-      hidden: false,
-      isToday: d === todayDate,
-    });
-  }
-
-  // fill next month
-  let nextDay = 1;
-  while (allCells.length < TOTAL_CELLS) {
-    allCells.push({
-      date: new Date(year, month + 1, nextDay),
-      day: nextDay++,
-      isCurrentMonth: false,
-      hidden: false,
-      isToday: false,
-    });
-  }
-
-  return allCells.slice(0, TOTAL_CELLS);
+  return allCells;
 }
 
 export function getSelectedDates(

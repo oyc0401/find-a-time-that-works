@@ -148,6 +148,14 @@ export default function OverviewGrid() {
     [room?.dates],
   );
 
+  const calendarBaseDate = useMemo(() => {
+    const dates = room?.dates ?? [];
+    if (dates.length === 0) return new Date();
+    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const [y, m, d] = earliest.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [room?.dates]);
+
   // 날짜별 참여자 수 (시간 무관)
   const dateCountMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -545,6 +553,7 @@ export default function OverviewGrid() {
         }
       >
         <HeatmapCalendarView
+          baseDate={calendarBaseDate}
           highlightedDates={highlightedDates}
           dateCountMap={dateCountMap}
           maxCount={maxCount}

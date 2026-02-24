@@ -22,6 +22,7 @@ function countToHeatBg(count: number, maxCount: number): string {
 }
 
 interface HeatmapCalendarViewProps {
+  baseDate: Date;
   highlightedDates: Set<string>;
   dateCountMap: Map<string, number>;
   maxCount: number;
@@ -29,12 +30,13 @@ interface HeatmapCalendarViewProps {
 }
 
 export default function HeatmapCalendarView({
+  baseDate,
   highlightedDates,
   dateCountMap,
   maxCount,
   onDateClick,
 }: HeatmapCalendarViewProps) {
-  const cells = useMemo(() => buildCalendarCells(), []);
+  const cells = useMemo(() => buildCalendarCells(baseDate), [baseDate]);
 
   // 가중치 기반 countGrid: 참여인원 + 1 (0은 빈칸 전용)
   const countGrid = useMemo(() => {

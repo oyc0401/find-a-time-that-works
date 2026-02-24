@@ -263,6 +263,14 @@ export default function AvailabilityGrid() {
     [room?.dates],
   );
 
+  const calendarBaseDate = useMemo(() => {
+    const dates = room?.dates ?? [];
+    if (dates.length === 0) return new Date();
+    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const [y, m, d] = earliest.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [room?.dates]);
+
   const handleCalendarDateClick = useCallback(
     (dateKey: string) => {
       const targetIdx = weeks.findIndex((w) =>
@@ -506,6 +514,7 @@ export default function AvailabilityGrid() {
         header={<BottomSheet.Header>날짜</BottomSheet.Header>}
       >
         <CalendarView
+          baseDate={calendarBaseDate}
           highlightedDates={highlightedDates}
           selectedDates={selectedDatesSet}
           onDateClick={handleCalendarDateClick}

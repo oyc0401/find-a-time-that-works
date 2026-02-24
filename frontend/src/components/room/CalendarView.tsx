@@ -22,17 +22,19 @@ function countColor(count: number) {
 }
 
 interface CalendarViewProps {
+  baseDate: Date;
   highlightedDates: Set<string>;
   selectedDates?: Set<string>;
   onDateClick?: (dateKey: string) => void;
 }
 
 export default function CalendarView({
+  baseDate,
   highlightedDates,
   selectedDates,
   onDateClick,
 }: CalendarViewProps) {
-  const cells = useMemo(() => buildCalendarCells(), []);
+  const cells = useMemo(() => buildCalendarCells(baseDate), [baseDate]);
   const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
 
   const countGrid = useMemo(() => {

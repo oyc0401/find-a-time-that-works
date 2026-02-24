@@ -213,7 +213,7 @@ function buildCalendarCellModels(
 }
 
 export default function DateSelector() {
-  const cells = useMemo(() => buildCalendarCells(), []);
+  const cells = useMemo(() => buildCalendarCells(new Date()), []);
 
   const {
     confirmed,

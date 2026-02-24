@@ -126,7 +126,7 @@ export default function Home() {
   const confirmed = useDateSelectionStore((s) => s.confirmed);
   const startHour = useTimeSliderStore((s) => s.startHour);
   const endHour = useTimeSliderStore((s) => s.endHour);
-  const cells = useMemo(() => buildCalendarCells(), []);
+  const cells = useMemo(() => buildCalendarCells(new Date()), []);
 
   const selectedDates = useMemo(
     () => getSelectedDates(confirmed, cells),
