@@ -6,18 +6,41 @@ function createGrid(rows: number, cols: number): boolean[][] {
 }
 
 interface RoomState {
+  /** 뷰 상태 섹션 */
   // 주간 타임라인에서 현재 선택된 주 인덱스
   weekIdx: number;
+  // 방 페이지 탭 선택 상태 (0:선택,1:개요,2:참가자)
+  tabIdx: number;
+  // Overview에서 강조할 참가자 ID
+  selectedUserId?: string;
+  setWeekIdx: (idx: number) => void;
+  setTabIdx: (idx: number) => void;
+  setSelectedUserId: (userId?: string) => void;
+
+  /** 사용자 섹션 */
   // 사용자가 직접 입력 중인 닉네임
   nickname: string;
   // 시스템이 추천해 둔 임시 닉네임
   generatedNickname: string;
   // 참가자 썸네일(이미지 키)
   thumbnail: string;
-  // 방 페이지 탭 선택 상태 (0:선택,1:개요,2:참가자)
-  tabIdx: number;
-  // Overview에서 강조할 참가자 ID
-  selectedUserId?: string;
+  setNickname: (name: string) => void;
+  setGeneratedNickname: (name: string) => void;
+  setThumbnail: (thumbnail: string) => void;
+
+  /** 그리드 섹션 */
+  // 화면에서 직접 편집 중인 시간 격자 상태
+  grid: boolean[][];
+  // 방 시간표 크기로 grid 초기화
+  init: (rows: number, cols: number) => void;
+  // 서버 슬롯 데이터를 grid에 반영
+  loadFromSlots: (slots: SlotDto[], dates: string[], timeSlots: string[]) => void;
+  // 특정 범위를 선택 상태(true)로 변경
+  select: (r0: number, r1: number, c0: number, c1: number) => void;
+  // 특정 범위를 선택 해제(false)
+  deselect: (r0: number, r1: number, c0: number, c1: number) => void;
+
+  /** 다이얼로그/시트 섹션 */
   // 튜토리얼 시트 표시 여부
   isTutorialOpen: boolean;
   // 방 이름 변경 시트 표시 여부
@@ -30,46 +53,35 @@ interface RoomState {
   isOverviewCalendarOpen: boolean;
   // 날짜 선택 시트 표시 여부
   isSelectCalendarOpen: boolean;
-  // 화면에서 직접 편집 중인 시간 격자 상태
-  grid: boolean[][];
-  // 방 시간표 크기로 grid 초기화
-  init: (rows: number, cols: number) => void;
-  // 서버 슬롯 데이터를 grid에 반영
-  loadFromSlots: (slots: SlotDto[], dates: string[], timeSlots: string[]) => void;
-  // 특정 범위를 선택 상태(true)로 변경
-  select: (r0: number, r1: number, c0: number, c1: number) => void;
-  // 특정 범위를 선택 해제(false)
-  deselect: (r0: number, r1: number, c0: number, c1: number) => void;
-  // 모든 셀을 false로 초기화
-  clear: () => void;
-  setWeekIdx: (idx: number) => void;
-  setNickname: (name: string) => void;
-  setGeneratedNickname: (name: string) => void;
-  setThumbnail: (thumbnail: string) => void;
-  setTabIdx: (idx: number) => void;
-  setSelectedUserId: (userId?: string) => void;
   setIsTutorialOpen: (open: boolean) => void;
   setIsRoomNameOpen: (open: boolean) => void;
   setIsNicknameDialogOpen: (open: boolean) => void;
   setIsThumbnailDialogOpen: (open: boolean) => void;
   setIsOverviewCalendarOpen: (open: boolean) => void;
   setIsSelectCalendarOpen: (open: boolean) => void;
+
+  /** 리셋 섹션 */
   reset: () => void;
 }
 
 export const useRoomStore = create<RoomState>((set) => ({
+  // ── View state ──
   weekIdx: 0,
+  tabIdx: 0,
+  selectedUserId: undefined,
+  setWeekIdx: (idx) => set({ weekIdx: idx }),
+  setTabIdx: (idx) => set({ tabIdx: idx }),
+  setSelectedUserId: (userId) => set({ selectedUserId: userId }),
+
+  // ── User state ──
   nickname: "",
   generatedNickname: "",
   thumbnail: "",
-  tabIdx: 0,
-  selectedUserId: undefined,
-  isTutorialOpen: false,
-  isRoomNameOpen: false,
-  isNicknameDialogOpen: false,
-  isThumbnailDialogOpen: false,
-  isOverviewCalendarOpen: false,
-  isSelectCalendarOpen: false,
+  setNickname: (name) => set({ nickname: name }),
+  setGeneratedNickname: (name) => set({ generatedNickname: name }),
+  setThumbnail: (thumbnail) => set({ thumbnail }),
+
+  // ── Grid state ──
   grid: [],
   init: (rows, cols) => set({ grid: createGrid(rows, cols) }),
   loadFromSlots: (slots, dates, timeSlots) =>
@@ -111,13 +123,14 @@ export const useRoomStore = create<RoomState>((set) => ({
         for (let c = c0; c <= c1; c++) next[r][c] = false;
       return { grid: next };
     }),
-  clear: () => set((s) => ({ grid: s.grid.map((row) => row.map(() => false)) })),
-  setWeekIdx: (idx) => set({ weekIdx: idx }),
-  setNickname: (name) => set({ nickname: name }),
-  setGeneratedNickname: (name) => set({ generatedNickname: name }),
-  setThumbnail: (thumbnail) => set({ thumbnail }),
-  setTabIdx: (idx) => set({ tabIdx: idx }),
-  setSelectedUserId: (userId) => set({ selectedUserId: userId }),
+
+  // ── Dialog / sheet state ──
+  isTutorialOpen: false,
+  isRoomNameOpen: false,
+  isNicknameDialogOpen: false,
+  isThumbnailDialogOpen: false,
+  isOverviewCalendarOpen: false,
+  isSelectCalendarOpen: false,
   setIsTutorialOpen: (open) => set({ isTutorialOpen: open }),
   setIsRoomNameOpen: (open) => set({ isRoomNameOpen: open }),
   setIsNicknameDialogOpen: (open) => set({ isNicknameDialogOpen: open }),
@@ -127,17 +140,17 @@ export const useRoomStore = create<RoomState>((set) => ({
   reset: () =>
     set({
       weekIdx: 0,
+      tabIdx: 0,
+      selectedUserId: undefined,
       nickname: "",
       generatedNickname: "",
       thumbnail: "",
-      tabIdx: 0,
-      selectedUserId: undefined,
+      grid: [],
       isTutorialOpen: false,
       isRoomNameOpen: false,
       isNicknameDialogOpen: false,
       isThumbnailDialogOpen: false,
       isOverviewCalendarOpen: false,
       isSelectCalendarOpen: false,
-      grid: [],
     }),
 }));
