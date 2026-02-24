@@ -5,12 +5,19 @@ function createGrid(rows: number, cols: number): boolean[][] {
   return Array.from({ length: rows }, () => Array(cols).fill(false));
 }
 
+// Zustand store가 들고 있을 상태 모양을 정의 (grid + 조작 메서드)
 interface AvailabilityState {
+  // 화면에 칠해진 현재 가용 상태
   grid: boolean[][];
+  // 방 시간표가 바뀌었을 때 행/열 크기를 맞춰 빈 grid를 생성
   init: (rows: number, cols: number) => void;
+  // 서버에서 내려온 slots 배열을 grid에 반영
   loadFromSlots: (slots: SlotDto[], dates: string[], timeSlots: string[]) => void;
+  // 특정 범위를 선택 상태(true)로 채움
   select: (r0: number, r1: number, c0: number, c1: number) => void;
+  // 특정 범위를 선택 해제(false)
   deselect: (r0: number, r1: number, c0: number, c1: number) => void;
+  // 모든 셀을 false로 초기화
   clear: () => void;
 }
 

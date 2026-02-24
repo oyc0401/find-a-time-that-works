@@ -71,14 +71,30 @@ export default function AvailabilityGrid() {
 
   const { grid, select, deselect } = useAvailabilityStore();
 
+  const [preview, setPreview] = useState<boolean[][]>([]);
+  const [dragMode, setDragMode] = useState<DragMode>("select");
+
   const allSelectedCols = useMemo(
     () =>
-      columns.map(
-        (col) =>
+      columns.map((col, displayIdx) => {
+        const isConfirmedFull =
           rows > 0 &&
-          timeSlots.every((_, rowIdx) => grid[rowIdx]?.[col.storeColIdx] === true),
-      ),
-    [columns, grid, rows, timeSlots],
+          timeSlots.every((_, r) => grid[r]?.[col.storeColIdx] === true);
+
+        // 해당 컬럼 전체 행이 preview 범위에 포함되는지
+        const isFullyInPreview =
+          rows > 0 &&
+          preview.length > 0 &&
+          timeSlots.every((_, r) => preview[r]?.[displayIdx] === true);
+
+        if (isFullyInPreview) {
+          // select 드래그 중 → 선택된 것처럼, deselect 드래그 중 → 해제된 것처럼
+          return dragMode === "select";
+        }
+
+        return isConfirmedFull;
+      }),
+    [columns, grid, rows, timeSlots, preview, dragMode],
   );
 
   const handleDateHeaderClick = useCallback(
@@ -93,9 +109,6 @@ export default function AvailabilityGrid() {
     },
     [columns, allSelectedCols, rows, select, deselect],
   );
-
-  const [preview, setPreview] = useState<boolean[][]>([]);
-  const [dragMode, setDragMode] = useState<DragMode>("select");
 
   const startCell = useRef<Cell | undefined>(undefined);
   const currentRect = useRef<{
