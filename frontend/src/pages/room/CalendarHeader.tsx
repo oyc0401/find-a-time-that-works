@@ -3,7 +3,7 @@ import { adaptive } from "@toss/tds-colors";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { useTranslation } from "react-i18next";
 import { formatDateHeader } from "@/lib/timeSlots";
-import { getHeaderColFromPoint, TIME_WIDTH } from "@/lib/gridUtils";
+import { CELL_W, getHeaderColFromPoint } from "@/lib/gridUtils";
 import type { WeekColumn } from "@/lib/weekGroup";
 
 const LONG_PRESS_MS = 250;
@@ -176,8 +176,8 @@ export default function CalendarHeader({
 
   return (
     <div
-      className="flex"
-      style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
+      className="flex w-max"
+      style={{ touchAction: "none" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -188,8 +188,8 @@ export default function CalendarHeader({
         <div
           key={columns[i].date}
           data-header-col={i}
-          className="flex-1 text-center select-none"
-          style={{ minWidth: 44 }}
+          className="flex-none text-center select-none"
+          style={{ width: CELL_W }}
         >
           <div
             style={{

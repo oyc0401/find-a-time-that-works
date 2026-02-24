@@ -4,6 +4,7 @@ export type Cell = { row: number; col: number };
 export type CornerPos = "lt" | "rt" | "lb" | "rb";
 export const CORNERS: CornerPos[] = ["lt", "rt", "lb", "rb"];
 export const CELL_H = 20;
+export const CELL_W = 56;
 export const CORNER_SIZE = 0;
 export const TIME_WIDTH = 16;
 

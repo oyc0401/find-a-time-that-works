@@ -17,6 +17,7 @@ import {
   CORNERS,
   CELL_H,
   TIME_WIDTH,
+  CELL_W,
   getCellFromPoint,
   isSameCell,
   cornerStyle,
@@ -104,6 +105,35 @@ export default function OverviewTap() {
 
   // ── Clear selection on week change ──
   const prevWeekIdx = useRef(weekIdx);
+  const headerScrollRef = useRef<HTMLDivElement | null>(null);
+  const gridScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const header = headerScrollRef.current;
+    const grid = gridScrollRef.current;
+    if (!header || !grid) return;
+
+    let isSyncing = false;
+    const sync = (source: HTMLDivElement, target: HTMLDivElement) => {
+      if (isSyncing) return;
+      isSyncing = true;
+      target.scrollLeft = source.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
+    };
+
+    const handleHeaderScroll = () => sync(header, grid);
+    const handleGridScroll = () => sync(grid, header);
+
+    header.addEventListener("scroll", handleHeaderScroll, { passive: true });
+    grid.addEventListener("scroll", handleGridScroll, { passive: true });
+
+    return () => {
+      header.removeEventListener("scroll", handleHeaderScroll);
+      grid.removeEventListener("scroll", handleGridScroll);
+    };
+  }, [columns.length]);
   useEffect(() => {
     if (prevWeekIdx.current !== weekIdx) {
       setSelectionRect(undefined);
@@ -348,14 +378,19 @@ export default function OverviewTap() {
           })()}
         </div>
 
-        <CalendarHeader
-          columns={columns}
-          allSelectedCols={allSelectedCols}
-          onTap={(col) => selectHeaderCols(col, col)}
-          onSelect={(dc0, dc1) => selectHeaderCols(dc0, dc1)}
-          onPreview={(dc0, dc1) => previewHeaderCols(dc0, dc1)}
-          onCancelPreview={() => setPreviewRect(undefined)}
-        />
+        <div className="flex">
+          <div className="shrink-0" style={{ width: TIME_WIDTH }} />
+          <div className="flex-1 overflow-x-auto" ref={headerScrollRef}>
+            <CalendarHeader
+              columns={columns}
+              allSelectedCols={allSelectedCols}
+              onTap={(col) => selectHeaderCols(col, col)}
+              onSelect={(dc0, dc1) => selectHeaderCols(dc0, dc1)}
+              onPreview={(dc0, dc1) => previewHeaderCols(dc0, dc1)}
+              onCancelPreview={() => setPreviewRect(undefined)}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Grid body */}
@@ -400,104 +435,106 @@ export default function OverviewTap() {
         </div>
 
         {/* Cells */}
-        <div
-          className="relative flex flex-1"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onLostPointerCapture={onLostPointerCapture}
-        >
-          {columns.map((col, displayIdx) => (
-            <div
-              key={col.date}
-              className="flex flex-1 flex-col"
-              style={{ minWidth: 44 }}
-            >
-              {timeSlots.map((slot, rowIdx) => {
-                const rc = renderGrid[rowIdx]?.[displayIdx];
-                if (!rc) return null;
+        <div className="flex-1 overflow-x-auto" ref={gridScrollRef}>
+          <div
+            className="relative flex w-max"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onLostPointerCapture={onLostPointerCapture}
+          >
+            {columns.map((col, displayIdx) => (
+              <div
+                key={col.date}
+                className="flex flex-col flex-none"
+                style={{ width: CELL_W }}
+              >
+                {timeSlots.map((slot, rowIdx) => {
+                  const rc = renderGrid[rowIdx]?.[displayIdx];
+                  if (!rc) return null;
 
-                const count = rc.center;
-                const isHour = slot.endsWith(":00");
-                const isFilled = count > 0;
-                const cellBg = intensityColor(count, maxCount);
+                  const count = rc.center;
+                  const isHour = slot.endsWith(":00");
+                  const isFilled = count > 0;
+                  const cellBg = intensityColor(count, maxCount);
 
-                return (
-                  <div
-                    key={slot}
-                    data-cell={`${rowIdx},${displayIdx}`}
-                    className={cn(
-                      "relative border-r border-gray-300",
-                      isHour && "border-t border-gray-300",
-                      displayIdx === 0 && "border-l border-gray-300",
-                      rowIdx === timeSlots.length - 1 && "border-b border-gray-300",
-                    )}
-                    style={{ height: CELL_H }}
-                  >
-                    {/* Center fill */}
-                    {isFilled && (
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ backgroundColor: cellBg }}
-                      />
-                    )}
+                  return (
+                    <div
+                      key={slot}
+                      data-cell={`${rowIdx},${displayIdx}`}
+                      className={cn(
+                        "relative border-r border-gray-300",
+                        isHour && "border-t border-gray-300",
+                        displayIdx === 0 && "border-l border-gray-300",
+                        rowIdx === timeSlots.length - 1 && "border-b border-gray-300",
+                      )}
+                      style={{ height: CELL_H }}
+                    >
+                      {/* Center fill */}
+                      {isFilled && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{ backgroundColor: cellBg }}
+                        />
+                      )}
 
-                    {/* Corner rendering */}
-                    {CORNERS.map((pos) => {
-                      const cornerCount = rc[pos];
-                      if (cornerCount === count) return null;
+                      {/* Corner rendering */}
+                      {CORNERS.map((pos) => {
+                        const cornerCount = rc[pos];
+                        if (cornerCount === count) return null;
 
-                      const outerColor =
-                        cornerCount < count
-                          ? baseBg
-                          : intensityColor(cornerCount, maxCount);
-                      const innerColor = cornerCount < count ? cellBg : baseBg;
+                        const outerColor =
+                          cornerCount < count
+                            ? baseBg
+                            : intensityColor(cornerCount, maxCount);
+                        const innerColor = cornerCount < count ? cellBg : baseBg;
 
-                      return (
-                        <div key={`corner-${pos}`}>
-                          {/* Corner color band */}
-                          <div
-                            className="pointer-events-none"
-                            style={{
-                              ...cornerStyle(pos),
-                              backgroundColor: outerColor,
-                            }}
-                          />
-                          {/* Corner cut band */}
-                          <div
-                            className={cn(
-                              "absolute pointer-events-none",
-                              roundClass(pos),
-                            )}
-                            style={{
-                              ...cornerStyle(pos),
-                              backgroundColor: innerColor,
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                        return (
+                          <div key={`corner-${pos}`}>
+                            {/* Corner color band */}
+                            <div
+                              className="pointer-events-none"
+                              style={{
+                                ...cornerStyle(pos),
+                                backgroundColor: outerColor,
+                              }}
+                            />
+                            {/* Corner cut band */}
+                            <div
+                              className={cn(
+                                "absolute pointer-events-none",
+                                roundClass(pos),
+                              )}
+                              style={{
+                                ...cornerStyle(pos),
+                                backgroundColor: innerColor,
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
 
-          {/* Selection overlay */}
-          {overlayRect && displayCols > 0 && (
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                top: overlayRect.r0 * CELL_H,
-                height: (overlayRect.r1 - overlayRect.r0 + 1) * CELL_H,
-                left: `${(overlayRect.dc0 / displayCols) * 100}%`,
-                width: `${((overlayRect.dc1 - overlayRect.dc0 + 1) / displayCols) * 100}%`,
-                backgroundColor: "#c9e2ff60",
-                border: "2px solid #3182f6",
-              }}
-            />
-          )}
+            {/* Selection overlay */}
+            {overlayRect && displayCols > 0 && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  top: overlayRect.r0 * CELL_H,
+                  height: (overlayRect.r1 - overlayRect.r0 + 1) * CELL_H,
+                  left: overlayRect.dc0 * CELL_W,
+                  width: (overlayRect.dc1 - overlayRect.dc0 + 1) * CELL_W,
+                  backgroundColor: "#c9e2ff60",
+                  border: "2px solid #3182f6",
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
 

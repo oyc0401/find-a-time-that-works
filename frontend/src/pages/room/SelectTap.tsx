@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
@@ -21,6 +21,7 @@ import {
   type CornerPos,
   CORNERS,
   CELL_H,
+  CELL_W,
   TIME_WIDTH,
   getCellFromPoint,
   isSameCell,
@@ -118,6 +119,35 @@ export default function SelectTap() {
     dc1: number;
   }>();
   const isHeaderDragging = useRef(false);
+  const headerScrollRef = useRef<HTMLDivElement | null>(null);
+  const gridScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const header = headerScrollRef.current;
+    const grid = gridScrollRef.current;
+    if (!header || !grid) return;
+
+    let isSyncing = false;
+    const sync = (source: HTMLDivElement, target: HTMLDivElement) => {
+      if (isSyncing) return;
+      isSyncing = true;
+      target.scrollLeft = source.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
+    };
+
+    const handleHeaderScroll = () => sync(header, grid);
+    const handleGridScroll = () => sync(grid, header);
+
+    header.addEventListener("scroll", handleHeaderScroll, { passive: true });
+    grid.addEventListener("scroll", handleGridScroll, { passive: true });
+
+    return () => {
+      header.removeEventListener("scroll", handleHeaderScroll);
+      grid.removeEventListener("scroll", handleGridScroll);
+    };
+  }, [columns.length]);
 
   const makeEmptyPreview = useCallback(
     () => Array.from({ length: rows }, () => Array(displayCols).fill(false)),
@@ -345,14 +375,19 @@ export default function SelectTap() {
       </div>
 
       <div className="bg-white px-4">
-        <CalendarHeader
-          columns={columns}
-          allSelectedCols={allSelectedCols}
-          onTap={handleDateHeaderClick}
-          onSelect={handleHeaderSelect}
-          onPreview={handleHeaderPreview}
-          onCancelPreview={handleHeaderCancelPreview}
-        />
+        <div className="flex">
+          <div className="shrink-0" style={{ width: TIME_WIDTH }} />
+          <div className="flex-1 overflow-x-auto" ref={headerScrollRef}>
+            <CalendarHeader
+              columns={columns}
+              allSelectedCols={allSelectedCols}
+              onTap={handleDateHeaderClick}
+              onSelect={handleHeaderSelect}
+              onPreview={handleHeaderPreview}
+              onCancelPreview={handleHeaderCancelPreview}
+            />
+          </div>
+        </div>
       </div>
       {/* Grid body */}
       <div className="mt-2 px-4 flex">
@@ -396,101 +431,101 @@ export default function SelectTap() {
         </div>
 
         {/* Cells */}
-        <div
-          className="flex flex-1"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onLostPointerCapture={onLostPointerCapture}
-        >
-          {columns.map((col, displayIdx) => (
-            <div
-              key={col.date}
-              className="flex flex-1 flex-col"
-              style={{ minWidth: 44 }}
-            >
-              {timeSlots.map((slot, rowIdx) => {
-                const rc = renderGrid[rowIdx]?.[displayIdx];
-                if (!rc) return null;
+        <div className="flex-1 overflow-x-auto" ref={gridScrollRef}>
+          <div
+            className="relative flex w-max"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onLostPointerCapture={onLostPointerCapture}
+          >
+            {columns.map((col, displayIdx) => (
+              <div
+                key={col.date}
+                className="flex flex-col flex-none"
+                style={{ width: CELL_W }}
+              >
+                {timeSlots.map((slot, rowIdx) => {
+                  const rc = renderGrid[rowIdx]?.[displayIdx];
+                  if (!rc) return null;
 
-                const isHour = slot.endsWith(":00");
-                const center = centerOwner(rc);
-                const centerBg = ownerBg(center, dragMode);
+                  const isHour = slot.endsWith(":00");
+                  const center = centerOwner(rc);
+                  const centerBg = ownerBg(center, dragMode);
 
-                return (
-                  <div
-                    key={slot}
-                    data-cell={`${rowIdx},${displayIdx}`}
-                    className={cn(
-                      "relative border-r border-gray-300",
-                      isHour && "border-t border-gray-300",
-                      displayIdx === 0 && "border-l border-gray-300",
-                      rowIdx === timeSlots.length - 1 &&
-                        "border-b border-gray-300",
-                    )}
-                    style={{ height: CELL_H }}
-                  >
-                    {/* Center fill */}
-                    {center !== "empty" && (
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ backgroundColor: centerBg }}
-                      />
-                    )}
-
-                    {/* Corner Color band */}
-                    {CORNERS.map((pos) => {
-                      const corner = cornerOwner(rc, pos);
-                      if (!needsCornerOp(center, corner)) return null;
-
-                      const outerColor =
-                        center !== "empty"
-                          ? corner === "empty"
-                            ? baseBg
-                            : ownerBg(corner, dragMode)
-                          : ownerBg(corner, dragMode);
-
-                      return (
+                  return (
+                    <div
+                      key={slot}
+                      data-cell={`${rowIdx},${displayIdx}`}
+                      className={cn(
+                        "relative border-r border-gray-300",
+                        isHour && "border-t border-gray-300",
+                        displayIdx === 0 && "border-l border-gray-300",
+                        rowIdx === timeSlots.length - 1 &&
+                          "border-b border-gray-300",
+                      )}
+                      style={{ height: CELL_H }}
+                    >
+                      {/* Center fill */}
+                      {center !== "empty" && (
                         <div
-                          key={`corner-color-${pos}`}
-                          className="pointer-events-none"
-                          style={{
-                            ...cornerStyle(pos),
-                            backgroundColor: outerColor,
-                          }}
+                          className="absolute inset-0 pointer-events-none"
+                          style={{ backgroundColor: centerBg }}
                         />
-                      );
-                    })}
+                      )}
 
-                    {/* Corner Cut band */}
-                    {CORNERS.map((pos) => {
-                      const corner = cornerOwner(rc, pos);
-                      if (!needsCornerOp(center, corner)) return null;
+                      {/* Corner Color band */}
+                      {CORNERS.map((pos) => {
+                        const corner = cornerOwner(rc, pos);
+                        if (!needsCornerOp(center, corner)) return null;
 
-                      const innerColor = center !== "empty" ? centerBg : baseBg;
+                        const outerColor =
+                          center !== "empty"
+                            ? corner === "empty"
+                              ? baseBg
+                              : ownerBg(corner, dragMode)
+                            : ownerBg(corner, dragMode);
 
-                      return (
-                        <div
-                          key={`corner-cut-${pos}`}
-                          className={cn(
-                            "absolute pointer-events-none",
-                            roundClass(pos),
-                          )}
-                          style={{
-                            ...cornerStyle(pos),
-                            backgroundColor: innerColor,
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                        return (
+                          <div
+                            key={`corner-color-${pos}`}
+                            className="pointer-events-none"
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: outerColor,
+                            }}
+                          />
+                        );
+                      })}
 
+                      {/* Corner Cut band */}
+                      {CORNERS.map((pos) => {
+                        const corner = cornerOwner(rc, pos);
+                        if (!needsCornerOp(center, corner)) return null;
 
+                        const innerColor = center !== "empty" ? centerBg : baseBg;
+
+                        return (
+                          <div
+                            key={`corner-cut-${pos}`}
+                            className={cn(
+                              "absolute pointer-events-none",
+                              roundClass(pos),
+                            )}
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: innerColor,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <SelectCalendarSheet />
