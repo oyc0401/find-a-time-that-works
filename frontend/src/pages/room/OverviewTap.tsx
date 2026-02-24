@@ -37,6 +37,20 @@ function getCellFromPoint(x: number, y: number): Cell | undefined {
   return { row: r, col: c };
 }
 
+function getHeaderColFromPoint(x: number, y: number): number | undefined {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return undefined;
+  const headerEl = el.closest("[data-header-col]");
+  if (!headerEl) return undefined;
+
+  const attr = headerEl.getAttribute("data-header-col");
+  if (!attr) return undefined;
+
+  const col = Number(attr);
+  if (Number.isNaN(col)) return undefined;
+  return col;
+}
+
 function isSameCell(a: Cell, b: Cell): boolean {
   return a.row === b.row && a.col === b.col;
 }
@@ -80,8 +94,7 @@ export default function OverviewGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const { weekIdx, selectedUserId, setSelectedUserId } =
-    useRoomStore();
+  const { weekIdx, selectedUserId, setSelectedUserId } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -160,7 +173,7 @@ export default function OverviewGrid() {
   const startCell = useRef<Cell | undefined>(undefined);
   const currentRect = useRef<Rect>();
 
-  // ── Drag handlers ──
+  // ── Grid drag handlers ──
   const handleLongPressStart = useCallback((cell: Cell) => {
     setSelectedUserId(undefined);
     startCell.current = cell;
@@ -174,7 +187,7 @@ export default function OverviewGrid() {
     currentRect.current = rect;
     setSelectionRect(undefined);
     setPreviewRect(rect);
-  }, []);
+  }, [setSelectedUserId]);
 
   const handleDrag = useCallback((cell: Cell) => {
     if (!startCell.current) return;
@@ -208,7 +221,7 @@ export default function OverviewGrid() {
         dc1: cell.col,
       };
     });
-  }, []);
+  }, [setSelectedUserId]);
 
   const handleEnd = useCallback(() => {
     const rect = currentRect.current;
@@ -234,6 +247,194 @@ export default function OverviewGrid() {
     onTap: handleTap,
     onEnd: handleEnd,
   });
+
+  // ── Header selection helpers (single / range) ──
+  const selectHeaderCols = useCallback(
+    (colA: number, colB: number) => {
+      if (rows <= 0 || displayCols <= 0) return;
+
+      const dc0 = Math.max(0, Math.min(colA, colB));
+      const dc1 = Math.min(displayCols - 1, Math.max(colA, colB));
+
+      setSelectedUserId(undefined);
+      startCell.current = undefined;
+      currentRect.current = undefined;
+
+      setPreviewRect(undefined);
+      setSelectionRect({
+        r0: 0,
+        r1: rows - 1,
+        dc0,
+        dc1,
+      });
+    },
+    [rows, displayCols, setSelectedUserId],
+  );
+
+  const previewHeaderCols = useCallback(
+    (colA: number, colB: number) => {
+      if (rows <= 0 || displayCols <= 0) return;
+
+      const dc0 = Math.max(0, Math.min(colA, colB));
+      const dc1 = Math.min(displayCols - 1, Math.max(colA, colB));
+
+      setSelectedUserId(undefined);
+      startCell.current = undefined;
+      currentRect.current = undefined;
+
+      setSelectionRect(undefined);
+      setPreviewRect({
+        r0: 0,
+        r1: rows - 1,
+        dc0,
+        dc1,
+      });
+    },
+    [rows, displayCols, setSelectedUserId],
+  );
+
+  const handleDateHeaderClick = useCallback(
+    (colIdx: number) => {
+      selectHeaderCols(colIdx, colIdx);
+    },
+    [selectHeaderCols],
+  );
+
+  // ── Header long-press + drag state ──
+  const headerLongPressTimer = useRef<number | null>(null);
+  const headerPointerId = useRef<number | null>(null);
+  const headerStartCol = useRef<number | null>(null);
+  const headerCurrentCol = useRef<number | null>(null);
+  const headerLongPressActivated = useRef(false);
+  const headerPressStartPoint = useRef<{ x: number; y: number } | null>(null);
+
+  const HEADER_LONG_PRESS_MS = 250;
+  const HEADER_MOVE_CANCEL_PX = 8;
+
+  const clearHeaderLongPressTimer = useCallback(() => {
+    if (headerLongPressTimer.current != null) {
+      window.clearTimeout(headerLongPressTimer.current);
+      headerLongPressTimer.current = null;
+    }
+  }, []);
+
+  const resetHeaderGestureState = useCallback(() => {
+    headerPointerId.current = null;
+    headerStartCol.current = null;
+    headerCurrentCol.current = null;
+    headerLongPressActivated.current = false;
+    headerPressStartPoint.current = null;
+  }, []);
+
+  
+  const onHeaderPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const col = getHeaderColFromPoint(e.clientX, e.clientY);
+      if (col == null) return;
+
+      headerPointerId.current = e.pointerId;
+      headerStartCol.current = col;
+      headerCurrentCol.current = col;
+      headerLongPressActivated.current = false;
+      headerPressStartPoint.current = { x: e.clientX, y: e.clientY };
+
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+
+      clearHeaderLongPressTimer();
+      headerLongPressTimer.current = window.setTimeout(() => {
+        if (headerStartCol.current == null) return;
+        headerLongPressActivated.current = true;
+        previewHeaderCols(headerStartCol.current, headerStartCol.current);
+      }, HEADER_LONG_PRESS_MS);
+    },
+    [clearHeaderLongPressTimer, previewHeaderCols],
+  );
+
+  const onHeaderPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (headerPointerId.current !== e.pointerId) return;
+      if (headerStartCol.current == null) return;
+
+      const startPt = headerPressStartPoint.current;
+
+      if (!headerLongPressActivated.current && startPt) {
+        const dx = e.clientX - startPt.x;
+        const dy = e.clientY - startPt.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > HEADER_MOVE_CANCEL_PX) {
+          clearHeaderLongPressTimer();
+        }
+      }
+
+      if (!headerLongPressActivated.current) return;
+
+      const col = getHeaderColFromPoint(e.clientX, e.clientY);
+      if (col == null) return;
+      if (headerCurrentCol.current === col) return;
+
+      headerCurrentCol.current = col;
+      previewHeaderCols(headerStartCol.current, col);
+    },
+    [clearHeaderLongPressTimer, previewHeaderCols],
+  );
+
+  const finishHeaderGesture = useCallback(() => {
+    clearHeaderLongPressTimer();
+
+    const startCol = headerStartCol.current;
+    const endCol = headerCurrentCol.current;
+
+    if (startCol != null) {
+      if (headerLongPressActivated.current) {
+        const colB = endCol ?? startCol;
+        selectHeaderCols(startCol, colB);
+      } else {
+        handleDateHeaderClick(startCol);
+      }
+    }
+
+    resetHeaderGestureState();
+  }, [
+    clearHeaderLongPressTimer,
+    handleDateHeaderClick,
+    resetHeaderGestureState,
+    selectHeaderCols,
+  ]);
+
+  const onHeaderPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (headerPointerId.current !== e.pointerId) return;
+      finishHeaderGesture();
+    },
+    [finishHeaderGesture],
+  );
+
+  const onHeaderPointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (headerPointerId.current !== e.pointerId) return;
+
+      clearHeaderLongPressTimer();
+      setPreviewRect(undefined);
+      resetHeaderGestureState();
+    },
+    [clearHeaderLongPressTimer, resetHeaderGestureState],
+  );
+
+const onHeaderLostPointerCapture = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (headerPointerId.current !== e.pointerId) return;
+
+      clearHeaderLongPressTimer();
+
+      // 롱프레스 활성 상태였다면 현재 previewRect 유지(혹은 확정하고 싶으면 finishHeaderGesture 호출)
+      if (!headerLongPressActivated.current) {
+        setPreviewRect(undefined);
+      }
+
+      resetHeaderGestureState();
+    },
+    [clearHeaderLongPressTimer, resetHeaderGestureState],
+  );
 
   // ── Participant panel data ──
   const activeRect = previewRect ?? selectionRect;
@@ -273,16 +474,33 @@ export default function OverviewGrid() {
   }, [selectedSlots, participants]);
 
   const weekdays = t("weekdays", { returnObjects: true }) as string[];
-  const dateHeaders = columns.map((col) =>
-    formatDateHeader(col.date, weekdays),
-  );
+  const dateHeaders = columns.map((col) => formatDateHeader(col.date, weekdays));
   const baseBg = "white";
 
   const overlayRect = previewRect ?? selectionRect;
 
+  const allSelectedCols = useMemo<boolean[]>(() => {
+  const result = Array.from({ length: displayCols }, () => false);
+
+  if (!overlayRect) return result;
+
+  const isFullRowSelection =
+    rows > 0 && overlayRect.r0 === 0 && overlayRect.r1 === rows - 1;
+
+  if (!isFullRowSelection) return result;
+
+  for (let c = overlayRect.dc0; c <= overlayRect.dc1; c++) {
+    if (c >= 0 && c < displayCols) result[c] = true;
+  }
+
+  return result;
+}, [overlayRect, displayCols, rows]);
+
+
   return (
     <div className="w-full pb-32">
       <WeekNavigation onDateClick={() => setIsOverviewCalendarOpen(true)} />
+
       <div className="bg-white px-4">
         {/* Participant badges */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
@@ -306,6 +524,7 @@ export default function OverviewGrid() {
               if (!aIsMe && bIsMe) return 1;
               return 0;
             });
+
             return sorted.map((p) => {
               const name = p.name;
               const pUserId = "userId" in p ? p.userId : undefined;
@@ -327,28 +546,47 @@ export default function OverviewGrid() {
             });
           })()}
         </div>
-        <div className="flex w-full" style={{ paddingLeft: TIME_WIDTH }}>
+
+        {/* Date headers (tap: single column, long-press + drag: multi columns) */}
+        <div
+          className="flex w-full"
+          style={{ paddingLeft: TIME_WIDTH, touchAction: "pan-y" }}
+          onPointerDown={onHeaderPointerDown}
+          onPointerMove={onHeaderPointerMove}
+          onPointerUp={onHeaderPointerUp}
+          onPointerCancel={onHeaderPointerCancel}
+          onLostPointerCapture={onHeaderLostPointerCapture}
+        >
           {dateHeaders.map((h, i) => (
-            <div
-              key={columns[i].date}
-              className="flex-1 text-center"
-              style={{ minWidth: 44 }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  color:
-                    h.dayOfWeek === 0
-                      ? adaptive.red400
-                      : h.dayOfWeek === 6
-                        ? adaptive.blue300
-                        : adaptive.grey500,
-                }}
-              >
-                {`${h.day} (${h.weekday})`}
-              </div>
-            </div>
-          ))}
+    <div
+      key={columns[i].date}
+      data-header-col={i}
+      className="flex-1 text-center select-none"
+      style={{ minWidth: 44 }}
+    >
+      <button
+        type="button"
+        className="w-full cursor-pointer"
+
+      >
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: allSelectedCols[i] ? 700 : 400,
+            color: allSelectedCols[i]
+              ? adaptive.blue400
+              : h.dayOfWeek === 0
+                ? adaptive.red400
+                : h.dayOfWeek === 6
+                  ? adaptive.blue300
+                  : adaptive.grey500,
+          }}
+        >
+          {`${h.day} (${h.weekday})`}
+        </div>
+      </button>
+    </div>
+  ))}
         </div>
       </div>
 
@@ -425,8 +663,7 @@ export default function OverviewGrid() {
                       "relative border-r border-gray-300",
                       isHour && "border-t border-gray-300",
                       displayIdx === 0 && "border-l border-gray-300",
-                      rowIdx === timeSlots.length - 1 &&
-                        "border-b border-gray-300",
+                      rowIdx === timeSlots.length - 1 && "border-b border-gray-300",
                     )}
                     style={{ height: CELL_H }}
                   >
@@ -490,8 +727,6 @@ export default function OverviewGrid() {
                 width: `${((overlayRect.dc1 - overlayRect.dc0 + 1) / displayCols) * 100}%`,
                 backgroundColor: "#c9e2ff60",
                 border: "2px solid #3182f6",
-                // outline: "2px solid #3182f6",
-                // outlineOffset: "-1px",
               }}
             />
           )}
