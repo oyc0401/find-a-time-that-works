@@ -105,35 +105,6 @@ export default function OverviewTap() {
 
   // ── Clear selection on week change ──
   const prevWeekIdx = useRef(weekIdx);
-  const headerScrollRef = useRef<HTMLDivElement | null>(null);
-  const gridScrollRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const header = headerScrollRef.current;
-    const grid = gridScrollRef.current;
-    if (!header || !grid) return;
-
-    let isSyncing = false;
-    const sync = (source: HTMLDivElement, target: HTMLDivElement) => {
-      if (isSyncing) return;
-      isSyncing = true;
-      target.scrollLeft = source.scrollLeft;
-      requestAnimationFrame(() => {
-        isSyncing = false;
-      });
-    };
-
-    const handleHeaderScroll = () => sync(header, grid);
-    const handleGridScroll = () => sync(grid, header);
-
-    header.addEventListener("scroll", handleHeaderScroll, { passive: true });
-    grid.addEventListener("scroll", handleGridScroll, { passive: true });
-
-    return () => {
-      header.removeEventListener("scroll", handleHeaderScroll);
-      grid.removeEventListener("scroll", handleGridScroll);
-    };
-  }, [columns.length]);
   useEffect(() => {
     if (prevWeekIdx.current !== weekIdx) {
       setSelectionRect(undefined);
@@ -378,25 +349,12 @@ export default function OverviewTap() {
           })()}
         </div>
 
-        <div className="flex">
-          <div className="shrink-0" style={{ width: TIME_WIDTH }} />
-          <div className="flex-1 overflow-x-auto" ref={headerScrollRef}>
-            <CalendarHeader
-              columns={columns}
-              allSelectedCols={allSelectedCols}
-              onTap={(col) => selectHeaderCols(col, col)}
-              onSelect={(dc0, dc1) => selectHeaderCols(dc0, dc1)}
-              onPreview={(dc0, dc1) => previewHeaderCols(dc0, dc1)}
-              onCancelPreview={() => setPreviewRect(undefined)}
-            />
-          </div>
-        </div>
       </div>
 
       {/* Grid body */}
-      <div className="mt-2 px-4 flex">
+      <div className="pl-4 flex flex-row">
         {/* Time labels */}
-        <div className="shrink-0" style={{ width: TIME_WIDTH }}>
+        <div className="shrink-0 pt-7" style={{ width: TIME_WIDTH }}>
           {timeSlots.map((slot) => {
             const isHour = slot.endsWith(":00");
             const hour = Number.parseInt(slot.split(":")[0]);
@@ -435,9 +393,18 @@ export default function OverviewTap() {
         </div>
 
         {/* Cells */}
-        <div className="flex-1 overflow-x-auto" ref={gridScrollRef}>
+        <div className="overflow-x-auto">
+          <div className="w-max pr-4">
+            <CalendarHeader
+              columns={columns}
+              allSelectedCols={allSelectedCols}
+              onTap={(col) => selectHeaderCols(col, col)}
+              onSelect={(dc0, dc1) => selectHeaderCols(dc0, dc1)}
+              onPreview={(dc0, dc1) => previewHeaderCols(dc0, dc1)}
+              onCancelPreview={() => setPreviewRect(undefined)}
+            />
           <div
-            className="relative flex w-max"
+            className="mt-2 relative flex w-max"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -534,6 +501,7 @@ export default function OverviewTap() {
                 }}
               />
             )}
+          </div>
           </div>
         </div>
       </div>

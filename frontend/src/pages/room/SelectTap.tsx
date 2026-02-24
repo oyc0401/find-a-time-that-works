@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
@@ -119,35 +119,6 @@ export default function SelectTap() {
     dc1: number;
   }>();
   const isHeaderDragging = useRef(false);
-  const headerScrollRef = useRef<HTMLDivElement | null>(null);
-  const gridScrollRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const header = headerScrollRef.current;
-    const grid = gridScrollRef.current;
-    if (!header || !grid) return;
-
-    let isSyncing = false;
-    const sync = (source: HTMLDivElement, target: HTMLDivElement) => {
-      if (isSyncing) return;
-      isSyncing = true;
-      target.scrollLeft = source.scrollLeft;
-      requestAnimationFrame(() => {
-        isSyncing = false;
-      });
-    };
-
-    const handleHeaderScroll = () => sync(header, grid);
-    const handleGridScroll = () => sync(grid, header);
-
-    header.addEventListener("scroll", handleHeaderScroll, { passive: true });
-    grid.addEventListener("scroll", handleGridScroll, { passive: true });
-
-    return () => {
-      header.removeEventListener("scroll", handleHeaderScroll);
-      grid.removeEventListener("scroll", handleGridScroll);
-    };
-  }, [columns.length]);
 
   const makeEmptyPreview = useCallback(
     () => Array.from({ length: rows }, () => Array(displayCols).fill(false)),
@@ -374,25 +345,11 @@ export default function SelectTap() {
         </div>
       </div>
 
-      <div className="bg-white px-4">
-        <div className="flex">
-          <div className="shrink-0" style={{ width: TIME_WIDTH }} />
-          <div className="flex-1 overflow-x-auto" ref={headerScrollRef}>
-            <CalendarHeader
-              columns={columns}
-              allSelectedCols={allSelectedCols}
-              onTap={handleDateHeaderClick}
-              onSelect={handleHeaderSelect}
-              onPreview={handleHeaderPreview}
-              onCancelPreview={handleHeaderCancelPreview}
-            />
-          </div>
-        </div>
-      </div>
+      
       {/* Grid body */}
-      <div className="mt-2 px-4 flex">
+      <div className="pl-4 flex flex-row">
         {/* Time labels */}
-        <div className="shrink-0" style={{ width: TIME_WIDTH }}>
+        <div className="shrink-0 pt-7" style={{ width: TIME_WIDTH }}>
           {timeSlots.map((slot) => {
             const isHour = slot.endsWith(":00");
             const hour = Number.parseInt(slot.split(":")[0]);
@@ -431,9 +388,18 @@ export default function SelectTap() {
         </div>
 
         {/* Cells */}
-        <div className="flex-1 overflow-x-auto" ref={gridScrollRef}>
+        <div className="overflow-x-auto" >
+         <div className="w-max pr-4">
+             <CalendarHeader
+              columns={columns}
+              allSelectedCols={allSelectedCols}
+              onTap={handleDateHeaderClick}
+              onSelect={handleHeaderSelect}
+              onPreview={handleHeaderPreview}
+              onCancelPreview={handleHeaderCancelPreview}
+            />
           <div
-            className="relative flex w-max"
+            className="mt-2 relative flex w-max"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -526,6 +492,10 @@ export default function SelectTap() {
               </div>
             ))}
           </div>
+         </div>
+
+         
+        
         </div>
       </div>
       <SelectCalendarSheet />
