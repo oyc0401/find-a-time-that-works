@@ -8,7 +8,9 @@ import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { heatColor } from "@/lib/heatColor";
-import CalendarGrid, { type CalendarCellModel } from "../../../components/CalendarGrid";
+import CalendarGridSub, {
+  type CalendarCellModel,
+} from "../../../components/CalendarGridSub";
 
 const W = 7;
 const H = 5;
@@ -76,31 +78,28 @@ function HeatmapCalendarView({
       const center = rc.center;
       const isPast = cell.date < todayStart;
       const dateKey = toDateKey(cell.date);
-      const count = dateCountMap.get(dateKey) ?? 0;
+	      const count = dateCountMap.get(dateKey) ?? 0;
 
       const centerBg = center > 0 ? countToHeatBg(center, maxCount) : undefined;
-      const isRoomDate = highlightedDates.has(dateKey);
       const textColor =
-        center > 0 && count / maxCount > 0.5
-          ? "#fff"
-          : isPast || !isRoomDate
-            ? adaptive.grey400
-            : adaptive.grey800;
+        center > 0 && count / maxCount > 0.5 ? "#fff" : adaptive.grey600;
 
-      return {
-        hidden: cell.hidden,
-        day: cell.day,
-        text: center > 0 ? String(count) : undefined,
-        isToday: cell.isToday,
-        textColor,
-        center: centerBg,
-        lt: countToHeatBg(rc.lt, maxCount),
-        rt: countToHeatBg(rc.rt, maxCount),
-        lb: countToHeatBg(rc.lb, maxCount),
-        rb: countToHeatBg(rc.rb, maxCount),
+      const subTexts = center > 0 ? [String(count)] : undefined;
+
+	      return {
+	        hidden: cell.hidden,
+	        day: cell.day,
+	        isToday: cell.isToday,
+	        textColor,
+	        center: centerBg,
+	        lt: countToHeatBg(rc.lt, maxCount),
+	        rt: countToHeatBg(rc.rt, maxCount),
+	        lb: countToHeatBg(rc.lb, maxCount),
+	        rb: countToHeatBg(rc.rb, maxCount),
+        subTexts,
       };
-    });
-  }, [cells, renderGrid, dateCountMap, maxCount]);
+	    });
+	  }, [cells, renderGrid, dateCountMap, maxCount]);
 
   const handleCellClick = useCallback(
     (idx: number) => {
@@ -114,7 +113,7 @@ function HeatmapCalendarView({
   );
 
   return (
-    <CalendarGrid
+    <CalendarGridSub
       cells={calendarCells}
       onCellClick={handleCellClick}
     />
@@ -167,11 +166,11 @@ export default function OverviewCalendarSheet() {
         map.get(slot.date)?.add(p.name);
       }
     }
-    const result = new Map<string, number>();
+    const countResult = new Map<string, number>();
     for (const [date, names] of map) {
-      result.set(date, names.size);
+      countResult.set(date, names.size);
     }
-    return result;
+    return countResult;
   }, [filteredParticipants]);
 
   const handleDateClick = useCallback(
