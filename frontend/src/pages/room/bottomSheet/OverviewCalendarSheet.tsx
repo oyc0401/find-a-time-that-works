@@ -130,14 +130,14 @@ export default function OverviewCalendarSheet() {
   const setIsOverviewCalendarOpen = useRoomStore(
     (state) => state.setIsOverviewCalendarOpen,
   );
-  const selectedUserId = useRoomStore((state) => state.selectedUserId);
+  const selectedUserIds = useRoomStore((state) => state.selectedUserIds);
 
   const filteredParticipants = useMemo(
     () =>
-      selectedUserId
-        ? participants.filter((p) => p.userId === selectedUserId)
+      selectedUserIds.length > 0
+        ? participants.filter((p) => selectedUserIds.includes(p.userId))
         : participants,
-    [participants, selectedUserId],
+    [participants, selectedUserIds],
   );
 
   const highlightedDates = useMemo(
