@@ -11,79 +11,23 @@ import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { heatColor } from "@/lib/heatColor";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
+import { useHeaderLongPressDrag } from "@/hooks/useHeaderLongPressDrag";
 import { useTranslation } from "react-i18next";
 import { getUserId } from "@/repository/userId";
+import {
+  type Cell,
+  CORNERS,
+  CELL_H,
+  TIME_WIDTH,
+  getCellFromPoint,
+  isSameCell,
+  cornerStyle,
+  roundClass,
+} from "@/lib/gridUtils";
 import OverviewCalendarSheet from "./bottomSheet/OverviewCalendarSheet";
 import WeekNavigation from "./WeekNavigation";
 
-const CELL_H = 20;
-const CORNER_SIZE = 0;
-const TIME_WIDTH = 16;
-
-type Cell = { row: number; col: number };
 type Rect = { r0: number; r1: number; dc0: number; dc1: number };
-type CornerPos = "lt" | "rt" | "lb" | "rb";
-const CORNERS: CornerPos[] = ["lt", "rt", "lb", "rb"];
-
-function getCellFromPoint(x: number, y: number): Cell | undefined {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return undefined;
-  const cellEl = el.closest("[data-cell]");
-  if (!cellEl) return undefined;
-  const attr = cellEl.getAttribute("data-cell");
-  if (!attr) return undefined;
-  const [r, c] = attr.split(",").map(Number);
-  if (Number.isNaN(r) || Number.isNaN(c)) return undefined;
-  return { row: r, col: c };
-}
-
-function getHeaderColFromPoint(x: number, y: number): number | undefined {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return undefined;
-  const headerEl = el.closest("[data-header-col]");
-  if (!headerEl) return undefined;
-
-  const attr = headerEl.getAttribute("data-header-col");
-  if (!attr) return undefined;
-
-  const col = Number(attr);
-  if (Number.isNaN(col)) return undefined;
-  return col;
-}
-
-function isSameCell(a: Cell, b: Cell): boolean {
-  return a.row === b.row && a.col === b.col;
-}
-
-function cornerStyle(pos: CornerPos): React.CSSProperties {
-  const s: React.CSSProperties = {
-    position: "absolute",
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    pointerEvents: "none",
-  };
-  if (pos === "lt") {
-    s.top = 0;
-    s.left = 0;
-  } else if (pos === "rt") {
-    s.top = 0;
-    s.right = 0;
-  } else if (pos === "lb") {
-    s.bottom = 0;
-    s.left = 0;
-  } else {
-    s.bottom = 0;
-    s.right = 0;
-  }
-  return s;
-}
-
-function roundClass(pos: CornerPos) {
-  if (pos === "lt") return "rounded-tl";
-  if (pos === "rt") return "rounded-tr";
-  if (pos === "lb") return "rounded-bl";
-  return "rounded-br";
-}
 
 function intensityColor(count: number, max: number): string {
   if (count === 0 || max === 0) return "transparent";
@@ -293,148 +237,14 @@ export default function OverviewGrid() {
     [rows, displayCols, setSelectedUserId],
   );
 
-  const handleDateHeaderClick = useCallback(
-    (colIdx: number) => {
-      selectHeaderCols(colIdx, colIdx);
-    },
-    [selectHeaderCols],
-  );
-
-  // ── Header long-press + drag state ──
-  const headerLongPressTimer = useRef<number | null>(null);
-  const headerPointerId = useRef<number | null>(null);
-  const headerStartCol = useRef<number | null>(null);
-  const headerCurrentCol = useRef<number | null>(null);
-  const headerLongPressActivated = useRef(false);
-  const headerPressStartPoint = useRef<{ x: number; y: number } | null>(null);
-
-  const HEADER_LONG_PRESS_MS = 250;
-  const HEADER_MOVE_CANCEL_PX = 8;
-
-  const clearHeaderLongPressTimer = useCallback(() => {
-    if (headerLongPressTimer.current != null) {
-      window.clearTimeout(headerLongPressTimer.current);
-      headerLongPressTimer.current = null;
-    }
-  }, []);
-
-  const resetHeaderGestureState = useCallback(() => {
-    headerPointerId.current = null;
-    headerStartCol.current = null;
-    headerCurrentCol.current = null;
-    headerLongPressActivated.current = false;
-    headerPressStartPoint.current = null;
-  }, []);
-
-  
-  const onHeaderPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const col = getHeaderColFromPoint(e.clientX, e.clientY);
-      if (col == null) return;
-
-      headerPointerId.current = e.pointerId;
-      headerStartCol.current = col;
-      headerCurrentCol.current = col;
-      headerLongPressActivated.current = false;
-      headerPressStartPoint.current = { x: e.clientX, y: e.clientY };
-
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-
-      clearHeaderLongPressTimer();
-      headerLongPressTimer.current = window.setTimeout(() => {
-        if (headerStartCol.current == null) return;
-        headerLongPressActivated.current = true;
-        previewHeaderCols(headerStartCol.current, headerStartCol.current);
-      }, HEADER_LONG_PRESS_MS);
-    },
-    [clearHeaderLongPressTimer, previewHeaderCols],
-  );
-
-  const onHeaderPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (headerPointerId.current !== e.pointerId) return;
-      if (headerStartCol.current == null) return;
-
-      const startPt = headerPressStartPoint.current;
-
-      if (!headerLongPressActivated.current && startPt) {
-        const dx = e.clientX - startPt.x;
-        const dy = e.clientY - startPt.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > HEADER_MOVE_CANCEL_PX) {
-          clearHeaderLongPressTimer();
-        }
-      }
-
-      if (!headerLongPressActivated.current) return;
-
-      const col = getHeaderColFromPoint(e.clientX, e.clientY);
-      if (col == null) return;
-      if (headerCurrentCol.current === col) return;
-
-      headerCurrentCol.current = col;
-      previewHeaderCols(headerStartCol.current, col);
-    },
-    [clearHeaderLongPressTimer, previewHeaderCols],
-  );
-
-  const finishHeaderGesture = useCallback(() => {
-    clearHeaderLongPressTimer();
-
-    const startCol = headerStartCol.current;
-    const endCol = headerCurrentCol.current;
-
-    if (startCol != null) {
-      if (headerLongPressActivated.current) {
-        const colB = endCol ?? startCol;
-        selectHeaderCols(startCol, colB);
-      } else {
-        handleDateHeaderClick(startCol);
-      }
-    }
-
-    resetHeaderGestureState();
-  }, [
-    clearHeaderLongPressTimer,
-    handleDateHeaderClick,
-    resetHeaderGestureState,
-    selectHeaderCols,
-  ]);
-
-  const onHeaderPointerUp = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (headerPointerId.current !== e.pointerId) return;
-      finishHeaderGesture();
-    },
-    [finishHeaderGesture],
-  );
-
-  const onHeaderPointerCancel = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (headerPointerId.current !== e.pointerId) return;
-
-      clearHeaderLongPressTimer();
-      setPreviewRect(undefined);
-      resetHeaderGestureState();
-    },
-    [clearHeaderLongPressTimer, resetHeaderGestureState],
-  );
-
-const onHeaderLostPointerCapture = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (headerPointerId.current !== e.pointerId) return;
-
-      clearHeaderLongPressTimer();
-
-      // 롱프레스 활성 상태였다면 현재 previewRect 유지(혹은 확정하고 싶으면 finishHeaderGesture 호출)
-      if (!headerLongPressActivated.current) {
-        setPreviewRect(undefined);
-      }
-
-      resetHeaderGestureState();
-    },
-    [clearHeaderLongPressTimer, resetHeaderGestureState],
-  );
+  // ── Header long-press + drag ──
+  const headerHandlers = useHeaderLongPressDrag({
+    displayCols,
+    onTap: (col) => selectHeaderCols(col, col),
+    onSelect: (dc0, dc1) => selectHeaderCols(dc0, dc1),
+    onPreview: (dc0, dc1) => previewHeaderCols(dc0, dc1),
+    onCancelPreview: () => setPreviewRect(undefined),
+  });
 
   // ── Participant panel data ──
   const activeRect = previewRect ?? selectionRect;
@@ -480,21 +290,21 @@ const onHeaderLostPointerCapture = useCallback(
   const overlayRect = previewRect ?? selectionRect;
 
   const allSelectedCols = useMemo<boolean[]>(() => {
-  const result = Array.from({ length: displayCols }, () => false);
+    const result = Array.from({ length: displayCols }, () => false);
 
-  if (!overlayRect) return result;
+    if (!overlayRect) return result;
 
-  const isFullRowSelection =
-    rows > 0 && overlayRect.r0 === 0 && overlayRect.r1 === rows - 1;
+    const isFullRowSelection =
+      rows > 0 && overlayRect.r0 === 0 && overlayRect.r1 === rows - 1;
 
-  if (!isFullRowSelection) return result;
+    if (!isFullRowSelection) return result;
 
-  for (let c = overlayRect.dc0; c <= overlayRect.dc1; c++) {
-    if (c >= 0 && c < displayCols) result[c] = true;
-  }
+    for (let c = overlayRect.dc0; c <= overlayRect.dc1; c++) {
+      if (c >= 0 && c < displayCols) result[c] = true;
+    }
 
-  return result;
-}, [overlayRect, displayCols, rows]);
+    return result;
+  }, [overlayRect, displayCols, rows]);
 
 
   return (
@@ -551,42 +361,37 @@ const onHeaderLostPointerCapture = useCallback(
         <div
           className="flex w-full"
           style={{ paddingLeft: TIME_WIDTH, touchAction: "pan-y" }}
-          onPointerDown={onHeaderPointerDown}
-          onPointerMove={onHeaderPointerMove}
-          onPointerUp={onHeaderPointerUp}
-          onPointerCancel={onHeaderPointerCancel}
-          onLostPointerCapture={onHeaderLostPointerCapture}
+          {...headerHandlers}
         >
           {dateHeaders.map((h, i) => (
-    <div
-      key={columns[i].date}
-      data-header-col={i}
-      className="flex-1 text-center select-none"
-      style={{ minWidth: 44 }}
-    >
-      <button
-        type="button"
-        className="w-full cursor-pointer"
-
-      >
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: allSelectedCols[i] ? 700 : 400,
-            color: allSelectedCols[i]
-              ? adaptive.blue400
-              : h.dayOfWeek === 0
-                ? adaptive.red400
-                : h.dayOfWeek === 6
-                  ? adaptive.blue300
-                  : adaptive.grey500,
-          }}
-        >
-          {`${h.day} (${h.weekday})`}
-        </div>
-      </button>
-    </div>
-  ))}
+            <div
+              key={columns[i].date}
+              data-header-col={i}
+              className="flex-1 text-center select-none"
+              style={{ minWidth: 44 }}
+            >
+              <button
+                type="button"
+                className="w-full cursor-pointer"
+              >
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: allSelectedCols[i] ? 700 : 400,
+                    color: allSelectedCols[i]
+                      ? adaptive.blue400
+                      : h.dayOfWeek === 0
+                        ? adaptive.red400
+                        : h.dayOfWeek === 6
+                          ? adaptive.blue300
+                          : adaptive.grey500,
+                  }}
+                >
+                  {`${h.day} (${h.weekday})`}
+                </div>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

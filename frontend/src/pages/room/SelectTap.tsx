@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
 import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
@@ -16,66 +16,20 @@ import { useTranslation } from "react-i18next";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useLongPressDrag } from "@/hooks/useLongPressDrag";
+import { useHeaderLongPressDrag } from "@/hooks/useHeaderLongPressDrag";
+import {
+  type Cell,
+  type CornerPos,
+  CORNERS,
+  CELL_H,
+  TIME_WIDTH,
+  getCellFromPoint,
+  isSameCell,
+  cornerStyle,
+  roundClass,
+} from "@/lib/gridUtils";
 import WeekNavigation from "./WeekNavigation";
 import SelectCalendarSheet from "./bottomSheet/SelectCalendarSheet";
-
-const CELL_H = 20;
-const CORNER_SIZE = 0;
-
-type Cell = { row: number; col: number };
-
-function getCellFromPoint(x: number, y: number): Cell | undefined {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return undefined;
-  const cellEl = el.closest("[data-cell]");
-  if (!cellEl) return undefined;
-  const attr = cellEl.getAttribute("data-cell");
-  if (!attr) return undefined;
-  const [r, c] = attr.split(",").map(Number);
-  if (Number.isNaN(r) || Number.isNaN(c)) return undefined;
-  return { row: r, col: c };
-}
-
-function isSameCell(a: Cell, b: Cell): boolean {
-  return a.row === b.row && a.col === b.col;
-}
-
-// =====================
-// Corner rendering
-// =====================
-
-type CornerPos = "lt" | "rt" | "lb" | "rb";
-const CORNERS: CornerPos[] = ["lt", "rt", "lb", "rb"];
-
-function cornerStyle(pos: CornerPos): React.CSSProperties {
-  const s: React.CSSProperties = {
-    position: "absolute",
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    pointerEvents: "none",
-  };
-  if (pos === "lt") {
-    s.top = 0;
-    s.left = 0;
-  } else if (pos === "rt") {
-    s.top = 0;
-    s.right = 0;
-  } else if (pos === "lb") {
-    s.bottom = 0;
-    s.left = 0;
-  } else {
-    s.bottom = 0;
-    s.right = 0;
-  }
-  return s;
-}
-
-function roundClass(pos: CornerPos) {
-  if (pos === "lt") return "rounded-tl";
-  if (pos === "rt") return "rounded-tr";
-  if (pos === "lb") return "rounded-bl";
-  return "rounded-br";
-}
 
 function centerOwner(rc: RenderCell): Owner {
   return rc.lt.center;
@@ -104,7 +58,7 @@ export default function AvailabilityGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { weekIdx, nickname } = useRoomStore();
+  const { weekIdx } = useRoomStore();
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -142,6 +96,18 @@ export default function AvailabilityGrid() {
 
   const [preview, setPreview] = useState<boolean[][]>([]);
   const [dragMode, setDragMode] = useState<DragMode>("select");
+
+  // ── Header drag preview ──
+  const [headerPreviewCols, setHeaderPreviewCols] = useState<{ dc0: number; dc1: number }>();
+
+  // Clear header preview on week change
+  const prevWeekIdx = useRef(weekIdx);
+  useEffect(() => {
+    if (prevWeekIdx.current !== weekIdx) {
+      setHeaderPreviewCols(undefined);
+      prevWeekIdx.current = weekIdx;
+    }
+  }, [weekIdx]);
 
   const startCell = useRef<Cell | undefined>(undefined);
   const currentRect = useRef<{
@@ -279,6 +245,36 @@ export default function AvailabilityGrid() {
     onEnd: handleEnd,
   });
 
+  // ── Header long-press + drag ──
+  const handleHeaderSelect = useCallback(
+    (dc0: number, dc1: number) => {
+      const mode = allSelectedCols[dc0] ? "deselect" : "select";
+      for (let dc = dc0; dc <= dc1; dc++) {
+        const sc = columns[dc]?.storeColIdx;
+        if (sc === undefined) continue;
+        if (mode === "select") select(0, rows - 1, sc, sc);
+        else deselect(0, rows - 1, sc, sc);
+      }
+    },
+    [allSelectedCols, columns, rows, select, deselect],
+  );
+
+  const headerHandlers = useHeaderLongPressDrag({
+    displayCols,
+    onTap: handleDateHeaderClick,
+    onSelect: handleHeaderSelect,
+    onPreview: (dc0, dc1) => setHeaderPreviewCols({ dc0, dc1 }),
+    onCancelPreview: () => setHeaderPreviewCols(undefined),
+  });
+
+  const isInHeaderPreview = useCallback(
+    (i: number) => {
+      if (!headerPreviewCols) return false;
+      return i >= headerPreviewCols.dc0 && i <= headerPreviewCols.dc1;
+    },
+    [headerPreviewCols],
+  );
+
   const { setIsSelectCalendarOpen } = useRoomStore();
 
   const selectedDatesSet = useMemo(() => {
@@ -315,7 +311,6 @@ export default function AvailabilityGrid() {
   );
   const baseBg = "white";
 
-  const TIME_WIDTH = 16;
   return (
     <div className="w-full pb-32">
       <div className="">
@@ -345,35 +340,34 @@ export default function AvailabilityGrid() {
       </div>
 
       <div className="bg-white px-4">
-        {/* Date headers */}
-        <div className="flex " style={{ paddingLeft: TIME_WIDTH }}>
+        {/* Date headers (tap: single column toggle, long-press + drag: multi columns) */}
+        <div
+          className="flex"
+          style={{ paddingLeft: TIME_WIDTH, touchAction: "pan-y" }}
+          {...headerHandlers}
+        >
           {dateHeaders.map((h, i) => (
             <div
               key={columns[i].date}
-              className="flex-1 text-center"
+              data-header-col={i}
+              className="flex-1 text-center select-none"
               style={{ minWidth: 44 }}
             >
-              <button
-                type="button"
-                className="w-full cursor-pointer"
-                onClick={() => handleDateHeaderClick(i)}
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: (allSelectedCols[i] || isInHeaderPreview(i)) ? 700 : 400,
+                  color: (allSelectedCols[i] || isInHeaderPreview(i))
+                    ? adaptive.blue400
+                    : h.dayOfWeek === 0
+                      ? adaptive.red400
+                      : h.dayOfWeek === 6
+                        ? adaptive.blue300
+                        : adaptive.grey500,
+                }}
               >
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: allSelectedCols[i] ? 700 : 400,
-                    color: allSelectedCols[i]
-                      ? adaptive.blue400
-                      : h.dayOfWeek === 0
-                        ? adaptive.red400
-                        : h.dayOfWeek === 6
-                          ? adaptive.blue300
-                          : adaptive.grey500,
-                  }}
-                >
-                  {`${h.day} (${h.weekday})`}
-                </div>
-              </button>
+                {`${h.day} (${h.weekday})`}
+              </div>
             </div>
           ))}
         </div>
