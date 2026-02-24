@@ -36,7 +36,9 @@ export default function OverviewGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const { weekIdx, selectedUserId, setSelectedUserId } = useRoomStore();
+  const weekIdx = useRoomStore((state) => state.weekIdx);
+  const selectedUserId = useRoomStore((state) => state.selectedUserId);
+  const setSelectedUserId = useRoomStore((state) => state.setSelectedUserId);
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -96,7 +98,9 @@ export default function OverviewGrid() {
     [countGrid],
   );
 
-  const { setIsOverviewCalendarOpen } = useRoomStore();
+  const setIsOverviewCalendarOpen = useRoomStore(
+    (state) => state.setIsOverviewCalendarOpen,
+  );
 
   // ── Clear selection on week change ──
   const prevWeekIdx = useRef(weekIdx);

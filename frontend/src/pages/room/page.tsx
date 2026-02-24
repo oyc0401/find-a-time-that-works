@@ -18,7 +18,6 @@ import { adaptive } from "@toss/tds-colors";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
-import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useSubmitAvailability } from "@/hooks/useSubmitAvailability";
 import { getUserId } from "@/repository/userId";
@@ -47,15 +46,17 @@ export default function Room() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { room, participants, isLoading } = useRoomData(id);
-  const {
-    tabIdx,
-    setTabIdx,
-    setIsTutorialOpen,
-    setIsRoomNameOpen,
-    setIsNicknameDialogOpen,
-    setIsThumbnailDialogOpen,
-    reset,
-  } = useRoomStore();
+  const tabIdx = useRoomStore((state) => state.tabIdx);
+  const setTabIdx = useRoomStore((state) => state.setTabIdx);
+  const setIsTutorialOpen = useRoomStore((state) => state.setIsTutorialOpen);
+  const setIsRoomNameOpen = useRoomStore((state) => state.setIsRoomNameOpen);
+  const setIsNicknameDialogOpen = useRoomStore(
+    (state) => state.setIsNicknameDialogOpen,
+  );
+  const setIsThumbnailDialogOpen = useRoomStore(
+    (state) => state.setIsThumbnailDialogOpen,
+  );
+  const reset = useRoomStore((state) => state.reset);
 
   useEffect(() => {
     reset();
@@ -121,7 +122,7 @@ export default function Room() {
     if (!room) return;
 
     const timeSlots = generateTimeSlots(room.startTime, room.endTime);
-    const store = useAvailabilityStore.getState();
+    const store = useRoomStore.getState();
 
     if (!loadedRef.current) {
       loadedRef.current = true;
@@ -137,14 +138,12 @@ export default function Room() {
           myParticipant?.name ?? savedNickname ?? generatedNickname;
         const thumbnail =
           myParticipant?.thumbnail ?? (await getDefaultThumbnail());
-        const store = useRoomStore.getState();
-        store.setNickname(nickname);
-        store.setGeneratedNickname(generatedNickname);
-        store.setThumbnail(thumbnail);
+        const roomStore = useRoomStore.getState();
+        roomStore.setNickname(nickname);
+        roomStore.setGeneratedNickname(generatedNickname);
+        roomStore.setThumbnail(thumbnail);
         if (myParticipant && myParticipant.slots.length > 0) {
-          useAvailabilityStore
-            .getState()
-            .loadFromSlots(myParticipant.slots, room.dates, timeSlots);
+          roomStore.loadFromSlots(myParticipant.slots, room.dates, timeSlots);
         }
         enable();
       });

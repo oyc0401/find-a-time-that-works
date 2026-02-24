@@ -17,7 +17,8 @@ export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { weeks } = useRoomData(id);
-  const { weekIdx, setWeekIdx } = useRoomStore();
+  const weekIdx = useRoomStore((state) => state.weekIdx);
+  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
 
   const weekLabel = useMemo(() => {
     const currentWeek = weeks[weekIdx];

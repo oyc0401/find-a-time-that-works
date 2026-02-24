@@ -7,7 +7,8 @@ import { handleShare } from "@/lib/share";
 export default function TutorialSheet() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { isTutorialOpen, setIsTutorialOpen } = useRoomStore();
+  const isTutorialOpen = useRoomStore((state) => state.isTutorialOpen);
+  const setIsTutorialOpen = useRoomStore((state) => state.setIsTutorialOpen);
 
   return (
     <BottomSheet

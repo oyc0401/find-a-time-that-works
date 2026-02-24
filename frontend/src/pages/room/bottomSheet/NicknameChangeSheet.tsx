@@ -8,12 +8,16 @@ import { setSavedNickname } from "@/repository/nickname";
 export default function NicknameChangeSheet() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const {
-    nickname,
-    generatedNickname,
-    isNicknameDialogOpen,
-    setIsNicknameDialogOpen,
-  } = useRoomStore();
+  const nickname = useRoomStore((state) => state.nickname);
+  const generatedNickname = useRoomStore(
+    (state) => state.generatedNickname,
+  );
+  const isNicknameDialogOpen = useRoomStore(
+    (state) => state.isNicknameDialogOpen,
+  );
+  const setIsNicknameDialogOpen = useRoomStore(
+    (state) => state.setIsNicknameDialogOpen,
+  );
   const [nicknameInput, setNicknameInput] = useState("");
 
   useEffect(() => {

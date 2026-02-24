@@ -11,8 +11,13 @@ import {
 
 export default function ThumbnailChangeSheet() {
   const { t } = useTranslation();
-  const { thumbnail, isThumbnailDialogOpen, setIsThumbnailDialogOpen } =
-    useRoomStore();
+  const thumbnail = useRoomStore((state) => state.thumbnail);
+  const isThumbnailDialogOpen = useRoomStore(
+    (state) => state.isThumbnailDialogOpen,
+  );
+  const setIsThumbnailDialogOpen = useRoomStore(
+    (state) => state.setIsThumbnailDialogOpen,
+  );
   const [selectedThumbnail, setSelectedThumbnail] = useState("");
 
   useEffect(() => {

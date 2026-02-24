@@ -15,7 +15,8 @@ export default function RoomNameChangeSheet() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room } = useRoomData(id);
-  const { isRoomNameOpen, setIsRoomNameOpen } = useRoomStore();
+  const isRoomNameOpen = useRoomStore((state) => state.isRoomNameOpen);
+  const setIsRoomNameOpen = useRoomStore((state) => state.setIsRoomNameOpen);
   const { mutate: updateRoomName } = useRoomsControllerUpdateRoomName();
   const queryClient = useQueryClient();
   const [roomNameInput, setRoomNameInput] = useState("");

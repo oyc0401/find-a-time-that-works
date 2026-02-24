@@ -11,7 +11,6 @@ import {
   type DragMode,
   buildRenderDragGrid,
 } from "@/lib/renderDragGrid";
-import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useTranslation } from "react-i18next";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -58,7 +57,10 @@ export default function AvailabilityGrid() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { weekIdx } = useRoomStore();
+  const weekIdx = useRoomStore((state) => state.weekIdx);
+  const grid = useRoomStore((state) => state.grid);
+  const select = useRoomStore((state) => state.select);
+  const deselect = useRoomStore((state) => state.deselect);
   const columns = weeks[weekIdx]?.columns ?? [];
 
   const timeSlots = useMemo(
@@ -68,8 +70,6 @@ export default function AvailabilityGrid() {
   );
   const rows = timeSlots.length;
   const displayCols = columns.length;
-
-  const { grid, select, deselect } = useAvailabilityStore();
 
   const [preview, setPreview] = useState<boolean[][]>([]);
   const [dragMode, setDragMode] = useState<DragMode>("select");
@@ -282,7 +282,9 @@ export default function AvailabilityGrid() {
     setPreview(makeEmptyPreview());
   }, [makeEmptyPreview]);
 
-  const { setIsSelectCalendarOpen } = useRoomStore();
+  const setIsSelectCalendarOpen = useRoomStore(
+    (state) => state.setIsSelectCalendarOpen,
+  );
 
   const selectedDatesSet = useMemo(() => {
     const dates = room?.dates ?? [];

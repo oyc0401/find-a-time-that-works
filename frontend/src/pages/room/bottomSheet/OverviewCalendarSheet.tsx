@@ -125,12 +125,14 @@ export default function OverviewCalendarSheet() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { room, participants, weeks } = useRoomData(id);
-  const {
-    isOverviewCalendarOpen,
-    setIsOverviewCalendarOpen,
-    setWeekIdx,
-    selectedUserId,
-  } = useRoomStore();
+  const isOverviewCalendarOpen = useRoomStore(
+    (state) => state.isOverviewCalendarOpen,
+  );
+  const setIsOverviewCalendarOpen = useRoomStore(
+    (state) => state.setIsOverviewCalendarOpen,
+  );
+  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
+  const selectedUserId = useRoomStore((state) => state.selectedUserId);
 
   const filteredParticipants = useMemo(
     () =>

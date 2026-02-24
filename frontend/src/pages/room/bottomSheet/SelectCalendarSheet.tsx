@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { BottomSheet } from "@toss/tds-mobile";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
-import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
@@ -143,9 +142,14 @@ function CalendarView({
 export default function SelectCalendarSheet() {
   const { id } = useParams<{ id: string }>();
   const { room, weeks } = useRoomData(id);
-  const { isSelectCalendarOpen, setIsSelectCalendarOpen, setWeekIdx } =
-    useRoomStore();
-  const { grid } = useAvailabilityStore();
+  const isSelectCalendarOpen = useRoomStore(
+    (state) => state.isSelectCalendarOpen,
+  );
+  const setIsSelectCalendarOpen = useRoomStore(
+    (state) => state.setIsSelectCalendarOpen,
+  );
+  const setWeekIdx = useRoomStore((state) => state.setWeekIdx);
+  const grid = useRoomStore((state) => state.grid);
 
   const highlightedDates = useMemo(
     () => new Set(room?.dates ?? []),

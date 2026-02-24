@@ -26,12 +26,14 @@ export default function ParticipantList({
   const { id } = useParams<{ id: string }>();
   const nickname = useRoomStore((s) => s.nickname);
   const thumbnail = useRoomStore((s) => s.thumbnail);
-  const {
-    setTabIdx,
-    setSelectedUserId,
-    setIsNicknameDialogOpen,
-    setIsThumbnailDialogOpen,
-  } = useRoomStore();
+  const setTabIdx = useRoomStore((state) => state.setTabIdx);
+  const setSelectedUserId = useRoomStore((state) => state.setSelectedUserId);
+  const setIsNicknameDialogOpen = useRoomStore(
+    (state) => state.setIsNicknameDialogOpen,
+  );
+  const setIsThumbnailDialogOpen = useRoomStore(
+    (state) => state.setIsThumbnailDialogOpen,
+  );
   const [myUserId, setMyUserId] = useState<string>();
 
   useEffect(() => {

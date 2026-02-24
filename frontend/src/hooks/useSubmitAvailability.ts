@@ -8,7 +8,6 @@ import {
 import type { AvailabilitySlotDto } from "@/api/model/models";
 import { getUserId } from "@/repository/userId";
 import { generateTimeSlots } from "@/lib/timeSlots";
-import { useAvailabilityStore } from "@/stores/useAvailabilityStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 
 function gridToSlots(
@@ -51,7 +50,7 @@ export function useSubmitAvailability(roomId?: string) {
 
       const room = cached.data.data.room;
       const timeSlots = generateTimeSlots(room.startTime, room.endTime);
-      const grid = useAvailabilityStore.getState().grid;
+      const grid = useRoomStore.getState().grid;
       const slots = gridToSlots(grid, room.dates, timeSlots);
 
       getUserId().then((userId) => {
@@ -82,7 +81,7 @@ export function useSubmitAvailability(roomId?: string) {
   useEffect(() => {
     if (!roomId) return;
 
-    const unsub = useAvailabilityStore.subscribe((state, prev) => {
+    const unsub = useRoomStore.subscribe((state, prev) => {
       if (state.grid === prev.grid) return;
       if (!enabledRef.current) return;
       submitCurrent(roomId);
