@@ -1,31 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import {
   graniteEvent,
   generateHapticFeedback,
 } from "@apps-in-toss/web-framework";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Asset,
   Border,
   BottomCTA,
-  BottomSheet,
-  Button,
-  Checkbox,
   CTAButton,
-  FixedBottomCTA,
   Loader,
   Menu,
-  Post,
   Tab,
-  TextField,
   Top,
 } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import {
-  getRoomsControllerFindByIdQueryKey,
-  useRoomsControllerUpdateRoomName,
-} from "@/api/model/rooms/rooms";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
@@ -37,22 +26,20 @@ import { generateTimeSlots } from "@/lib/timeSlots";
 import {
   getSavedNickname,
   getGeneratedNickname,
-  setSavedNickname,
 } from "@/repository/nickname";
-import {
-  getDefaultThumbnail,
-  setDefaultThumbnail,
-  THUMBNAILS,
-  thumbnailUrl,
-} from "@/repository/thumbnail";
+import { getDefaultThumbnail } from "@/repository/thumbnail";
 import { Repository } from "@/repository/repository";
 import { handleShare } from "@/lib/share";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { WifiOff } from "lucide-react";
 import { truncateTitle } from "@/lib/truncateTitle";
 import AvailabilityGrid from "./SelectTap";
 import OverviewGrid from "./OverviewTap";
 import ParticipantList from "./ParticipantTap";
+import TutorialSheet from "./bottomSheet/TutorialSheet";
+import RoomNameChangeSheet from "./bottomSheet/RoomNameChangeSheet";
+import NicknameChangeSheet from "./bottomSheet/NicknameChangeSheet";
+import ThumbnailChangeSheet from "./bottomSheet/ThumbnailChangeSheet";
 
 export default function Room() {
   const { t } = useTranslation();
@@ -63,20 +50,12 @@ export default function Room() {
   const {
     tabIdx,
     setTabIdx,
-    nickname,
-    generatedNickname,
-    thumbnail,
-    isTutorialOpen,
-    isRoomNameOpen,
-    isNicknameDialogOpen,
-    isThumbnailDialogOpen,
     setIsTutorialOpen,
     setIsRoomNameOpen,
     setIsNicknameDialogOpen,
     setIsThumbnailDialogOpen,
   } = useRoomStore();
   const { enable } = useSubmitAvailability(id);
-  const queryClient = useQueryClient();
 
   const roomTitle = useMemo(() => {
     if (room?.name) return room.name;
@@ -108,70 +87,6 @@ export default function Room() {
 
   // ── Settings menu ──
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // ── Room name bottom sheet ── (open 상태는 useRoomStore에서 관리)
-  const [roomNameInput, setRoomNameInput] = useState("");
-  const { mutate: updateRoomName } = useRoomsControllerUpdateRoomName();
-
-  const handleRoomNameOpen = useCallback(() => {
-    if (!room) return;
-    setRoomNameInput(room.name || "");
-    setIsRoomNameOpen(true);
-  }, [room]);
-
-  const handleRoomNameSave = useCallback(() => {
-    const trimmed = roomNameInput.trim();
-    if (!trimmed || !id) return;
-
-    getUserId().then((userId) => {
-      updateRoomName(
-        { id, data: { creatorId: userId, name: trimmed } },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({
-              queryKey: getRoomsControllerFindByIdQueryKey(id),
-            });
-            setIsRoomNameOpen(false);
-          },
-        },
-      );
-    });
-  }, [roomNameInput, id, updateRoomName, queryClient]);
-
-  // ── Nickname bottom sheet ──
-  const [nicknameInput, setNicknameInput] = useState("");
-
-  useEffect(() => {
-    if (isNicknameDialogOpen) {
-      setNicknameInput(nickname === generatedNickname ? "" : nickname);
-    }
-  }, [isNicknameDialogOpen, nickname, generatedNickname]);
-
-  const handleNicknameSave = useCallback(() => {
-    const trimmed = nicknameInput.trim();
-    if (!trimmed || !id) return;
-
-    useRoomStore.getState().setNickname(trimmed);
-    setSavedNickname(trimmed); // 항상 저장
-    setIsNicknameDialogOpen(false);
-  }, [nicknameInput, id, setIsNicknameDialogOpen]);
-
-  // ── Thumbnail bottom sheet ──
-  const [selectedThumbnail, setSelectedThumbnail] = useState("");
-
-  useEffect(() => {
-    if (isThumbnailDialogOpen) {
-      setSelectedThumbnail(thumbnail);
-    }
-  }, [isThumbnailDialogOpen, thumbnail]);
-
-  const handleThumbnailSave = useCallback(() => {
-    if (!selectedThumbnail) return;
-
-    useRoomStore.getState().setThumbnail(selectedThumbnail);
-    setDefaultThumbnail(selectedThumbnail);
-    setIsThumbnailDialogOpen(false);
-  }, [selectedThumbnail, setIsThumbnailDialogOpen]);
 
   useEffect(() => {
     if (searchParams.get("created") === "true" && id) {
@@ -255,7 +170,7 @@ export default function Room() {
             <button
               type="button"
               className="cursor-pointer active:scale-[0.97] transition-transform"
-              onClick={handleRoomNameOpen}
+              onClick={() => setIsRoomNameOpen(true)}
             >
               <Top.TitleParagraph size={28} color={adaptive.grey900}>
                 {truncateTitle(roomTitle)}
@@ -316,7 +231,7 @@ export default function Room() {
                       <Menu.DropdownItem
                         onClick={() => {
                           setIsMenuOpen(false);
-                          handleRoomNameOpen();
+                          setIsRoomNameOpen(true);
                         }}
                       >
                         {t("room.renameTitle")}
@@ -376,197 +291,10 @@ export default function Room() {
         }
       />
 
-      <BottomSheet
-        open={isTutorialOpen}
-        onClose={() => setIsTutorialOpen(false)}
-        header={<BottomSheet.Header>{t("room.created")}</BottomSheet.Header>}
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsTutorialOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button
-                onClick={() => {
-                  handleShare(id ?? "");
-                }}
-              >
-                {t("common.invite")}
-              </Button>
-            }
-          />
-        }
-      >
-        <Post.Ol>
-          <Post.Li>
-            <Trans
-              i18nKey="room.tutorial.step1"
-              components={{ strong: <strong /> }}
-            />
-          </Post.Li>
-          <Post.Li>
-            <Trans
-              i18nKey="room.tutorial.step2"
-              components={{ strong: <strong /> }}
-            />
-          </Post.Li>
-          <Post.Li>
-            <Trans
-              i18nKey="room.tutorial.step3"
-              components={{ strong: <strong /> }}
-            />
-          </Post.Li>
-        </Post.Ol>
-      </BottomSheet>
-
-      <BottomSheet
-        open={isRoomNameOpen}
-        onClose={() => setIsRoomNameOpen(false)}
-        header={
-          <BottomSheet.Header>{t("room.renameTitle")}</BottomSheet.Header>
-        }
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsRoomNameOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button
-                onClick={handleRoomNameSave}
-                disabled={!roomNameInput.trim()}
-              >
-                {t("common.save")}
-              </Button>
-            }
-          />
-        }
-      >
-        <TextField
-          variant="box"
-          label={t("room.renameLabel")}
-          labelOption="sustain"
-          placeholder={t("room.renamePlaceholder")}
-          value={roomNameInput}
-          onChange={(e) => setRoomNameInput(e.target.value)}
-        />
-      </BottomSheet>
-
-      {/* ── Nickname Bottom Sheet ── */}
-      <BottomSheet
-        open={isNicknameDialogOpen}
-        onClose={() => setIsNicknameDialogOpen(false)}
-        header={
-          <BottomSheet.Header>{t("participant.changeName")}</BottomSheet.Header>
-        }
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsNicknameDialogOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button
-                onClick={handleNicknameSave}
-                disabled={!nicknameInput.trim()}
-              >
-                {t("common.save")}
-              </Button>
-            }
-          />
-        }
-      >
-        <TextField
-          variant="box"
-          label={t("participant.nameLabel")}
-          labelOption="sustain"
-          placeholder={
-            nickname === generatedNickname
-              ? generatedNickname
-              : t("participant.namePlaceholder")
-          }
-          value={nicknameInput}
-          onChange={(e) => setNicknameInput(e.target.value)}
-        />
-      </BottomSheet>
-
-      {/* ── Thumbnail Bottom Sheet ── */}
-      <BottomSheet
-        open={isThumbnailDialogOpen}
-        onClose={() => setIsThumbnailDialogOpen(false)}
-        header={
-          <BottomSheet.Header>
-            {t("participant.changeProfile")}
-          </BottomSheet.Header>
-        }
-        cta={
-          <BottomSheet.DoubleCTA
-            leftButton={
-              <Button
-                variant="weak"
-                color="dark"
-                onClick={() => setIsThumbnailDialogOpen(false)}
-              >
-                {t("common.close")}
-              </Button>
-            }
-            rightButton={
-              <Button onClick={handleThumbnailSave}>{t("common.save")}</Button>
-            }
-          />
-        }
-      >
-        <div
-          className="grid px-4 py-2"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit, 84px)",
-            justifyContent: "space-evenly",
-            justifyItems: "center",
-          }}
-        >
-          {THUMBNAILS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className="flex cursor-pointer items-center justify-center w-[84px] h-[84px]"
-              onClick={() => setSelectedThumbnail(t)}
-            >
-              <div
-                style={{
-                  padding: 8,
-                  background:
-                    selectedThumbnail === t
-                      ? adaptive.grey300
-                      : adaptive.grey100,
-                  borderRadius: 9999,
-                }}
-              >
-                <Asset.Image
-                  src={thumbnailUrl(t)}
-                  frameShape={Asset.frameShape.Circle2XLarge}
-                  scale={0.9}
-                />
-              </div>
-            </button>
-          ))}
-        </div>
-      </BottomSheet>
+      <TutorialSheet />
+      <RoomNameChangeSheet />
+      <NicknameChangeSheet />
+      <ThumbnailChangeSheet />
     </div>
   );
 }
