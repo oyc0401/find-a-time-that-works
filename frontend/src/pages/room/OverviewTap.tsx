@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { adaptive } from "@toss/tds-colors";
-import { BottomCTA, BottomSheet, FixedBottomCTA } from "@toss/tds-mobile";
 import Badge from "@/components/Badge";
-import { handleShare } from "@/lib/share";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots, formatDateHeader } from "@/lib/timeSlots";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
@@ -359,8 +357,8 @@ export default function OverviewGrid() {
 
         {/* Date headers (tap: single column, long-press + drag: multi columns) */}
         <div
-          className="flex w-full"
-          style={{ paddingLeft: TIME_WIDTH, touchAction: "pan-y" }}
+          className="flex"
+          style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
           {...headerHandlers}
         >
           {dateHeaders.map((h, i) => (
@@ -370,26 +368,21 @@ export default function OverviewGrid() {
               className="flex-1 text-center select-none"
               style={{ minWidth: 44 }}
             >
-              <button
-                type="button"
-                className="w-full cursor-pointer"
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: allSelectedCols[i] ? 700 : 400,
+                  color: allSelectedCols[i]
+                    ? adaptive.blue400
+                    : h.dayOfWeek === 0
+                      ? adaptive.red400
+                      : h.dayOfWeek === 6
+                        ? adaptive.blue300
+                        : adaptive.grey500,
+                }}
               >
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: allSelectedCols[i] ? 700 : 400,
-                    color: allSelectedCols[i]
-                      ? adaptive.blue400
-                      : h.dayOfWeek === 0
-                        ? adaptive.red400
-                        : h.dayOfWeek === 6
-                          ? adaptive.blue300
-                          : adaptive.grey500,
-                  }}
-                >
-                  {`${h.day} (${h.weekday})`}
-                </div>
-              </button>
+                {`${h.day} (${h.weekday})`}
+              </div>
             </div>
           ))}
         </div>

@@ -137,24 +137,33 @@ export function useHeaderLongPressDrag({
     [clearLongPressTimer, onSelect, onCancelPreview, onTap, resetState],
   );
 
+  const confirmOrCancelDrag = useCallback(() => {
+    if (longPressActivatedRef.current && startColRef.current != null) {
+      const start = startColRef.current;
+      const end = currentColRef.current ?? start;
+      onSelect(Math.min(start, end), Math.max(start, end));
+    }
+    onCancelPreview?.();
+  }, [onSelect, onCancelPreview]);
+
   const onPointerCancel = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
       clearLongPressTimer();
-      onCancelPreview?.();
+      confirmOrCancelDrag();
       resetState();
     },
-    [clearLongPressTimer, onCancelPreview, resetState],
+    [clearLongPressTimer, confirmOrCancelDrag, resetState],
   );
 
   const onLostPointerCapture = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (pointerIdRef.current !== e.pointerId) return;
       clearLongPressTimer();
-      onCancelPreview?.();
+      confirmOrCancelDrag();
       resetState();
     },
-    [clearLongPressTimer, onCancelPreview, resetState],
+    [clearLongPressTimer, confirmOrCancelDrag, resetState],
   );
 
   return {

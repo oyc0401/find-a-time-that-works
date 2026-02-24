@@ -343,7 +343,7 @@ export default function AvailabilityGrid() {
         {/* Date headers (tap: single column toggle, long-press + drag: multi columns) */}
         <div
           className="flex"
-          style={{ paddingLeft: TIME_WIDTH, touchAction: "pan-y" }}
+          style={{ paddingLeft: TIME_WIDTH, touchAction: "none" }}
           {...headerHandlers}
         >
           {dateHeaders.map((h, i) => (
