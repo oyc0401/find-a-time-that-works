@@ -76,8 +76,6 @@ export default function OverviewTap() {
     return map;
   }, [filteredParticipants]);
 
-  const maxCount = selectedUserId ? 1 : participants.length;
-
   const countGrid = useMemo(() => {
     const result: number[][] = [];
     for (let r = 0; r < rows; r++) {
@@ -91,6 +89,16 @@ export default function OverviewTap() {
     }
     return result;
   }, [rows, displayCols, columns, timeSlots, countMap]);
+
+  const maxCount = useMemo(() => {
+    let max = 1;
+    for (const row of countGrid) {
+      for (const val of row) {
+        if (val > max) max = val;
+      }
+    }
+    return max;
+  }, [countGrid]);
 
   const renderGrid = useMemo(
     () => (countGrid.length > 0 ? buildRenderGrid2(countGrid) : []),

@@ -140,8 +140,6 @@ export default function OverviewCalendarSheet() {
     [participants, selectedUserId],
   );
 
-  const maxCount = selectedUserId ? 1 : participants.length;
-
   const highlightedDates = useMemo(
     () => new Set(room?.dates ?? []),
     [room?.dates],
@@ -171,6 +169,14 @@ export default function OverviewCalendarSheet() {
     }
     return countResult;
   }, [filteredParticipants]);
+
+  const maxCount = useMemo(() => {
+    let max = 1;
+    for (const val of dateCountMap.values()) {
+      if (val > max) max = val;
+    }
+    return max;
+  }, [dateCountMap]);
 
   const handleDateClick = useCallback(() => {
     setIsOverviewCalendarOpen(false);

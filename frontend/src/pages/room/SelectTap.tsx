@@ -317,9 +317,9 @@ export default function SelectTap() {
 
   return (
     <div className="w-full pb-32">
-      <div className="">
+  
         <WeekNavigation onDateClick={() => setIsSelectCalendarOpen(true)} />
-      </div>
+ 
       {/* Guide / Selected dates */}
       <div
         className="flex items-center pl-4 pr-2 pb-2"
@@ -328,7 +328,7 @@ export default function SelectTap() {
         }}
       >
         <div
-          className="flex items-center pl-1 pb-2.5 pt-1.5 pr-2 min-w-0"
+          className="flex items-center pl-1 pb-3 pt-1 pr-2 min-w-0"
           style={{
             fontSize: 16,
             fontWeight: 500,
