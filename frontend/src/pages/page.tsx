@@ -8,8 +8,8 @@ import {
   Top,
 } from "@toss/tds-mobile";
 import { adaptive } from "@toss/tds-colors";
-import DateSelector from "../components/DateSelector";
-import TimeSlider from "../components/TimeSlider";
+import DateSelector from "./DateSelector";
+import TimeSlider from "./TimeSlider";
 import {
   useRoomsControllerCreate,
   useRoomsControllerFindById,

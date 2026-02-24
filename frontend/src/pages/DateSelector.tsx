@@ -13,7 +13,7 @@ import {
   type RenderCell,
   buildRenderDragGrid,
 } from "@/lib/renderDragGrid";
-import CalendarGrid2, { type CalendarCellModel } from "./CalendarGrid2";
+import CalendarGrid2, { type CalendarCellModel } from "../components/CalendarGrid2";
 
 // =====================
 // Grid constants

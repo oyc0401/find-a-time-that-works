@@ -1,7 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ApiErrorAlert } from "./components/ApiErrorAlert";
-import Home from "./pages/Home";
+import Home from "./pages/page";
 
 const Room = lazy(() => import("./pages/room/page"));
 
