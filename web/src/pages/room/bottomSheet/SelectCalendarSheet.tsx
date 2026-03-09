@@ -1,0 +1,195 @@
+import { useCallback, useMemo,useState } from "react";
+import { useParams } from "react-router-dom";
+import { BottomSheet } from "@toss/tds-mobile";
+import { useRoomData } from "@/hooks/useRoomData";
+import { useRoomStore } from "@/stores/useRoomStore";
+import { adaptive } from "@toss/tds-colors";
+import { buildCalendarCells } from "@/lib/calendar";
+import { buildRenderGrid2 } from "@/lib/renderGrid2";
+import CalendarGrid, { type CalendarCellModel } from "../../../components/CalendarGrid";
+
+
+const W = 7;
+const H = 5;
+
+function toDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function countColor(count: number) {
+  if (count === 3) return { bg: adaptive.blue300, whiteText: true };
+  if (count === 2) return { bg: adaptive.blue200, whiteText: true };
+  if (count === 1) return { bg: adaptive.blue100, whiteText: false };
+  return { bg: "white", whiteText: false };
+}
+
+interface CalendarViewProps {
+  baseDate: Date;
+  highlightedDates: Set<string>;
+  selectedDates?: Set<string>;
+  onDateClick?: (dateKey: string) => void;
+}
+
+function CalendarView({
+  baseDate,
+  highlightedDates,
+  selectedDates,
+  onDateClick,
+}: CalendarViewProps) {
+  const cells = useMemo(() => buildCalendarCells(baseDate), [baseDate]);
+  const [pressedIdx, setPressedIdx] = useState<number | undefined>(undefined);
+
+  const countGrid = useMemo(() => {
+    const grid: number[][] = Array.from({ length: H }, () => Array(W).fill(0));
+    for (let i = 0; i < cells.length; i++) {
+      const key = toDateKey(cells[i].date);
+      if (!highlightedDates.has(key)) continue;
+      const r = Math.floor(i / W);
+      const c = i % W;
+      if (i === pressedIdx) {
+        grid[r][c] = 1;
+      } else if (selectedDates?.has(key)) {
+        grid[r][c] = 3;
+      } else {
+        grid[r][c] = 2;
+      }
+    }
+    return grid;
+  }, [cells, highlightedDates, selectedDates, pressedIdx]);
+
+  const renderGrid = useMemo(
+    () => buildRenderGrid2(countGrid),
+    [countGrid],
+  );
+
+  const calendarCells: CalendarCellModel[] = useMemo(() => {
+    const today = new Date();
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
+    return cells.map((cell, idx) => {
+      const r = Math.floor(idx / W);
+      const c = idx % W;
+      const rc = renderGrid[r][c];
+      const center = rc.center;
+      const isPast = cell.date < todayStart;
+
+      const { bg, whiteText } = countColor(center);
+      const centerBg = center > 0 ? bg : undefined;
+      const textColor =
+        center > 0 && whiteText
+          ? "#ffffff"
+          : isPast
+            ? adaptive.grey400
+            : adaptive.grey800;
+
+      return {
+        hidden: cell.hidden,
+        day: cell.day,
+        isToday: cell.isToday,
+        textColor,
+        center: centerBg,
+        lt: countColor(rc.lt).bg,
+        rt: countColor(rc.rt).bg,
+        lb: countColor(rc.lb).bg,
+        rb: countColor(rc.rb).bg,
+      };
+    });
+  }, [cells, renderGrid]);
+
+  const handlePressStart = useCallback(
+    (idx: number) => {
+      const cell = cells[idx];
+      if (!cell) return;
+      if (highlightedDates.has(toDateKey(cell.date))) {
+        setPressedIdx(idx);
+      }
+    },
+    [cells, highlightedDates],
+  );
+
+  const handlePressEnd = useCallback(() => {
+    setPressedIdx(undefined);
+  }, []);
+
+  const handleCellClick = useCallback(
+    (idx: number) => {
+      const cell = cells[idx];
+      if (!cell) return;
+      const key = toDateKey(cell.date);
+      if (!highlightedDates.has(key)) return;
+      onDateClick?.(key);
+    },
+    [cells, highlightedDates, onDateClick],
+  );
+
+  return (
+    <CalendarGrid
+      cells={calendarCells}
+      onCellClick={handleCellClick}
+      onCellPressStart={handlePressStart}
+      onCellPressEnd={handlePressEnd}
+    />
+  );
+}
+
+export default function SelectCalendarSheet() {
+  const { id } = useParams<{ id: string }>();
+  const { room } = useRoomData(id);
+  const isSelectCalendarOpen = useRoomStore(
+    (state) => state.isSelectCalendarOpen,
+  );
+  const setIsSelectCalendarOpen = useRoomStore(
+    (state) => state.setIsSelectCalendarOpen,
+  );
+  const grid = useRoomStore((state) => state.grid);
+
+  const highlightedDates = useMemo(
+    () => new Set(room?.dates ?? []),
+    [room?.dates],
+  );
+
+  const calendarBaseDate = useMemo(() => {
+    const dates = room?.dates ?? [];
+    if (dates.length === 0) return new Date();
+    const earliest = dates.reduce((min, d) => (d < min ? d : min), dates[0]);
+    const [y, m, d] = earliest.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }, [room?.dates]);
+
+  const selectedDatesSet = useMemo(() => {
+    const dates = room?.dates ?? [];
+    const set = new Set<string>();
+    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
+      if (grid.some((row) => row[colIdx])) {
+        set.add(dates[colIdx]);
+      }
+    }
+    return set;
+  }, [room?.dates, grid]);
+
+  const handleDateClick = useCallback(() => {
+    setIsSelectCalendarOpen(false);
+  }, [setIsSelectCalendarOpen]);
+
+  return (
+    <BottomSheet
+      open={isSelectCalendarOpen}
+      onClose={() => setIsSelectCalendarOpen(false)}
+      header={<BottomSheet.Header>날짜</BottomSheet.Header>}
+    >
+      <CalendarView
+        baseDate={calendarBaseDate}
+        highlightedDates={highlightedDates}
+        selectedDates={selectedDatesSet}
+        onDateClick={handleDateClick}
+      />
+    </BottomSheet>
+  );
+}

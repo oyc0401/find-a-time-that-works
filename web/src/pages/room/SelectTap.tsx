@@ -1,0 +1,485 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { adaptive } from "@toss/tds-colors";
+import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
+import { cn } from "@/lib/cn";
+import { handleShare } from "@/lib/share";
+import { generateTimeSlots } from "@/lib/timeSlots";
+import {
+  type Owner,
+  type RenderCell,
+  type DragMode,
+  buildRenderDragGrid,
+} from "@/lib/renderDragGrid";
+import { useTranslation } from "react-i18next";
+import { useRoomData } from "@/hooks/useRoomData";
+import { useRoomStore } from "@/stores/useRoomStore";
+import { useLongPressDrag } from "@/hooks/useLongPressDrag";
+import CalendarHeader from "./CalendarHeader";
+import {
+  type Cell,
+  type CornerPos,
+  CORNERS,
+  CELL_H,
+  CELL_W,
+  TIME_WIDTH,
+  getCellFromPoint,
+  isSameCell,
+  cornerStyle,
+  roundClass,
+} from "@/lib/gridUtils";
+import WeekNavigation from "./WeekNavigation";
+import SelectCalendarSheet from "./bottomSheet/SelectCalendarSheet";
+
+function centerOwner(rc: RenderCell): Owner {
+  return rc.lt.center;
+}
+
+function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
+  if (pos === "lt") return rc.lt.corner;
+  if (pos === "rt") return rc.rt.corner;
+  if (pos === "lb") return rc.lb.corner;
+  return rc.rb.corner;
+}
+
+function ownerBg(owner: Owner, dragMode: DragMode) {
+  if (owner === "confirmed") return adaptive.blue400;
+  if (owner === "preview")
+    return dragMode === "select" ? adaptive.blue200 : adaptive.blue100;
+  return "transparent";
+}
+
+function needsCornerOp(center: Owner, corner: Owner) {
+  if (center !== "empty") return corner !== center;
+  return corner !== "empty";
+}
+
+export default function SelectTap() {
+  const { t } = useTranslation();
+  const { id } = useParams<{ id: string }>();
+  const { room, columns } = useRoomData(id);
+  const grid = useRoomStore((state) => state.grid);
+  const select = useRoomStore((state) => state.select);
+  const deselect = useRoomStore((state) => state.deselect);
+
+  const timeSlots = useMemo(
+    () =>
+      generateTimeSlots(room?.startTime ?? "09:00", room?.endTime ?? "18:00"),
+    [room?.startTime, room?.endTime],
+  );
+  const rows = timeSlots.length;
+  const displayCols = columns.length;
+
+  const [preview, setPreview] = useState<boolean[][]>([]);
+  const [dragMode, setDragMode] = useState<DragMode>("select");
+
+  const allSelectedCols = useMemo(
+    () =>
+      columns.map((col, displayIdx) => {
+        const isConfirmedFull =
+          rows > 0 &&
+          timeSlots.every((_, r) => grid[r]?.[col.storeColIdx] === true);
+
+        // 해당 컬럼 전체 행이 preview 범위에 포함되는지
+        const isFullyInPreview =
+          rows > 0 &&
+          preview.length > 0 &&
+          timeSlots.every((_, r) => preview[r]?.[displayIdx] === true);
+
+        if (isFullyInPreview) {
+          // select 드래그 중 → 선택된 것처럼, deselect 드래그 중 → 해제된 것처럼
+          return dragMode === "select";
+        }
+
+        return isConfirmedFull;
+      }),
+    [columns, grid, rows, timeSlots, preview, dragMode],
+  );
+
+  const handleDateHeaderClick = useCallback(
+    (displayIdx: number) => {
+      const sc = columns[displayIdx]?.storeColIdx;
+      if (sc === undefined) return;
+      if (allSelectedCols[displayIdx]) {
+        deselect(0, rows - 1, sc, sc);
+      } else {
+        select(0, rows - 1, sc, sc);
+      }
+    },
+    [columns, allSelectedCols, rows, select, deselect],
+  );
+
+  const startCell = useRef<Cell | undefined>(undefined);
+  const currentRect = useRef<{
+    r0: number;
+    r1: number;
+    dc0: number;
+    dc1: number;
+  }>();
+  const isHeaderDragging = useRef(false);
+
+  const makeEmptyPreview = useCallback(
+    () => Array.from({ length: rows }, () => Array(displayCols).fill(false)),
+    [rows, displayCols],
+  );
+
+  // storeCol → displayCol 변환된 confirmed 배열
+  const displayConfirmed = useMemo(() => {
+    const result: boolean[][] = [];
+    for (let r = 0; r < rows; r++) {
+      result[r] = [];
+      for (let dc = 0; dc < displayCols; dc++) {
+        const sc = columns[dc]?.storeColIdx;
+        result[r][dc] = sc !== undefined && (grid[r]?.[sc] ?? false);
+      }
+    }
+    return result;
+  }, [grid, rows, displayCols, columns]);
+
+  const renderGrid = useMemo(
+    () =>
+      displayCols > 0 && rows > 0
+        ? buildRenderDragGrid({
+            confirmed: displayConfirmed,
+            preview: preview.length > 0 ? preview : makeEmptyPreview(),
+            dragMode,
+          })
+        : [],
+    [displayConfirmed, preview, dragMode, displayCols, rows, makeEmptyPreview],
+  );
+
+  const applySelection = useCallback(
+    (rect: { r0: number; r1: number; dc0: number; dc1: number }) => {
+      const sc0 = columns[rect.dc0]?.storeColIdx;
+      const sc1 = columns[rect.dc1]?.storeColIdx;
+      if (sc0 === undefined || sc1 === undefined) return;
+      if (dragMode === "select") select(rect.r0, rect.r1, sc0, sc1);
+      else deselect(rect.r0, rect.r1, sc0, sc1);
+    },
+    [dragMode, select, deselect, columns],
+  );
+
+  const handleLongPressStart = useCallback(
+    (cell: Cell) => {
+      const storeCol = columns[cell.col]?.storeColIdx;
+      if (storeCol === undefined) return;
+
+      startCell.current = cell;
+
+      const mode: DragMode = grid[cell.row]?.[storeCol] ? "deselect" : "select";
+      setDragMode(mode);
+
+      const rect = {
+        r0: cell.row,
+        r1: cell.row,
+        dc0: cell.col,
+        dc1: cell.col,
+      };
+      currentRect.current = rect;
+
+      const p = makeEmptyPreview();
+      p[cell.row][cell.col] = true;
+      setPreview(p);
+    },
+    [grid, columns, makeEmptyPreview],
+  );
+
+  const handleDrag = useCallback(
+    (cell: Cell) => {
+      if (!startCell.current) return;
+
+      const s = startCell.current;
+      const rect = {
+        r0: Math.min(s.row, cell.row),
+        r1: Math.max(s.row, cell.row),
+        dc0: Math.min(s.col, cell.col),
+        dc1: Math.max(s.col, cell.col),
+      };
+      currentRect.current = rect;
+
+      const p = makeEmptyPreview();
+      for (let r = rect.r0; r <= rect.r1; r++) {
+        for (let dc = rect.dc0; dc <= rect.dc1; dc++) {
+          p[r][dc] = true;
+        }
+      }
+      setPreview(p);
+    },
+    [makeEmptyPreview],
+  );
+
+  const handleTap = useCallback(
+    (cell: Cell) => {
+      const storeCol = columns[cell.col]?.storeColIdx;
+      if (storeCol === undefined) return;
+
+      const mode: DragMode = grid[cell.row]?.[storeCol] ? "deselect" : "select";
+      if (mode === "select") select(cell.row, cell.row, storeCol, storeCol);
+      else deselect(cell.row, cell.row, storeCol, storeCol);
+    },
+    [grid, columns, select, deselect],
+  );
+
+  const handleEnd = useCallback(() => {
+    const rect = currentRect.current;
+    if (rect) {
+      applySelection(rect);
+    }
+
+    startCell.current = undefined;
+    currentRect.current = undefined;
+    setPreview(makeEmptyPreview());
+  }, [applySelection, makeEmptyPreview]);
+
+  const {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    onLostPointerCapture,
+  } = useLongPressDrag({
+    getCellFromPoint,
+    isSameCell,
+    onLongPressStart: handleLongPressStart,
+    onDrag: handleDrag,
+    onTap: handleTap,
+    onEnd: handleEnd,
+  });
+
+  // ── Header long-press + drag ──
+  const handleHeaderPreview = useCallback(
+    (dc0: number, dc1: number) => {
+      // dragMode는 드래그 시작 시 1회만 결정
+      if (!isHeaderDragging.current) {
+        isHeaderDragging.current = true;
+        setDragMode(allSelectedCols[dc0] ? "deselect" : "select");
+      }
+
+      // currentRect는 건드리지 않음 — 셀 오버레이 div는 셀 드래그 전용
+      const p = makeEmptyPreview();
+      for (let r = 0; r < rows; r++) {
+        for (let dc = dc0; dc <= dc1; dc++) {
+          p[r][dc] = true;
+        }
+      }
+      setPreview(p);
+    },
+    [rows, allSelectedCols, makeEmptyPreview],
+  );
+
+  const handleHeaderSelect = useCallback(
+    (dc0: number, dc1: number) => {
+      applySelection({ r0: 0, r1: rows - 1, dc0, dc1 });
+      isHeaderDragging.current = false;
+      setPreview(makeEmptyPreview());
+    },
+    [applySelection, rows, makeEmptyPreview],
+  );
+
+  const handleHeaderCancelPreview = useCallback(() => {
+    isHeaderDragging.current = false;
+    setPreview(makeEmptyPreview());
+  }, [makeEmptyPreview]);
+
+  const setIsSelectCalendarOpen = useRoomStore(
+    (state) => state.setIsSelectCalendarOpen,
+  );
+
+  // 나중에 사용 예정
+  const selectedDatesSet = useMemo(() => {
+    const dates = room?.dates ?? [];
+    const set = new Set<string>();
+    for (let colIdx = 0; colIdx < dates.length; colIdx++) {
+      if (grid.some((row) => row[colIdx])) {
+        set.add(dates[colIdx]);
+      }
+    }
+    return set;
+  }, [room?.dates, grid]);
+  void selectedDatesSet;
+
+  if (grid.length === 0) return null;
+
+  const baseBg = "white";
+
+  return (
+    <div className="w-full pb-32">
+  
+        <WeekNavigation onDateClick={() => setIsSelectCalendarOpen(true)} />
+ 
+      {/* Guide / Selected dates */}
+      <div
+        className="flex items-center pl-4 pr-2 pb-1"
+        style={{
+          paddingTop: 1,
+        }}
+      >
+        <div
+          className="flex items-center pl-1 pb-3 pt-1 pr-2 min-w-0"
+          style={{
+            fontSize: 16,
+            fontWeight: 500,
+            color: adaptive.grey500,
+          }}
+        >
+          {t("availability.dragGuide")}
+        </div>
+      </div>
+
+      
+      {/* Grid body */}
+      <div className="pl-4 flex flex-row">
+        {/* Time labels */}
+        <div className="shrink-0 pt-7" style={{ width: TIME_WIDTH }}>
+          {timeSlots.map((slot) => {
+            const isHour = slot.endsWith(":00");
+            const hour = Number.parseInt(slot.split(":")[0]);
+            return (
+              <div key={slot} className="relative" style={{ height: CELL_H }}>
+                {isHour && (
+                  <span
+                    className="absolute right-1.5"
+                    style={{
+                      top: -8,
+                      fontSize: 12,
+                      lineHeight: "16px",
+                      color: adaptive.grey500,
+                    }}
+                  >
+                    {hour}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+          {/* End time label */}
+          <div className="relative" style={{ height: 0 }}>
+            <span
+              className="absolute right-1.5"
+              style={{
+                top: -8,
+                fontSize: 12,
+                lineHeight: "16px",
+                color: adaptive.grey500,
+              }}
+            >
+              {Number.parseInt(room?.endTime?.split(":")[0] ?? "18")}
+            </span>
+          </div>
+        </div>
+
+        {/* Cells */}
+        <div className="overflow-x-auto" >
+         <div className="min-w-full pr-4">
+             <CalendarHeader
+              columns={columns}
+              allSelectedCols={allSelectedCols}
+              onTap={handleDateHeaderClick}
+              onSelect={handleHeaderSelect}
+              onPreview={handleHeaderPreview}
+              onCancelPreview={handleHeaderCancelPreview}
+            />
+          <div
+            className="mt-2 relative flex"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onLostPointerCapture={onLostPointerCapture}
+          >
+            {columns.map((col, displayIdx) => (
+              <div
+                key={col.date}
+                className="flex flex-col flex-1"
+                style={{ minWidth: CELL_W }}
+              >
+                {timeSlots.map((slot, rowIdx) => {
+                  const rc = renderGrid[rowIdx]?.[displayIdx];
+                  if (!rc) return null;
+
+                  const isHour = slot.endsWith(":00");
+                  const center = centerOwner(rc);
+                  const centerBg = ownerBg(center, dragMode);
+
+                  return (
+                    <div
+                      key={slot}
+                      data-cell={`${rowIdx},${displayIdx}`}
+                      className={cn(
+                        "relative border-r border-gray-300",
+                        isHour && "border-t border-gray-300",
+                        displayIdx === 0 && "border-l border-gray-300",
+                        rowIdx === timeSlots.length - 1 &&
+                          "border-b border-gray-300",
+                      )}
+                      style={{ height: CELL_H }}
+                    >
+                      {/* Center fill */}
+                      {center !== "empty" && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{ backgroundColor: centerBg }}
+                        />
+                      )}
+
+                      {/* Corner Color band */}
+                      {CORNERS.map((pos) => {
+                        const corner = cornerOwner(rc, pos);
+                        if (!needsCornerOp(center, corner)) return null;
+
+                        const outerColor =
+                          center !== "empty"
+                            ? corner === "empty"
+                              ? baseBg
+                              : ownerBg(corner, dragMode)
+                            : ownerBg(corner, dragMode);
+
+                        return (
+                          <div
+                            key={`corner-color-${pos}`}
+                            className="pointer-events-none"
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: outerColor,
+                            }}
+                          />
+                        );
+                      })}
+
+                      {/* Corner Cut band */}
+                      {CORNERS.map((pos) => {
+                        const corner = cornerOwner(rc, pos);
+                        if (!needsCornerOp(center, corner)) return null;
+
+                        const innerColor = center !== "empty" ? centerBg : baseBg;
+
+                        return (
+                          <div
+                            key={`corner-cut-${pos}`}
+                            className={cn(
+                              "absolute pointer-events-none",
+                              roundClass(pos),
+                            )}
+                            style={{
+                              ...cornerStyle(pos),
+                              backgroundColor: innerColor,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+         </div>
+
+         
+        
+        </div>
+      </div>
+      <SelectCalendarSheet />
+    </div>
+  );
+}
