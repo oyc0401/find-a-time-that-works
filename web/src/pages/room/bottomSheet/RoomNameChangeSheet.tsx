@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { BottomSheet, Button, TextField } from "@toss/tds-mobile";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +9,8 @@ import {
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { getUserId } from "@/repository/userId";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
 
 export default function RoomNameChangeSheet() {
   const { t } = useTranslation();
@@ -50,36 +51,36 @@ export default function RoomNameChangeSheet() {
     <BottomSheet
       open={isRoomNameOpen}
       onClose={() => setIsRoomNameOpen(false)}
-      header={
-        <BottomSheet.Header>{t("room.renameTitle")}</BottomSheet.Header>
-      }
-      cta={
-        <BottomSheet.DoubleCTA
-          leftButton={
-            <Button
-              variant="weak"
-              color="dark"
-              onClick={() => setIsRoomNameOpen(false)}
-            >
-              {t("common.close")}
-            </Button>
-          }
-          rightButton={
-            <Button onClick={handleSave} disabled={!roomNameInput.trim()}>
-              {t("common.save")}
-            </Button>
-          }
-        />
+      title={t("room.renameTitle")}
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => setIsRoomNameOpen(false)}
+          >
+            {t("common.close")}
+          </Button>
+          <Button
+            fullWidth
+            onClick={handleSave}
+            disabled={!roomNameInput.trim()}
+          >
+            {t("common.save")}
+          </Button>
+        </>
       }
     >
-      <TextField
-        variant="box"
-        label={t("room.renameLabel")}
-        labelOption="sustain"
-        placeholder={t("room.renamePlaceholder")}
-        value={roomNameInput}
-        onChange={(e) => setRoomNameInput(e.target.value)}
-      />
+      <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700">
+        <span>{t("room.renameLabel")}</span>
+        <input
+          type="text"
+          className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-blue-400"
+          placeholder={t("room.renamePlaceholder")}
+          value={roomNameInput}
+          onChange={(e) => setRoomNameInput(e.target.value)}
+        />
+      </label>
     </BottomSheet>
   );
 }

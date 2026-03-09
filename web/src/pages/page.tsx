@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  BottomCTA,
-  Button,
-  FixedBottomCTA,
-  List,
-  ListRow,
-  Top,
-} from "@toss/tds-mobile";
-import { adaptive } from "@toss/tds-colors";
 import DateSelector from "./DateSelector";
 import TimeSlider from "./TimeSlider";
 import {
@@ -23,22 +14,17 @@ import { getUserId } from "../repository/userId";
 import { getNickname, getGeneratedNickname } from "../repository/nickname";
 import { Repository } from "../repository/repository";
 import { thumbnailUrl, getDefaultThumbnail } from "../repository/thumbnail";
+import { BottomActionBar } from "@/components/ui/BottomActionBar";
+import { Button } from "@/components/ui/Button";
+import { Clock4, ChevronRight } from "lucide-react";
 
 function Header() {
   const { t } = useTranslation();
   return (
-    <>
-      <Top
-        title={
-          <Top.TitleParagraph size={28} color={adaptive.grey900}>
-            {t("home.title")}
-          </Top.TitleParagraph>
-        }
-        subtitleBottom={
-          <Top.SubtitleParagraph>{t("home.subtitle")}</Top.SubtitleParagraph>
-        }
-      />
-    </>
+    <header className="px-5 pb-4 pt-8">
+      <p className="text-3xl font-bold text-gray-900">{t("home.title")}</p>
+      <p className="mt-2 text-base text-gray-500">{t("home.subtitle")}</p>
+    </header>
   );
 }
 
@@ -79,12 +65,8 @@ function LastRoomCard() {
 
   if (isLoading) {
     return (
-      <div className="h-[66px] overflow-hidden">
-        <div className="origin-top-left scale-[0.85]">
-          <List>
-            <ListRow.Loader type="circle" verticalPadding="extraSmall" />
-          </List>
-        </div>
+      <div className="px-5 pt-2">
+        <div className="h-20 animate-pulse rounded-2xl bg-gray-100" />
       </div>
     );
   }
@@ -94,37 +76,46 @@ function LastRoomCard() {
   const creator = participants.find((p) => p.userId === room.creatorId);
   const roomTitle = room.name || `${creator?.name}${t("home.roomNameSuffix")}`;
 
-  return (
-    <div>
-      <div className="flex items-center justify-between pl-6 px-4 pt-4">
-        <span className="text-sm text-gray-500">{t("home.recentRoom")}</span>
-      
-        <Button size="small" color="light"  onClick={() => navigate("/recent")} > {t("home.viewAll")}</Button>
-      </div>
-      <List>
-        <ListRow
-          onClick={() => navigate(`/rooms/${room.id}`)}
-          left={
-            creator?.thumbnail ? (
-              <ListRow.AssetIcon
-                shape="circle-background"
-                url={thumbnailUrl(creator.thumbnail)}
-                backgroundColor={adaptive.grey100}
-              />
-            ) : (
-              <ListRow.AssetIcon name="icon-refresh-clock" />
-            )
-          }
-          contents={
-            <ListRow.Texts
-              type="1RowTypeC"
-              top={roomTitle}
-            />
-          }
-          withTouchEffect
-        />
-      </List>
+  const avatar = creator?.thumbnail ? (
+    <img
+      src={thumbnailUrl(creator.thumbnail)}
+      alt={creator?.name ?? ""}
+      className="h-12 w-12 rounded-full object-cover"
+    />
+  ) : (
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+      <Clock4 size={20} />
     </div>
+  );
+
+  return (
+    <section className="px-5 pt-2">
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <span>{t("home.recentRoom")}</span>
+        <button
+          type="button"
+          className="font-semibold text-blue-500 hover:text-blue-600"
+          onClick={() => navigate("/recent")}
+        >
+          {t("home.viewAll")}
+        </button>
+      </div>
+      <div className="mt-3 rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <button
+          type="button"
+          className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+          onClick={() => navigate(`/rooms/${room.id}`)}
+        >
+          {avatar}
+          <div className="flex-1">
+            <p className="text-base font-semibold text-gray-900">
+              {roomTitle}
+            </p>
+          </div>
+          <ChevronRight className="text-gray-400" />
+        </button>
+      </div>
+    </section>
   );
 }
 export default function Home() {
@@ -171,34 +162,24 @@ export default function Home() {
     });
   };
 
+  const disableCreate = selectedDates.length === 0 || isPending;
+
   return (
-    <div className="h-screen">
+    <div className="relative min-h-screen pb-36">
       <Header />
       <LastRoomCard />
       <DateSelector />
-
       <TimeSlider />
-      {selectedDates.length === 0 && (
-        <BottomCTA.Single
-          onTap={handleCreateRoom}
-          loading={isPending}
-          disabled={true}
-          color="primary"
-          fixed={true}
+
+      <BottomActionBar>
+        <Button
+          onClick={handleCreateRoom}
+          disabled={disableCreate}
+          fullWidth
         >
           {t("home.createRoom")}
-        </BottomCTA.Single>
-      )}
-      {selectedDates.length !== 0 && (
-        <BottomCTA.Single
-          onTap={handleCreateRoom}
-          loading={isPending}
-          color="primary"
-          fixed={true}
-        >
-          {t("home.createRoom")}
-        </BottomCTA.Single>
-      )}
+        </Button>
+      </BottomActionBar>
     </div>
   );
 }

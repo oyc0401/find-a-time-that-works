@@ -4,17 +4,6 @@ import {
   graniteEvent,
   generateHapticFeedback,
 } from "@apps-in-toss/web-framework";
-import {
-  Asset,
-  Border,
-  BottomCTA,
-  CTAButton,
-  Loader,
-  Menu,
-  Tab,
-  Top,
-} from "@toss/tds-mobile";
-import { adaptive } from "@toss/tds-colors";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
@@ -40,6 +29,11 @@ import RoomNameChangeSheet from "./bottomSheet/RoomNameChangeSheet";
 import NicknameChangeSheet from "./bottomSheet/NicknameChangeSheet";
 import ThumbnailChangeSheet from "./bottomSheet/ThumbnailChangeSheet";
 import RoomNavigateSheet from "./bottomSheet/RoomNavigateSheet";
+import { BottomActionBar } from "@/components/ui/BottomActionBar";
+import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/Spinner";
+import { Settings, WifiOff } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export default function Room() {
   const { t } = useTranslation();
@@ -118,6 +112,19 @@ export default function Room() {
 
   // ── Settings menu ──
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClick = (event: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handleClick);
+    return () => window.removeEventListener("mousedown", handleClick);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (searchParams.get("created") === "true" && id) {
@@ -178,161 +185,154 @@ export default function Room() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        {showLoader && <Loader size="large" />}
+        {showLoader && <Spinner size={48} />}
       </div>
     );
   }
 
   if (!room) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <span style={{ color: adaptive.grey500 }}>{t("room.notFound")}</span>
+      <div className="flex h-screen items-center justify-center text-gray-500">
+        <span>{t("room.notFound")}</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <Top
-        title={
-          isCreator ? (
-            <button
-              type="button"
-              className="cursor-pointer active:scale-[0.97] transition-transform"
-              onClick={() => {
-                if (isLongPressRef.current) return;
-                setIsRoomNameOpen(true);
-              }}
-              onPointerDown={handleTitlePointerDown}
-              onPointerUp={handleTitlePointerUp}
-              onPointerLeave={handleTitlePointerUp}
-              onPointerCancel={handleTitlePointerUp}
-            >
-              <Top.TitleParagraph size={28} color={adaptive.grey900}>
+    <div className="flex min-h-screen flex-col pb-36">
+      <header className="px-5 pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1">
+            {isCreator ? (
+              <button
+                type="button"
+                className="w-full text-left text-3xl font-bold text-gray-900"
+                onClick={() => {
+                  if (isLongPressRef.current) return;
+                  setIsRoomNameOpen(true);
+                }}
+                onPointerDown={handleTitlePointerDown}
+                onPointerUp={handleTitlePointerUp}
+                onPointerLeave={handleTitlePointerUp}
+                onPointerCancel={handleTitlePointerUp}
+              >
                 {truncateTitle(roomTitle)}
-              </Top.TitleParagraph>
-            </button>
-          ) : (
-            <div
-              onPointerDown={handleTitlePointerDown}
-              onPointerUp={handleTitlePointerUp}
-              onPointerLeave={handleTitlePointerUp}
-              onPointerCancel={handleTitlePointerUp}
-            >
-              <Top.TitleParagraph size={28} color={adaptive.grey900}>
+              </button>
+            ) : (
+              <div
+                className="text-3xl font-bold text-gray-900"
+                onPointerDown={handleTitlePointerDown}
+                onPointerUp={handleTitlePointerUp}
+                onPointerLeave={handleTitlePointerUp}
+                onPointerCancel={handleTitlePointerUp}
+              >
                 {truncateTitle(roomTitle)}
-              </Top.TitleParagraph>
-            </div>
-          )
-        }
-        right={
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
-            {isDisconnected && <WifiOff size={20} color={adaptive.red200} />}
-            <Menu.Trigger
-              open={isMenuOpen}
-              onOpen={() => setIsMenuOpen(true)}
-              onClose={() => setIsMenuOpen(false)}
-              placement="bottom-end"
-              dropdown={
-                <Menu.Dropdown>
-                  <Menu.DropdownItem
+            {isDisconnected && (
+              <WifiOff className="text-red-300" size={20} aria-hidden />
+            )}
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                className={cn(
+                  "flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 transition-all",
+                  isMenuOpen && "bg-gray-50",
+                )}
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+              >
+                <Settings size={20} />
+              </button>
+              {isMenuOpen && (
+                <div className="absolute right-0 top-12 w-56 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl">
+                  <button
+                    type="button"
+                    className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     onClick={() => {
                       setIsMenuOpen(false);
                       navigate("/");
                     }}
                   >
                     {t("home.createRoom")}
-                  </Menu.DropdownItem>
-                  <div className="py-1">
-                        <Border variant="full" />
-                      </div>
-
-                  <Menu.DropdownItem
+                  </button>
+                  <div className="my-1 h-px bg-gray-100" />
+                  <button
+                    type="button"
+                    className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsNicknameDialogOpen(true);
                     }}
                   >
                     {t("participant.changeName")}
-                  </Menu.DropdownItem>
-
-                  <Menu.DropdownItem
+                  </button>
+                  <button
+                    type="button"
+                    className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsThumbnailDialogOpen(true);
                     }}
                   >
                     {t("participant.changeProfile")}
-                  </Menu.DropdownItem>
-
+                  </button>
                   {isCreator && (
                     <>
-                      <div className="py-1">
-                        <Border variant="full" />
-                      </div>
-
-                      <Menu.DropdownItem
+                      <div className="my-1 h-px bg-gray-100" />
+                      <button
+                        type="button"
+                        className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
                         onClick={() => {
                           setIsMenuOpen(false);
                           setIsRoomNameOpen(true);
                         }}
                       >
                         {t("room.renameTitle")}
-                      </Menu.DropdownItem>
+                      </button>
                     </>
                   )}
-                </Menu.Dropdown>
-              }
-            >
-              <button
-                type="button"
-                className="cursor-pointer flex items-center justify-center p-4 active:scale-90 active:opacity-50 transition-transform"
-                style={{
-                  outline: "none",
-                  WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                <Asset.Icon
-                  frameShape={Asset.frameShape.CleanW24}
-                  backgroundColor="transparent"
-                  name="icon-setting-mono"
-                  color={adaptive.grey600}
-                  scale={1}
-                  aria-hidden={true}
-                  ratio="1/1"
-                />
-              </button>
-            </Menu.Trigger>
+                </div>
+              )}
+            </div>
           </div>
-        }
-      />
-      <Tab
-        size="large"
-        onChange={(idx) => {
-          generateHapticFeedback({ type: "tickWeak" });
-          setTabIdx(idx);
-        }}
-      >
-        <Tab.Item selected={tabIdx === 0}>{t("room.tab.schedule")}</Tab.Item>
-        <Tab.Item selected={tabIdx === 1}>{t("room.tab.overview")}</Tab.Item>
-        <Tab.Item selected={tabIdx === 2}>
-          {t("room.tab.participants")}
-        </Tab.Item>
-      </Tab>
+        </div>
+      </header>
+
+      <div className="mt-6 flex border-b border-gray-200 px-2">
+        {[t("room.tab.schedule"), t("room.tab.overview"), t("room.tab.participants")].map(
+          (label, idx) => (
+            <button
+              key={label}
+              type="button"
+              className={cn(
+                "flex-1 pb-3 text-sm font-semibold transition-colors",
+                tabIdx === idx
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-400",
+              )}
+              onClick={() => {
+                generateHapticFeedback({ type: "tickWeak" });
+                setTabIdx(idx);
+              }}
+            >
+              {label}
+            </button>
+          ),
+        )}
+      </div>
 
       <div className="min-h-0 flex-1">
         {tabIdx === 0 && <SelectTap />}
         {tabIdx === 1 && <OverviewTap />}
         {tabIdx === 2 && <ParticipantTap participants={participants} />}
       </div>
-      <BottomCTA.Double
-        fixed
-        rightButton={
-          <CTAButton onTap={() => handleShare(id ?? "")}>
-            {t("common.invite")}
-          </CTAButton>
-        }
-      />
+      <BottomActionBar>
+        <Button fullWidth onClick={() => handleShare(id ?? "")}>
+          {t("common.invite")}
+        </Button>
+      </BottomActionBar>
 
       <TutorialSheet />
       <RoomNameChangeSheet />

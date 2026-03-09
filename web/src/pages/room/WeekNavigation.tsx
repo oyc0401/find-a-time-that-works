@@ -1,5 +1,4 @@
 import { Calendar } from "lucide-react";
-import { adaptive } from "@toss/tds-colors";
 
 interface WeekNavigationProps {
   onDateClick?: () => void;
@@ -8,14 +7,13 @@ interface WeekNavigationProps {
 export default function WeekNavigation({ onDateClick }: WeekNavigationProps) {
   return (
     <div className="flex items-center justify-end pt-2 pl-4 pr-4 pb-1">
-      {/* <button
+      <button
         type="button"
-        className="flex items-center justify-center cursor-pointer transition-[colors,transform] duration-50 active:bg-[#f2f4f6] active:scale-90"
-        style={{ width: 44, height: 44, borderRadius: 8 }}
+        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 text-blue-500 transition-transform active:scale-95"
         onClick={onDateClick}
       >
-        <Calendar size={24} color={adaptive.blue400} />
-      </button> */}
+        <Calendar size={20} />
+      </button>
     </div>
   );
 }

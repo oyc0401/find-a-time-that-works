@@ -1,7 +1,7 @@
 // frontend/src/components/CalendarGridSub.tsx
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { adaptive } from "@toss/tds-colors";
+import { palette } from "@/lib/palette";
 import { cn } from "@/lib/cn";
 
 // ── 5-band zIndex ──
@@ -110,11 +110,11 @@ export function CalendarCell({
   const filled = centerBg !== undefined;
 
   const text = cell.text ?? cell.day;
-  const textColor = cell.textColor ?? adaptive.grey800;
+  const textColor = cell.textColor ?? palette.grey800;
   const subTexts = cell.subTexts ?? [];
   const hasSubTexts = subTexts.length > 0;
 
-  const ringColor = cell.circleColor ?? adaptive.blue400;
+  const ringColor = cell.circleColor ?? palette.blue400;
 
   return (
     <button
@@ -276,7 +276,12 @@ export default function CalendarGridSub({
             style={{
               fontSize: 15,
               lineHeight: "22.5px",
-              color: i === 0 ? adaptive.red400 : i === 6 ? adaptive.blue300 : adaptive.grey500,
+              color:
+                i === 0
+                  ? palette.red400
+                  : i === 6
+                    ? palette.blue300
+                    : palette.grey500,
             }}
           >
             {d}

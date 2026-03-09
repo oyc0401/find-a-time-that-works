@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BottomSheet, Button, TextField } from "@toss/tds-mobile";
 import { useTranslation } from "react-i18next";
 import { useRoomStore } from "@/stores/useRoomStore";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
 
 export default function RoomNavigateSheet() {
   const { t } = useTranslation();
@@ -29,32 +30,32 @@ export default function RoomNavigateSheet() {
     <BottomSheet
       open={isRoomNavigateOpen}
       onClose={handleClose}
-      header={
-        <BottomSheet.Header>{t("room.navigateTitle")}</BottomSheet.Header>
-      }
-      cta={
-        <BottomSheet.DoubleCTA
-          leftButton={
-            <Button variant="weak" color="dark" onClick={handleClose}>
-              {t("common.close")}
-            </Button>
-          }
-          rightButton={
-            <Button onClick={handleNavigate} disabled={!roomIdInput.trim()}>
-              {t("room.navigateButton")}
-            </Button>
-          }
-        />
+      title={t("room.navigateTitle")}
+      footer={
+        <>
+          <Button variant="secondary" fullWidth onClick={handleClose}>
+            {t("common.close")}
+          </Button>
+          <Button
+            fullWidth
+            onClick={handleNavigate}
+            disabled={!roomIdInput.trim()}
+          >
+            {t("room.navigateButton")}
+          </Button>
+        </>
       }
     >
-      <TextField
-        variant="box"
-        label={t("room.navigateLabel")}
-        labelOption="sustain"
-        placeholder={t("room.navigatePlaceholder")}
-        value={roomIdInput}
-        onChange={(e) => setRoomIdInput(e.target.value)}
-      />
+      <label className="flex flex-col gap-2 text-sm font-semibold text-gray-700">
+        <span>{t("room.navigateLabel")}</span>
+        <input
+          type="text"
+          className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-blue-400"
+          placeholder={t("room.navigatePlaceholder")}
+          value={roomIdInput}
+          onChange={(e) => setRoomIdInput(e.target.value)}
+        />
+      </label>
     </BottomSheet>
   );
 }

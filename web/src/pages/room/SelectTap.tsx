@@ -1,7 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { adaptive } from "@toss/tds-colors";
-import { BottomCTA, FixedBottomCTA } from "@toss/tds-mobile";
 import { cn } from "@/lib/cn";
 import { handleShare } from "@/lib/share";
 import { generateTimeSlots } from "@/lib/timeSlots";
@@ -30,6 +28,7 @@ import {
 } from "@/lib/gridUtils";
 import WeekNavigation from "./WeekNavigation";
 import SelectCalendarSheet from "./bottomSheet/SelectCalendarSheet";
+import { palette } from "@/lib/palette";
 
 function centerOwner(rc: RenderCell): Owner {
   return rc.lt.center;
@@ -43,9 +42,9 @@ function cornerOwner(rc: RenderCell, pos: CornerPos): Owner {
 }
 
 function ownerBg(owner: Owner, dragMode: DragMode) {
-  if (owner === "confirmed") return adaptive.blue400;
+  if (owner === "confirmed") return palette.blue400;
   if (owner === "preview")
-    return dragMode === "select" ? adaptive.blue200 : adaptive.blue100;
+    return dragMode === "select" ? palette.blue200 : palette.blue100;
   return "transparent";
 }
 
@@ -319,7 +318,7 @@ export default function SelectTap() {
           style={{
             fontSize: 16,
             fontWeight: 500,
-            color: adaptive.grey500,
+            color: palette.grey500,
           }}
         >
           {t("availability.dragGuide")}
@@ -343,7 +342,7 @@ export default function SelectTap() {
                       top: -8,
                       fontSize: 12,
                       lineHeight: "16px",
-                      color: adaptive.grey500,
+                      color: palette.grey500,
                     }}
                   >
                     {hour}
@@ -360,7 +359,7 @@ export default function SelectTap() {
                 top: -8,
                 fontSize: 12,
                 lineHeight: "16px",
-                color: adaptive.grey500,
+                color: palette.grey500,
               }}
             >
               {Number.parseInt(room?.endTime?.split(":")[0] ?? "18")}

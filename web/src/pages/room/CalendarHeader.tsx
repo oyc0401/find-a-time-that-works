@@ -1,10 +1,10 @@
 import { useCallback, useRef } from "react";
-import { adaptive } from "@toss/tds-colors";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { useTranslation } from "react-i18next";
 import { formatDateHeader } from "@/lib/timeSlots";
 import { CELL_W, getHeaderColFromPoint } from "@/lib/gridUtils";
 import type { WeekColumn } from "@/lib/weekGroup";
+import { palette } from "@/lib/palette";
 
 const LONG_PRESS_MS = 250;
 const MOVE_CANCEL_PX = 8;
@@ -196,12 +196,12 @@ export default function CalendarHeader({
               fontSize: 13,
               fontWeight: allSelectedCols[i] ? 700 : 400,
               color: allSelectedCols[i]
-                ? adaptive.blue400
+                ? palette.blue400
                 : h.dayOfWeek === 0
-                  ? adaptive.red400
+                  ? palette.red400
                   : h.dayOfWeek === 6
-                    ? adaptive.blue300
-                    : adaptive.grey500,
+                    ? palette.blue300
+                    : palette.grey500,
             }}
           >
             {`${h.day} (${h.weekday})`}

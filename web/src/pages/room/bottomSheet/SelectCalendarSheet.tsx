@@ -1,13 +1,14 @@
-import { useCallback, useMemo,useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { BottomSheet } from "@toss/tds-mobile";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
-import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
-import CalendarGrid, { type CalendarCellModel } from "../../../components/CalendarGrid";
-
+import CalendarGrid, {
+  type CalendarCellModel,
+} from "../../../components/CalendarGrid";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { palette } from "@/lib/palette";
 
 const W = 7;
 const H = 5;
@@ -20,9 +21,9 @@ function toDateKey(date: Date): string {
 }
 
 function countColor(count: number) {
-  if (count === 3) return { bg: adaptive.blue300, whiteText: true };
-  if (count === 2) return { bg: adaptive.blue200, whiteText: true };
-  if (count === 1) return { bg: adaptive.blue100, whiteText: false };
+  if (count === 3) return { bg: palette.blue300, whiteText: true };
+  if (count === 2) return { bg: palette.blue200, whiteText: true };
+  if (count === 1) return { bg: palette.blue100, whiteText: false };
   return { bg: "white", whiteText: false };
 }
 
@@ -86,8 +87,8 @@ function CalendarView({
         center > 0 && whiteText
           ? "#ffffff"
           : isPast
-            ? adaptive.grey400
-            : adaptive.grey800;
+            ? palette.grey400
+            : palette.grey800;
 
       return {
         hidden: cell.hidden,
@@ -182,7 +183,7 @@ export default function SelectCalendarSheet() {
     <BottomSheet
       open={isSelectCalendarOpen}
       onClose={() => setIsSelectCalendarOpen(false)}
-      header={<BottomSheet.Header>날짜</BottomSheet.Header>}
+      title="날짜"
     >
       <CalendarView
         baseDate={calendarBaseDate}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { adaptive } from "@toss/tds-colors";
 import Badge from "@/components/Badge";
 import { cn } from "@/lib/cn";
 import { generateTimeSlots } from "@/lib/timeSlots";
@@ -25,7 +24,7 @@ import {
 } from "@/lib/gridUtils";
 import OverviewCalendarSheet from "./bottomSheet/OverviewCalendarSheet";
 import WeekNavigation from "./WeekNavigation";
-import { Border } from "@toss/tds-mobile";
+import { palette } from "@/lib/palette";
 
 type Rect = { r0: number; r1: number; dc0: number; dc1: number };
 
@@ -306,8 +305,12 @@ export default function OverviewTap() {
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge
             title={t("overview.all")}
-            color={selectedUserIds.length === 0 ? adaptive.blue400 : adaptive.grey100}
-            textColor={selectedUserIds.length === 0 ? "white" : adaptive.grey600}
+            color={
+              selectedUserIds.length === 0 ? palette.blue400 : palette.grey100
+            }
+            textColor={
+              selectedUserIds.length === 0 ? "white" : palette.grey600
+            }
             className="shrink-0"
             onClick={() => {
               setSelectedUserIds([]);
@@ -328,9 +331,9 @@ export default function OverviewTap() {
                 <Badge
                   key={p.userId}
                   title={p.name}
-                  color={isSelected ? adaptive.blue400 : adaptive.grey100}
-                  textColor={isSelected ? "white" : adaptive.grey600}
-                  borderColor={inRange ? adaptive.green400 : undefined}
+                  color={isSelected ? palette.blue400 : palette.grey100}
+                  textColor={isSelected ? "white" : palette.grey600}
+                  borderColor={inRange ? palette.green400 : undefined}
                   className="shrink-0"
                   onClick={() => {
                     setSelectedUserIds(
@@ -345,9 +348,7 @@ export default function OverviewTap() {
         </div>
 
       </div>
-<div className="py-4">
-<Border variant="height16" />
-</div>
+      <div className="my-4 h-px bg-gray-200" />
 
 
       {/* Grid body */}
@@ -366,7 +367,7 @@ export default function OverviewTap() {
                       top: -8,
                       fontSize: 12,
                       lineHeight: "16px",
-                      color: adaptive.grey500,
+                      color: palette.grey500,
                     }}
                   >
                     {hour}
@@ -383,7 +384,7 @@ export default function OverviewTap() {
                 top: -8,
                 fontSize: 12,
                 lineHeight: "16px",
-                color: adaptive.grey500,
+                color: palette.grey500,
               }}
             >
               {Number.parseInt(room?.endTime?.split(":")[0] ?? "18")}

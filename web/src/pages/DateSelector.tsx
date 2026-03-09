@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { adaptive } from "@toss/tds-colors";
+import { palette } from "@/lib/palette";
 import type { CalendarCell } from "@/lib/calendar";
 import { buildCalendarCells } from "@/lib/calendar";
 import {
@@ -68,11 +68,11 @@ function getCellIdxFromPoint(x: number, y: number): number | undefined {
 }
 
 function ownerColor(owner: Owner, dragMode: DragMode) {
-  if (owner === "confirmed") return { bg: adaptive.blue300, whiteText: true };
+  if (owner === "confirmed") return { bg: palette.blue300, whiteText: true };
   if (owner === "preview")
     return dragMode === "select"
-      ? { bg: adaptive.blue200, whiteText: true }
-      : { bg: adaptive.blue50, whiteText: false };
+      ? { bg: palette.blue200, whiteText: true }
+      : { bg: palette.blue50, whiteText: false };
   return { bg: "white", whiteText: false };
 }
 
@@ -187,9 +187,13 @@ function buildCalendarCellModels(
 
     let textColor: string;
     if (center !== "empty") {
-      textColor = whiteText ? "#ffffff" : isPast ? adaptive.grey400 : adaptive.grey800;
+      textColor = whiteText
+        ? "#ffffff"
+        : isPast
+          ? palette.grey400
+          : palette.grey800;
     } else {
-      textColor = isPast ? adaptive.grey400 : adaptive.grey800;
+      textColor = isPast ? palette.grey400 : palette.grey800;
     }
 
     // Corner colors - 항상 색상 설정 (empty는 white)

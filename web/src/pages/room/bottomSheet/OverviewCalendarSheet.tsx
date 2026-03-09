@@ -1,16 +1,16 @@
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { BottomSheet } from "@toss/tds-mobile";
 import { useTranslation } from "react-i18next";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useRoomStore } from "@/stores/useRoomStore";
-import { adaptive } from "@toss/tds-colors";
 import { buildCalendarCells } from "@/lib/calendar";
 import { buildRenderGrid2 } from "@/lib/renderGrid2";
 import { heatColor } from "@/lib/heatColor";
 import CalendarGridSub, {
   type CalendarCellModel,
 } from "../../../components/CalendarGridSub";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { palette } from "@/lib/palette";
 
 const W = 7;
 const H = 5;
@@ -82,7 +82,7 @@ function HeatmapCalendarView({
 
       const centerBg = center > 0 ? countToHeatBg(center, maxCount) : undefined;
       const textColor =
-        center > 0 && count / maxCount > 0.5 ? "#fff" : adaptive.grey600;
+        center > 0 && count / maxCount > 0.5 ? "#fff" : palette.grey600;
 
       const subTexts = center > 0 ? [String(count)] : undefined;
 
@@ -186,11 +186,7 @@ export default function OverviewCalendarSheet() {
     <BottomSheet
       open={isOverviewCalendarOpen}
       onClose={() => setIsOverviewCalendarOpen(false)}
-      header={
-        <BottomSheet.Header>
-          {t("overview.participationStatus")}
-        </BottomSheet.Header>
-      }
+      title={t("overview.participationStatus")}
     >
       <HeatmapCalendarView
         baseDate={calendarBaseDate}

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Text, Spacing } from "@toss/tds-mobile";
-import { adaptive } from "@toss/tds-colors";
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import { useTranslation } from "react-i18next";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
+import { palette } from "@/lib/palette";
 
 const TOTAL_STEPS = 24;
 const THUMB_SIZE = 24;
@@ -140,15 +139,11 @@ export default function TimeSlider() {
 
   return (
     <>
-      <div className="flex justify-between px-5">
-        <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {t("time.startTime")}
-        </Text>
-        <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
-          {t("time.endTime")}
-        </Text>
+      <div className="flex justify-between px-5 text-sm font-medium text-gray-500">
+        <span>{t("time.startTime")}</span>
+        <span>{t("time.endTime")}</span>
       </div>
-      <Spacing size={20} />
+      <div className="h-5" />
 
       {/* Slider */}
       <div
@@ -167,7 +162,7 @@ export default function TimeSlider() {
           {/* Inactive track */}
           <div
             className="absolute inset-0 rounded-full"
-            style={{ backgroundColor: adaptive.grey200 }}
+            style={{ backgroundColor: palette.grey200 }}
           />
           {/* Active range */}
           <div
@@ -175,7 +170,7 @@ export default function TimeSlider() {
             style={{
               left: toTrackPos(startPercent),
               right: `calc(100% - ${toTrackPos(endPercent)})`,
-              backgroundColor: adaptive.blue500,
+              backgroundColor: palette.blue500,
             }}
           />
 
@@ -198,7 +193,7 @@ export default function TimeSlider() {
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 backgroundColor: "white",
-                outline: `2px solid ${adaptive.greyOpacity100}`,
+                outline: `2px solid ${palette.greyOpacity100}`,
               }}
             />
           </div>
@@ -222,7 +217,7 @@ export default function TimeSlider() {
                 width: THUMB_SIZE,
                 height: THUMB_SIZE,
                 backgroundColor: "white",
-                outline: `2px solid ${adaptive.greyOpacity100}`,
+                outline: `2px solid ${palette.greyOpacity100}`,
               }}
             />
           </div>
@@ -238,9 +233,9 @@ export default function TimeSlider() {
               transform: "translateX(-50%)",
             }}
           >
-            <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
+            <span className="text-sm font-medium text-gray-500">
               {formatHour(start)}
-            </Text>
+            </span>
           </div>
 
           <div
@@ -251,9 +246,9 @@ export default function TimeSlider() {
               transform: "translateX(50%)",
             }}
           >
-            <Text color={adaptive.grey600} typography="t7" fontWeight="medium">
+            <span className="text-sm font-medium text-gray-500">
               {formatHour(end)}
-            </Text>
+            </span>
           </div>
         </div>
       </div>

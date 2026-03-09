@@ -1,8 +1,9 @@
 import { useParams } from "react-router-dom";
-import { BottomSheet, Button, Post } from "@toss/tds-mobile";
 import { useTranslation, Trans } from "react-i18next";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { handleShare } from "@/lib/share";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
 
 export default function TutorialSheet() {
   const { t } = useTranslation();
@@ -14,46 +15,42 @@ export default function TutorialSheet() {
     <BottomSheet
       open={isTutorialOpen}
       onClose={() => setIsTutorialOpen(false)}
-      header={<BottomSheet.Header>{t("room.created")}</BottomSheet.Header>}
-      cta={
-        <BottomSheet.DoubleCTA
-          leftButton={
-            <Button
-              variant="weak"
-              color="dark"
-              onClick={() => setIsTutorialOpen(false)}
-            >
-              {t("common.close")}
-            </Button>
-          }
-          rightButton={
-            <Button onClick={() => handleShare(id ?? "")}>
-              {t("common.invite")}
-            </Button>
-          }
-        />
+      title={t("room.created")}
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => setIsTutorialOpen(false)}
+          >
+            {t("common.close")}
+          </Button>
+          <Button fullWidth onClick={() => handleShare(id ?? "")}>
+            {t("common.invite")}
+          </Button>
+        </>
       }
     >
-      <Post.Ol>
-        <Post.Li>
+      <ol className="list-decimal space-y-3 pl-5 text-base text-gray-800">
+        <li>
           <Trans
             i18nKey="room.tutorial.step1"
             components={{ strong: <strong /> }}
           />
-        </Post.Li>
-        <Post.Li>
+        </li>
+        <li>
           <Trans
             i18nKey="room.tutorial.step2"
             components={{ strong: <strong /> }}
           />
-        </Post.Li>
-        <Post.Li>
+        </li>
+        <li>
           <Trans
             i18nKey="room.tutorial.step3"
             components={{ strong: <strong /> }}
           />
-        </Post.Li>
-      </Post.Ol>
+        </li>
+      </ol>
     </BottomSheet>
   );
 }

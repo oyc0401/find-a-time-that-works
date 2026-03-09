@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { BottomSheet, Button, Asset } from "@toss/tds-mobile";
 import { useTranslation } from "react-i18next";
-import { adaptive } from "@toss/tds-colors";
 import { useRoomStore } from "@/stores/useRoomStore";
 import {
   THUMBNAILS,
   thumbnailUrl,
   setDefaultThumbnail,
 } from "@/repository/thumbnail";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
 
 export default function ThumbnailChangeSheet() {
   const { t } = useTranslation();
@@ -38,59 +38,41 @@ export default function ThumbnailChangeSheet() {
     <BottomSheet
       open={isThumbnailDialogOpen}
       onClose={() => setIsThumbnailDialogOpen(false)}
-      header={
-        <BottomSheet.Header>
-          {t("participant.changeProfile")}
-        </BottomSheet.Header>
-      }
-      cta={
-        <BottomSheet.DoubleCTA
-          leftButton={
-            <Button
-              variant="weak"
-              color="dark"
-              onClick={() => setIsThumbnailDialogOpen(false)}
-            >
-              {t("common.close")}
-            </Button>
-          }
-          rightButton={
-            <Button onClick={handleSave}>{t("common.save")}</Button>
-          }
-        />
+      title={t("participant.changeProfile")}
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => setIsThumbnailDialogOpen(false)}
+          >
+            {t("common.close")}
+          </Button>
+          <Button fullWidth onClick={handleSave}>
+            {t("common.save")}
+          </Button>
+        </>
       }
     >
-      <div
-        className="grid px-4 py-2"
-        style={{
-          gridTemplateColumns: "repeat(auto-fit, 84px)",
-          justifyContent: "space-evenly",
-          justifyItems: "center",
-        }}
-      >
+      <div className="grid grid-cols-3 gap-4 px-1 py-2">
         {THUMBNAILS.map((thumb) => (
           <button
             key={thumb}
             type="button"
-            className="flex cursor-pointer items-center justify-center w-[84px] h-[84px]"
+            className="flex h-20 w-full items-center justify-center rounded-full border border-gray-100 bg-gray-50 transition-all hover:border-blue-200 focus-visible:outline-none"
             onClick={() => setSelectedThumbnail(thumb)}
+            style={{
+              boxShadow:
+                selectedThumbnail === thumb
+                  ? "0 0 0 2px #3182f6 inset"
+                  : "none",
+            }}
           >
-            <div
-              style={{
-                padding: 8,
-                background:
-                  selectedThumbnail === thumb
-                    ? adaptive.grey300
-                    : adaptive.grey100,
-                borderRadius: 9999,
-              }}
-            >
-              <Asset.Image
-                src={thumbnailUrl(thumb)}
-                frameShape={Asset.frameShape.Circle2XLarge}
-                scale={0.9}
-              />
-            </div>
+            <img
+              src={thumbnailUrl(thumb)}
+              alt=""
+              className="h-12 w-12 rounded-full object-cover"
+            />
           </button>
         ))}
       </div>
