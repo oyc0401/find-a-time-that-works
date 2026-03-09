@@ -330,7 +330,7 @@ export default function OverviewTap() {
                   title={p.name}
                   color={isSelected ? adaptive.blue400 : adaptive.grey100}
                   textColor={isSelected ? "white" : adaptive.grey600}
-                  borderColor={inRange ? adaptive.blue400 : undefined}
+                  borderColor={inRange ? adaptive.green400 : undefined}
                   className="shrink-0"
                   onClick={() => {
                     setSelectedUserIds(

@@ -176,7 +176,7 @@ export default function CalendarHeader({
 
   return (
     <div
-      className="flex w-max"
+      className="flex w-full"
       style={{ touchAction: "none" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -188,8 +188,8 @@ export default function CalendarHeader({
         <div
           key={columns[i].date}
           data-header-col={i}
-          className="flex-none text-center select-none"
-          style={{ width: CELL_W }}
+          className="flex-1 text-center select-none"
+          style={{ minWidth: CELL_W }}
         >
           <div
             style={{
