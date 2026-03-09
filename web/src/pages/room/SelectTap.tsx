@@ -368,7 +368,7 @@ export default function SelectTap() {
         </div>
 
         {/* Cells */}
-        <div className="overflow-x-auto" >
+        <div className="overflow-x-auto w-full" >
          <div className="min-w-full pr-4">
              <CalendarHeader
               columns={columns}

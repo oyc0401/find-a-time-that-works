@@ -392,7 +392,7 @@ export default function OverviewTap() {
         </div>
 
         {/* Cells */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-full">
           <div className="w-max pr-4">
             <CalendarHeader
               columns={columns}
