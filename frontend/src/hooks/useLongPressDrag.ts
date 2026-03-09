@@ -37,7 +37,6 @@ export function useLongPressDrag<TCell>({
   const pointerIdRef = useRef<number | undefined>(undefined);
   const containerRef = useRef<HTMLElement | undefined>(undefined);
   const lastDragCellRef = useRef<TCell | undefined>(undefined);
-  const startPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
 
   const clearTimer = useCallback(() => {
     if (longPressTimerRef.current !== undefined) {
@@ -69,7 +68,6 @@ export function useLongPressDrag<TCell>({
     containerRef.current = undefined;
     hasMovedRef.current = false;
     lastDragCellRef.current = undefined;
-    startPosRef.current = undefined;
     return wasDragging;
   }, [clearTimer]);
 
@@ -95,16 +93,15 @@ export function useLongPressDrag<TCell>({
       pointerIdRef.current = e.pointerId;
       containerRef.current = e.currentTarget as HTMLElement;
       hasMovedRef.current = false;
-      startPosRef.current = { x: e.clientX, y: e.clientY };
+
+      // 안드로이드에서 스크롤이 먼저 시작되어 pointercancel이 발생하는 것을 막기 위해
+      // pointerdown 즉시 캡처. 움직임 감지 시 releasePointerCapture로 복구.
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 
       clearTimer();
       longPressTimerRef.current = setTimeout(() => {
         if (hasMovedRef.current) return;
         if (startCellRef.current === undefined) return;
-
-        if (containerRef.current && pointerIdRef.current !== undefined) {
-          containerRef.current.setPointerCapture(pointerIdRef.current);
-        }
 
         generateHapticFeedback({ type: "softMedium" });
         isDraggingRef.current = true;
@@ -124,20 +121,24 @@ export function useLongPressDrag<TCell>({
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
-      // 롱프레스 대기 중 움직이면 취소 (픽셀 임계값으로 jitter 무시)
+      // 롱프레스 대기 중 움직이면 취소
       if (
         !hasMovedRef.current &&
         startCellRef.current !== undefined &&
         !isDraggingRef.current
       ) {
-        const start = startPosRef.current;
-        if (start !== undefined) {
-          const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
-          if (dist > 8) {
-            hasMovedRef.current = true;
-            clearTimer();
-            return;
+        const currentCell = getCellFromPoint(e.clientX, e.clientY);
+        if (
+          currentCell === undefined ||
+          !isSameCell(currentCell, startCellRef.current)
+        ) {
+          hasMovedRef.current = true;
+          clearTimer();
+          // 스크롤 복구를 위해 포인터 캡처 해제
+          if (containerRef.current && pointerIdRef.current !== undefined) {
+            containerRef.current.releasePointerCapture(pointerIdRef.current);
           }
+          return;
         }
         return;
       }
