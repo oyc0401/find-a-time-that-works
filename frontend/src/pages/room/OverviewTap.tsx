@@ -404,11 +404,13 @@ export default function OverviewTap() {
             />
           <div
             className="mt-2 relative flex w-max"
+            style={{ touchAction: "none" }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
             onLostPointerCapture={onLostPointerCapture}
+            onContextMenu={(e) => e.preventDefault()}
           >
             {columns.map((col, displayIdx) => (
               <div

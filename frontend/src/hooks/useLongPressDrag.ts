@@ -37,6 +37,7 @@ export function useLongPressDrag<TCell>({
   const pointerIdRef = useRef<number | undefined>(undefined);
   const containerRef = useRef<HTMLElement | undefined>(undefined);
   const lastDragCellRef = useRef<TCell | undefined>(undefined);
+  const startPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
 
   const clearTimer = useCallback(() => {
     if (longPressTimerRef.current !== undefined) {
@@ -68,6 +69,7 @@ export function useLongPressDrag<TCell>({
     containerRef.current = undefined;
     hasMovedRef.current = false;
     lastDragCellRef.current = undefined;
+    startPosRef.current = undefined;
     return wasDragging;
   }, [clearTimer]);
 
@@ -93,6 +95,7 @@ export function useLongPressDrag<TCell>({
       pointerIdRef.current = e.pointerId;
       containerRef.current = e.currentTarget as HTMLElement;
       hasMovedRef.current = false;
+      startPosRef.current = { x: e.clientX, y: e.clientY };
 
       clearTimer();
       longPressTimerRef.current = setTimeout(() => {
@@ -121,21 +124,22 @@ export function useLongPressDrag<TCell>({
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
-      // 롱프레스 대기 중 움직이면 취소
+      // 롱프레스 대기 중 움직이면 취소 (픽셀 임계값으로 jitter 무시)
       if (
         !hasMovedRef.current &&
         startCellRef.current !== undefined &&
         !isDraggingRef.current
       ) {
-        const currentCell = getCellFromPoint(e.clientX, e.clientY);
-        if (
-          currentCell === undefined ||
-          !isSameCell(currentCell, startCellRef.current)
-        ) {
-          hasMovedRef.current = true;
-          clearTimer();
-          return;
+        const start = startPosRef.current;
+        if (start !== undefined) {
+          const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+          if (dist > 8) {
+            hasMovedRef.current = true;
+            clearTimer();
+            return;
+          }
         }
+        return;
       }
 
       if (!isDraggingRef.current || startCellRef.current === undefined) return;
