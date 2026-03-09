@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { generateHapticFeedback } from "@/lib/haptics";
 import { useTranslation } from "react-i18next";
 import { useTimeSliderStore } from "../stores/useTimeSliderStore";
 import { palette } from "@/lib/palette";

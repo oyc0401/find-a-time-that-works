@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { generateHapticFeedback } from "@/lib/haptics";
 import { useTranslation } from "react-i18next";
 import { formatDateHeader } from "@/lib/timeSlots";
 import { CELL_W, getHeaderColFromPoint } from "@/lib/gridUtils";

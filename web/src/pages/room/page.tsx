@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import {
-  graniteEvent,
-  generateHapticFeedback,
-} from "@apps-in-toss/web-framework";
+import { graniteEvent } from "@apps-in-toss/web-framework";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
@@ -19,7 +16,6 @@ import { getDefaultThumbnail } from "@/repository/thumbnail";
 import { Repository } from "@/repository/repository";
 import { handleShare } from "@/lib/share";
 import { useTranslation } from "react-i18next";
-import { WifiOff } from "lucide-react";
 import { truncateTitle } from "@/lib/truncateTitle";
 import SelectTap from "./SelectTap";
 import OverviewTap from "./OverviewTap";
@@ -34,6 +30,7 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { Settings, WifiOff } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { generateHapticFeedback } from "@/lib/haptics";
 
 export default function Room() {
   const { t } = useTranslation();

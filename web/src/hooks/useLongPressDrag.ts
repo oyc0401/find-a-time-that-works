@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { generateHapticFeedback } from "@/lib/haptics";
 
 const DEFAULT_DURATION = 250;
 
