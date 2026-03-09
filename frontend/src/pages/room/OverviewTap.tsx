@@ -404,13 +404,11 @@ export default function OverviewTap() {
             />
           <div
             className="mt-2 relative flex w-max"
-            style={{ touchAction: "none" }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
             onLostPointerCapture={onLostPointerCapture}
-            onContextMenu={(e) => e.preventDefault()}
           >
             {columns.map((col, displayIdx) => (
               <div
@@ -495,8 +493,8 @@ export default function OverviewTap() {
                 style={{
                   top: overlayRect.r0 * CELL_H,
                   height: (overlayRect.r1 - overlayRect.r0 + 1) * CELL_H,
-                  left: `${(overlayRect.dc0 / displayCols) * 100}%`,
-                  width: `${((overlayRect.dc1 - overlayRect.dc0 + 1) / displayCols) * 100}%`,
+                  left: overlayRect.dc0 * CELL_W,
+                  width: (overlayRect.dc1 - overlayRect.dc0 + 1) * CELL_W,
                   backgroundColor: "#c9e2ff60",
                   border: "2px solid #3182f6",
                 }}
