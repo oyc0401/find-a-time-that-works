@@ -493,8 +493,8 @@ export default function OverviewTap() {
                 style={{
                   top: overlayRect.r0 * CELL_H,
                   height: (overlayRect.r1 - overlayRect.r0 + 1) * CELL_H,
-                  left: overlayRect.dc0 * CELL_W,
-                  width: (overlayRect.dc1 - overlayRect.dc0 + 1) * CELL_W,
+                  left: `${(overlayRect.dc0 / displayCols) * 100}%`,
+                  width: `${((overlayRect.dc1 - overlayRect.dc0 + 1) / displayCols) * 100}%`,
                   backgroundColor: "#c9e2ff60",
                   border: "2px solid #3182f6",
                 }}

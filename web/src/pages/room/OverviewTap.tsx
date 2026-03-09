@@ -394,7 +394,7 @@ export default function OverviewTap() {
 
         {/* Cells */}
         <div className="overflow-x-auto w-full">
-          <div className="w-max pr-4">
+          <div className="min-w-full pr-4">
             <CalendarHeader
               columns={columns}
               allSelectedCols={allSelectedCols}
@@ -404,7 +404,7 @@ export default function OverviewTap() {
               onCancelPreview={() => setPreviewRect(undefined)}
             />
           <div
-            className="mt-2 relative flex w-max"
+            className="mt-2 relative flex"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -414,8 +414,8 @@ export default function OverviewTap() {
             {columns.map((col, displayIdx) => (
               <div
                 key={col.date}
-                className="flex flex-col flex-none"
-                style={{ width: CELL_W }}
+                className="flex flex-col flex-1"
+                style={{ minWidth: CELL_W }}
               >
                 {timeSlots.map((slot, rowIdx) => {
                   const rc = renderGrid[rowIdx]?.[displayIdx];
