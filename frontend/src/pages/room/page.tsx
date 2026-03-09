@@ -126,22 +126,6 @@ export default function Room() {
     }
   }, [searchParams, id, navigate]);
 
-  useEffect(() => {
-    const unsubscription = graniteEvent.addEventListener("backEvent", {
-      onEvent: () => {
-        navigate(-1);
-      },
-      onError: (error) => {
-        console.error(`backEvent 에러: ${error}`);
-      },
-    });
-
-    window.addEventListener("pagehide", unsubscription);
-    return () => {
-      unsubscription();
-      window.removeEventListener("pagehide", unsubscription);
-    };
-  }, [navigate]);
 
   useEffect(() => {
     if (!room) return;

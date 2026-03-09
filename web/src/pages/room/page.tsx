@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { graniteEvent } from "@apps-in-toss/web-framework";
 import { useRoomData } from "@/hooks/useRoomData";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
@@ -130,22 +129,7 @@ export default function Room() {
     }
   }, [searchParams, id, navigate]);
 
-  useEffect(() => {
-    const unsubscription = graniteEvent.addEventListener("backEvent", {
-      onEvent: () => {
-        navigate(-1);
-      },
-      onError: (error) => {
-        console.error(`backEvent 에러: ${error}`);
-      },
-    });
 
-    window.addEventListener("pagehide", unsubscription);
-    return () => {
-      unsubscription();
-      window.removeEventListener("pagehide", unsubscription);
-    };
-  }, [navigate]);
 
   useEffect(() => {
     if (!room) return;
