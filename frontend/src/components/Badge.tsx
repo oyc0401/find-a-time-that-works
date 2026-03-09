@@ -30,6 +30,8 @@ export default function Badge({
         borderRadius: 9999,
         fontSize: 14,
         border: `2px solid ${borderColor ?? "transparent"}`,
+        outline: "none",
+        WebkitTapHighlightColor: "transparent",
       }}
       onClick={onClick}
     >
